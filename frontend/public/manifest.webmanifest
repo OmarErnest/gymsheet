@@ -1,0 +1,12 @@
+{
+  "name": "GymSheet",
+  "short_name": "GymSheet",
+  "description": "Spreadsheet + gym tracker",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#07130d",
+  "theme_color": "#22c55e",
+  "icons": [
+    { "src": "/logo.svg", "sizes": "any", "type": "image/svg+xml" }
+  ]
+}
