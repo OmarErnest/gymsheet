@@ -222,18 +222,6 @@ export default function Settings({ preferences, setPreferences, lang }) {
         <label className="field"><span>Font Size</span><select value={form.font_size || 'medium'} onChange={(e) => update('font_size', e.target.value)}><option value="small">Small</option><option value="medium">Medium</option><option value="big">Big</option></select></label>
         <label className="field"><span>{t(lang, 'language')}</span><select value={form.language} onChange={(e) => update('language', e.target.value)}><option value="en">🇬🇧 English</option><option value="es">🇪🇸 Español</option></select></label>
         
-        <button 
-          type="button" 
-          className="fab-save" 
-          onClick={() => setShowLegal(true)} 
-          style={{ 
-            bottom: 'calc(6.5rem + env(safe-area-inset-bottom, 0px))',
-            background: 'linear-gradient(135deg, var(--brand), var(--brand-2))' 
-          }}
-        >
-          <FileText size={28} />
-        </button>
-
         {showLegal && (
           <div className="modal-overlay" onClick={() => setShowLegal(false)}>
             <div className="glass-card modal-content" onClick={e => e.stopPropagation()}>
@@ -353,6 +341,19 @@ export default function Settings({ preferences, setPreferences, lang }) {
           <LogOut size={18} /> {t(lang, 'logout')}
         </button>
       </div>
+
+      <button 
+        type="button" 
+        className="fab-save" 
+        onClick={() => setShowLegal(true)} 
+        style={{ 
+          bottom: 'calc(6.5rem + env(safe-area-inset-bottom, 0px))',
+          right: '1.5rem',
+          background: 'linear-gradient(135deg, var(--brand), var(--brand-2))' 
+        }}
+      >
+        <FileText size={28} />
+      </button>
     </section>
   );
 }
