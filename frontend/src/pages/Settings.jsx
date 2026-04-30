@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { LogOut, Save, Eye, EyeOff } from 'lucide-react';
+import { LogOut, Save, Eye, EyeOff, FileText } from 'lucide-react';
 import { api } from '../api/client.js';
 import { useAuth } from '../state/AuthContext.jsx';
 import { t } from '../i18n.js';
@@ -222,17 +222,26 @@ export default function Settings({ preferences, setPreferences, lang }) {
         <label className="field"><span>Font Size</span><select value={form.font_size || 'medium'} onChange={(e) => update('font_size', e.target.value)}><option value="small">Small</option><option value="medium">Medium</option><option value="big">Big</option></select></label>
         <label className="field"><span>{t(lang, 'language')}</span><select value={form.language} onChange={(e) => update('language', e.target.value)}><option value="en">🇬🇧 English</option><option value="es">🇪🇸 Español</option></select></label>
         
-        <div style={{ marginTop: '0.5rem' }}>
-          <button type="button" className="text-link" onClick={() => setShowLegal(true)} style={{ fontSize: '0.8rem', opacity: 0.8, background: 'none', border: 'none', color: 'var(--brand-2)', textDecoration: 'underline', padding: 0 }}>
-            {t(lang, 'legalDisclaimer')}
-          </button>
-        </div>
+        <button 
+          type="button" 
+          className="fab-save" 
+          onClick={() => setShowLegal(true)} 
+          style={{ 
+            bottom: 'calc(6.5rem + env(safe-area-inset-bottom, 0px))',
+            background: 'linear-gradient(135deg, var(--brand), var(--brand-2))' 
+          }}
+        >
+          <FileText size={28} />
+        </button>
 
         {showLegal && (
           <div className="modal-overlay" onClick={() => setShowLegal(false)}>
             <div className="glass-card modal-content" onClick={e => e.stopPropagation()}>
-              <h3>{t(lang, 'legalDisclaimer')}</h3>
-              <p style={{ lineHeight: '1.6', fontSize: '0.9rem', margin: '1rem 0' }}>{t(lang, 'legalDisclaimerText')}</p>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.8rem', marginBottom: '1rem' }}>
+                <FileText className="brand" />
+                <h3 style={{ margin: 0 }}>{t(lang, 'legalDisclaimer')}</h3>
+              </div>
+              <p style={{ lineHeight: '1.6', fontSize: '0.9rem', marginBottom: '1.5rem' }}>{t(lang, 'legalDisclaimerText')}</p>
               <button className="primary-btn" onClick={() => setShowLegal(false)}>OK</button>
             </div>
           </div>
