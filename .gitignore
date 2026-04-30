@@ -10,4 +10,4 @@ build/
 .coverage
 .pytest_cache/
 .DS_Store
-README.md
+
