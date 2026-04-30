@@ -218,7 +218,7 @@ export default function Settings({ preferences, setPreferences, lang }) {
           <small className="muted">{t(lang, 'linkHelp')}</small>
         </label>
 
-        <label className="field"><span>{t(lang, 'theme')}</span><select value={form.theme} onChange={(e) => update('theme', e.target.value)}><option value="dark">{t(lang, 'dark')}</option><option value="light">{t(lang, 'light')}</option></select></label>
+        <label className="field"><span>{t(lang, 'theme')}</span><select value={form.theme} onChange={(e) => update('theme', e.target.value)}><option value="dark">🌑 {t(lang, 'dark')}</option><option value="light">☀️ {t(lang, 'light')}</option></select></label>
         <label className="field"><span>Font Size</span><select value={form.font_size || 'medium'} onChange={(e) => update('font_size', e.target.value)}><option value="small">Small</option><option value="medium">Medium</option><option value="big">Big</option></select></label>
         <label className="field"><span>{t(lang, 'language')}</span><select value={form.language} onChange={(e) => update('language', e.target.value)}><option value="en">🇬🇧 English</option><option value="es">🇪🇸 Español</option></select></label>
         
