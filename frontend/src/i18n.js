@@ -137,7 +137,9 @@ export const dict = {
     arms: 'Arms',
     other: 'Other',
     legalDisclaimer: 'Legal Disclaimer',
-    legalDisclaimerText: 'This is a private community application. Please do not use sensitive passwords or share private personal information. This platform is provided for tracking purposes only and is not responsible for data security or privacy beyond basic community standards.',
+    legalDisclaimerText: 'This is a private community application. Please do not use sensitive passwords or share private personal information. This platform is provided for tracking purposes only and is not responsible for data security or privacy beyond basic community standards. For questions, contact spacejavelin@proton.me',
+    iUnderstand: 'I understand',
+    goBack: 'Go back',
   },
   es: {
     appName: 'GymSheet',
@@ -277,7 +279,9 @@ export const dict = {
     arms: 'Brazos',
     other: 'Otro',
     legalDisclaimer: 'Aviso Legal',
-    legalDisclaimerText: 'Esta es una aplicación de comunidad privada. Por favor, no use contraseñas sensibles ni comparta información personal privada. Esta plataforma se proporciona solo para fines de seguimiento y no se hace responsable de la seguridad de los datos o la privacidad más allá de los estándares básicos de la comunidad.',
+    legalDisclaimerText: 'Esta es una aplicación de comunidad privada. Por favor, no use contraseñas sensibles ni comparta información personal privada. Esta plataforma se proporciona solo para fines de seguimiento y no se hace responsable de la seguridad de los datos o la privacidad más allá de los estándares básicos de la comunidad. Para dudas, contacta a spacejavelin@proton.me',
+    iUnderstand: 'Entiendo',
+    goBack: 'Regresar',
   }
 };
 
