@@ -147,6 +147,7 @@ class HomeDaysView(APIView):
 
     def get(self, request):
         today = timezone.localdate()
+        week_end = today + timedelta(days=(6 - today.weekday()))
         start = parse_date_param(request.query_params.get('start'), today)
         end = parse_date_param(request.query_params.get('end'), today)
         if start > end:
@@ -193,6 +194,7 @@ class HomeDaysView(APIView):
                 'label': current.strftime('%A, %b %d'),
                 'is_today': current == today,
                 'is_future': current > today,
+                'can_log': current <= week_end,
                 'goals': enrich_goals(goals_data),
                 'progress': DailyProgressSerializer(progress_by_date.get(current)).data if progress_by_date.get(current) else None,
                 'logs': ExerciseLogSerializer(logs_by_date.get(current, []), many=True).data,
@@ -576,6 +578,7 @@ class HomeDaysView(APIView):
 
     def get(self, request):
         today = timezone.localdate()
+        week_end = today + timedelta(days=(6 - today.weekday()))
         start = parse_date_param(request.query_params.get('start'), today)
         end = parse_date_param(request.query_params.get('end'), today)
         if start > end:
@@ -622,6 +625,7 @@ class HomeDaysView(APIView):
                 'label': current.strftime('%A, %b %d'),
                 'is_today': current == today,
                 'is_future': current > today,
+                'can_log': current <= week_end,
                 'goals': enrich_goals(goals_data),
                 'progress': DailyProgressSerializer(progress_by_date.get(current)).data if progress_by_date.get(current) else None,
                 'logs': ExerciseLogSerializer(logs_by_date.get(current, []), many=True).data,

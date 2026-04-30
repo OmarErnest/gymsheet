@@ -121,8 +121,11 @@ class ExerciseLogSerializer(serializers.ModelSerializer):
 
     def validate_date(self, value):
         from django.utils import timezone
-        if value > timezone.localdate():
-            raise serializers.ValidationError("You cannot log exercises for future dates.")
+        from datetime import timedelta
+        today = timezone.localdate()
+        week_end = today + timedelta(days=(6 - today.weekday()))
+        if value > week_end:
+            raise serializers.ValidationError("You cannot log exercises for dates beyond the current week.")
         return value
 
     def validate_weight_kg(self, value):

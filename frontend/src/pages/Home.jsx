@@ -232,7 +232,7 @@ export default function Home({ lang }) {
                   const isTimeBased = item.exercise_detail?.is_time_based;
                   const logVal = inlineLogs[item.id] || {};
                   const isSaved = !!logVal.log_id;
-                  const isFuture = day.is_future;
+                  const isLocked = day.is_future && !day.can_log;
 
                   return (
                     <div
@@ -247,8 +247,8 @@ export default function Home({ lang }) {
                         borderRadius: '8px',
                         border: isSaved ? '1px solid color-mix(in srgb, var(--brand) 25%, transparent)' : '1px solid transparent',
                         transition: 'background 0.2s, border 0.2s',
-                        opacity: isFuture ? 0.6 : 1,
-                        pointerEvents: isFuture ? 'none' : 'auto'
+                        opacity: isLocked ? 0.6 : 1,
+                        pointerEvents: isLocked ? 'none' : 'auto'
                       }}
                     >
                       {/* Exercise name / YouTube link + personal best */}
@@ -312,7 +312,7 @@ export default function Home({ lang }) {
                             inputMode="numeric"
                             min="0"
                             step="1"
-                            disabled={isFuture}
+                            disabled={isLocked}
                             value={logVal.sets !== undefined ? logVal.sets : ''}
                             placeholder={String(item.sets)}
                             onChange={(e) => handleChange(item.id, 'sets', e.target.value)}
@@ -328,7 +328,7 @@ export default function Home({ lang }) {
                             inputMode="numeric"
                             min="0"
                             step="1"
-                            disabled={isFuture}
+                            disabled={isLocked}
                             value={logVal.reps !== undefined ? logVal.reps : ''}
                             placeholder={String(item.reps)}
                             onChange={(e) => handleChange(item.id, 'reps', e.target.value)}
@@ -343,7 +343,7 @@ export default function Home({ lang }) {
                               onFocus={(e) => e.target.select()}
                               type="text"
                               inputMode="numeric"
-                              disabled={isFuture}
+                              disabled={isLocked}
                               placeholder="MM:SS"
                               value={logVal.duration || ''}
                               onChange={(e) => handleChange(item.id, 'duration', e.target.value)}
@@ -359,7 +359,7 @@ export default function Home({ lang }) {
                               inputMode="decimal"
                               min="0"
                               step="0.5"
-                              disabled={isFuture}
+                              disabled={isLocked}
                               placeholder="0"
                               value={logVal.weight_kg !== undefined ? logVal.weight_kg : ''}
                               onChange={(e) => handleChange(item.id, 'weight_kg', e.target.value)}
@@ -382,7 +382,7 @@ export default function Home({ lang }) {
         <button
           className="fab-save"
           onClick={() => saveDay(days[0])}
-          disabled={saving || days[0].is_future}
+          disabled={saving || (days[0]?.is_future && !days[0]?.can_log)}
           title={t(lang, 'save')}
         >
           {saving ? <div className="spinner" /> : <Save />}
