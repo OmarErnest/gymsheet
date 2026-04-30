@@ -296,7 +296,7 @@ export default function Home({ lang }) {
                           )}
                         </div>
                         <p style={{ margin: 0, opacity: 0.7, fontSize: '0.85rem' }}>
-                          Target: {item.sets} {t(lang, 'sets')} · {item.reps} {t(lang, 'reps')} · {item.exercise_detail?.category}
+                          Target: {item.sets} {t(lang, 'sets')} · {item.reps} {t(lang, 'reps')} · {t(lang, item.exercise_detail?.category)}
                         </p>
                         {item.notes && <p style={{ margin: 0, fontSize: '0.8rem', fontStyle: 'italic', opacity: 0.55 }}>{item.notes}</p>}
                       </div>

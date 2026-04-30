@@ -130,6 +130,14 @@ export const dict = {
     uploadSuccess: 'File uploaded. Awaiting review.',
     testUserMessage: 'Test Environment Restricted.',
     contactMe: 'For full features or account migration, contact me at spacejavelin@proton.me',
+    shoulder: 'Shoulder',
+    legs: 'Legs',
+    chest: 'Chest',
+    back: 'Back',
+    arms: 'Arms',
+    other: 'Other',
+    legalDisclaimer: 'Legal Disclaimer',
+    legalDisclaimerText: 'This is a private community application. Please do not use sensitive passwords or share private personal information. This platform is provided for tracking purposes only and is not responsible for data security or privacy beyond basic community standards.',
   },
   es: {
     appName: 'GymSheet',
@@ -262,6 +270,14 @@ export const dict = {
     uploadSuccess: 'Archivo subido. Esperando revisión.',
     testUserMessage: 'Ambiente de Prueba Restringido.',
     contactMe: 'Para funciones completas o migración de cuenta, contáctame en spacejavelin@proton.me',
+    shoulder: 'Hombro',
+    legs: 'Piernas',
+    chest: 'Pecho',
+    back: 'Espalda',
+    arms: 'Brazos',
+    other: 'Otro',
+    legalDisclaimer: 'Aviso Legal',
+    legalDisclaimerText: 'Esta es una aplicación de comunidad privada. Por favor, no use contraseñas sensibles ni comparta información personal privada. Esta plataforma se proporciona solo para fines de seguimiento y no se hace responsable de la seguridad de los datos o la privacidad más allá de los estándares básicos de la comunidad.',
   }
 };
 

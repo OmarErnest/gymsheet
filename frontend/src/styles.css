@@ -353,8 +353,9 @@ input[type=number] { -moz-appearance: textfield; appearance: textfield; }
   padding: 0.35rem 0.55rem;
   font-size: 0.78rem;
   font-weight: 900;
-  background: color-mix(in srgb, var(--brand) 18%, transparent);
-  color: var(--brand-2);
+  background: color-mix(in srgb, var(--brand) 25%, var(--bg-soft));
+  color: var(--text);
+  border: 1px solid var(--line);
 }
 .exercise-list, .mini-log-list { display: grid; gap: 0.6rem; margin-top: 0.7rem; }
 .exercise-row { padding: 0.7rem 0; border-top: 1px solid var(--line); }
@@ -682,8 +683,9 @@ input[type=number] { -moz-appearance: textfield; appearance: textfield; }
   border-radius: var(--radius-md);
   display: grid;
   place-items: center;
-  background: color-mix(in srgb, var(--brand) 18%, transparent);
-  color: var(--brand-2);
+  background: color-mix(in srgb, var(--brand) 25%, var(--bg-soft));
+  color: var(--text);
+  border: 1px solid var(--line);
   font-weight: 950;
 }
 .rank-main { flex: 1; min-width: 0; }
@@ -736,3 +738,21 @@ input[type=number] { -moz-appearance: textfield; appearance: textfield; }
 select:invalid { color: var(--muted); }
 select option[value=""] { color: var(--muted); }
 select option { color: var(--text); }
+
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.7);
+  backdrop-filter: blur(8px);
+  z-index: 100;
+  display: grid;
+  place-items: center;
+  padding: 1.5rem;
+}
+
+.modal-content {
+  width: min(100%, 450px);
+  max-height: 80vh;
+  overflow-y: auto;
+  border: 1px solid var(--brand);
+}

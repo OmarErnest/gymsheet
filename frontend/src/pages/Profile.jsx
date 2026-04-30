@@ -115,8 +115,8 @@ export default function Profile({ lang }) {
       const cat = log.exercise_detail?.category || 'other';
       counts[cat] = (counts[cat] || 0) + 1;
     });
-    return Object.entries(counts).map(([name, value]) => ({ name, value }));
-  }, [logs]);
+    return Object.entries(counts).map(([name, value]) => ({ name: t(lang, name), value }));
+  }, [logs, lang]);
 
   const filteredLogsList = useMemo(() => {
     return logs.filter((log) => {

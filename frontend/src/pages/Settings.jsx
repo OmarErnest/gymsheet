@@ -16,6 +16,7 @@ export default function Settings({ preferences, setPreferences, lang }) {
   const [logUploadStatus, setLogUploadStatus] = useState(null);
 
   const [showSecret, setShowSecret] = useState(false);
+  const [showLegal, setShowLegal] = useState(false);
 
   useEffect(() => {
     setForm((prev) => ({ ...prev, ...preferences, auth_mode: prev.auth_mode || user?.auth_mode || 'pin', leaderboard_message: preferences.leaderboard_message || '', height_cm: preferences.height_cm || '', weight_kg: preferences.weight_kg || '', recommended_link: preferences.recommended_link || '' }));
@@ -219,7 +220,23 @@ export default function Settings({ preferences, setPreferences, lang }) {
 
         <label className="field"><span>{t(lang, 'theme')}</span><select value={form.theme} onChange={(e) => update('theme', e.target.value)}><option value="dark">{t(lang, 'dark')}</option><option value="light">{t(lang, 'light')}</option></select></label>
         <label className="field"><span>Font Size</span><select value={form.font_size || 'medium'} onChange={(e) => update('font_size', e.target.value)}><option value="small">Small</option><option value="medium">Medium</option><option value="big">Big</option></select></label>
-        <label className="field"><span>{t(lang, 'language')}</span><select value={form.language} onChange={(e) => update('language', e.target.value)}><option value="en">English</option><option value="es">Español</option></select></label>
+        <label className="field"><span>{t(lang, 'language')}</span><select value={form.language} onChange={(e) => update('language', e.target.value)}><option value="en">🇬🇧 English</option><option value="es">🇪🇸 Español</option></select></label>
+        
+        <div style={{ marginTop: '0.5rem' }}>
+          <button type="button" className="text-link" onClick={() => setShowLegal(true)} style={{ fontSize: '0.8rem', opacity: 0.8, background: 'none', border: 'none', color: 'var(--brand-2)', textDecoration: 'underline', padding: 0 }}>
+            {t(lang, 'legalDisclaimer')}
+          </button>
+        </div>
+
+        {showLegal && (
+          <div className="modal-overlay" onClick={() => setShowLegal(false)}>
+            <div className="glass-card modal-content" onClick={e => e.stopPropagation()}>
+              <h3>{t(lang, 'legalDisclaimer')}</h3>
+              <p style={{ lineHeight: '1.6', fontSize: '0.9rem', margin: '1rem 0' }}>{t(lang, 'legalDisclaimerText')}</p>
+              <button className="primary-btn" onClick={() => setShowLegal(false)}>OK</button>
+            </div>
+          </div>
+        )}
         
         <label className="field"><span>{t(lang, 'profilePictureUrl')}</span>
           <input type="url" value={form.profile_pic_url_pending} onChange={(e) => update('profile_pic_url_pending', e.target.value)} placeholder="https://..." />
