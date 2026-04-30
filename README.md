@@ -1,57 +1,35 @@
-# Gym Journey 🏋️‍♂️
+# GymJourney: An Integrated Fitness Tracking System
 
-**Your personal fitness companion for tracking progress, hitting goals, and climbing the leaderboard.**
+GymJourney is a full-stack application designed for longitudinal fitness data management and community-driven performance benchmarking. It provides a technical framework for goal-setting, anthropometric tracking, and relative strength analysis.
 
-Gym Journey is a modern, mobile-responsive fitness application designed to help you organize your workouts, track your physical evolution, and stay motivated through a competitive community leaderboard.
+## Core Architecture
 
----
+- **Data Persistence**: Relational schema manages high-fidelity exercise logs, goal plans, and anatomical measurements.
+- **Biometric Visualization**: Integrated 2D body mapping for localized measurement tracking over time.
+- **Performance Metrics**: Dynamic calculation of daily average intensity and relative ranking algorithms for the weekly leaderboard.
+- **Interface Design**: Mobile-responsive React frontend utilizing a custom CSS-in-JS design system with glassmorphism aesthetics.
 
-## ✨ Features
+## Schema Overview
 
-- **🎯 Goal-Oriented Workouts**: Build custom routines with sets, reps, and specific exercises. Supercharge your consistency with recurring weekly goals.
-- **🗺️ Interactive Body Map**: Track measurements for every muscle group using a visual map. Watch your progress in CM over time.
-- **📈 Strength Analytics**: Visualize your performance with dynamic charts. Monitor your **Daily Average Weight** lifted across all exercises or focus on specific muscle groups.
-- **🏆 Community Leaderboard**: Compete with other athletes. Earn **Gold, Silver, or Bronze** status based on your weekly consistency and lifting intensity.
-- **🔗 Profile Personalization**: Top-ranked users (Top 10) can share their favorite training resources, Spotify playlists, or gear via a custom "Recommended Link" badge.
-- **🌓 Adaptive UI**: Sleek dark and light modes with glassmorphism aesthetics, designed for a premium mobile-first experience.
+The database architecture leverages normalized relational tables to maintain integrity across users, preferences, and fitness metrics. 
 
----
+![Database Schema Diagram](database_diagram.png)
 
-## 🚀 Getting Started
+## Implementation Details
 
-### Prerequisites
-- Python 3.11+
-- Node.js 18+
-- PostgreSQL (or SQLite for local development)
+### Backend (Django)
+1. Environment initialization: `python -m venv .venv`
+2. Dependency installation: `pip install -r requirements.txt`
+3. Schema migration: `python manage.py migrate`
+4. Server execution: `python manage.py runserver`
 
-### Backend Setup (Django)
-1. Navigate to the `/backend` directory.
-2. Create a virtual environment: `python -m venv .venv`
-3. Activate the environment:
-   - Windows: `.venv\Scripts\activate`
-   - Mac/Linux: `source .venv/bin/activate`
-4. Install dependencies: `pip install -r requirements.txt`
-5. Apply database migrations: `python manage.py migrate`
-6. Start the server: `python manage.py runserver`
+### Frontend (React/Vite)
+1. Dependency management: `npm install`
+2. Development server: `npm run dev`
+3. Access point: `http://localhost:5173`
 
-### Frontend Setup (Vite + React)
-1. Navigate to the `/frontend` directory.
-2. Install dependencies: `npm install`
-3. Start the development server: `npm run dev`
-4. Access the application at `http://localhost:5173`
-
----
-
-## 🛠️ Tech Stack
-
-- **Frontend**: React, Vite, Recharts, Lucide Icons
+## Technical Stack
 - **Backend**: Django, Django REST Framework
+- **Frontend**: React 18, Vite, Recharts, Lucide
 - **Database**: PostgreSQL / SQLite
-- **Styling**: Vanilla CSS (Custom Glassmorphism Design System)
-
----
-
-## 🤝 Community
-The leaderboard refreshes weekly and uses consistency, logs, and your average lift weight to determine the rankings. Top performers get the privilege of sharing recommended resources with the community!
-
-*Developed with passion for fitness and precision.*
+- **Styling**: Vanilla CSS (Custom Design System)
