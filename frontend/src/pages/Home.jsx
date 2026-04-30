@@ -374,29 +374,27 @@ export default function Home({ lang }) {
               </div>
             </div>
           ))}
-
-          {/* ONE save button for the whole day */}
-          {day.goals.length > 0 && (
-            <div style={{ marginTop: '1.5rem', display: 'flex', flexDirection: 'column', gap: '0.5rem', alignItems: 'stretch' }}>
-              <button
-                className="primary-btn"
-                onClick={() => saveDay(day)}
-                disabled={saving || day.is_future}
-                style={{ fontSize: '1.05rem', minHeight: '54px' }}
-              >
-                <Save size={18} />
-                {saving ? 'Saving…' : day.is_future ? 'Cannot Log Future Workouts' : `Save ${day.is_today ? "Today's" : "Day's"} Workout`}
-              </button>
-              {saveMessage && (
-                <p className={`notice${saveMessage.includes('✓') ? '' : ' danger'}`} style={{ textAlign: 'center', margin: 0 }}>
-                  {saveMessage}
-                </p>
-              )}
-            </div>
-          )}
         </article>
       )}
 
+      {/* Floating Save Button */}
+      {days[0]?.goals?.length > 0 && (
+        <button
+          className="fab-save"
+          onClick={() => saveDay(days[0])}
+          disabled={saving || days[0].is_future}
+          title={t(lang, 'save')}
+        >
+          {saving ? <div className="spinner" /> : <Save />}
+        </button>
+      )}
+
+      {saveMessage && (
+        <div className="save-toast">
+          <CheckCircle2 size={16} />
+          <span>{saveMessage}</span>
+        </div>
+      )}
     </section>
   );
 }

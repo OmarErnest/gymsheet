@@ -51,7 +51,9 @@ export default function Login() {
   return (
     <main className="login-screen">
       <section className="login-card glass-card">
-        <div className="login-logo"><Table2 /></div>
+        <div className="login-logo">
+          <img src="/logo.png" alt="GymSheet" style={{ width: '80px', height: '80px', objectFit: 'contain' }} />
+        </div>
         <h1>{t(lang, 'appName')}</h1>
 
         <div className="segmented">

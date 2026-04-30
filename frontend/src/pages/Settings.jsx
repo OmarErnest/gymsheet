@@ -6,14 +6,21 @@ import { t } from '../i18n.js';
 
 export default function Settings({ preferences, setPreferences, lang }) {
   const { logout, user } = useAuth();
-  const [form, setForm] = useState({ ...preferences, auth_mode: user?.auth_mode || 'pin', new_pin: '', new_password: '', leaderboard_message: preferences.leaderboard_message || '', height_cm: preferences.height_cm || '', weight_kg: preferences.weight_kg || '' });
+  const [form, setForm] = useState({ ...preferences, auth_mode: user?.auth_mode || 'pin', new_pin: '', new_password: '', leaderboard_message: preferences.leaderboard_message || '', height_cm: preferences.height_cm || '', weight_kg: preferences.weight_kg || '', recommended_link: preferences.recommended_link || '' });
   const [message, setMessage] = useState('');
   const [isChampion, setIsChampion] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const [csvFile, setCsvFile] = useState(null);
+  const [logFile, setLogFile] = useState(null);
+  const [uploadStatus, setUploadStatus] = useState(null);
+  const [logUploadStatus, setLogUploadStatus] = useState(null);
+
   const [showSecret, setShowSecret] = useState(false);
 
   useEffect(() => {
-    setForm((prev) => ({ ...prev, ...preferences, auth_mode: prev.auth_mode || user?.auth_mode || 'pin', leaderboard_message: preferences.leaderboard_message || '', height_cm: preferences.height_cm || '', weight_kg: preferences.weight_kg || '' }));
+    setForm((prev) => ({ ...prev, ...preferences, auth_mode: prev.auth_mode || user?.auth_mode || 'pin', leaderboard_message: preferences.leaderboard_message || '', height_cm: preferences.height_cm || '', weight_kg: preferences.weight_kg || '', recommended_link: preferences.recommended_link || '' }));
   }, [preferences, user]);
+
 
   useEffect(() => {
     api('/leaderboard/').then(data => {
@@ -68,11 +75,72 @@ export default function Settings({ preferences, setPreferences, lang }) {
     if (!user) return;
     api('/csv-requests/').then(data => {
       const list = data.results || data;
-      if (list.length > 0) {
-        setCsvRequest(list[0]);
-      }
+      if (list.length > 0) setCsvRequest(list[0]);
+    }).catch(() => {});
+
+    api('/exercise-csv-uploads/').then(data => {
+      const list = data.results || data;
+      if (list.length > 0) setUploadStatus(list[0]);
+    }).catch(() => {});
+
+    api('/log-csv-uploads/').then(data => {
+      const list = data.results || data;
+      if (list.length > 0) setLogUploadStatus(list[0]);
     }).catch(() => {});
   }, [user]);
+
+  async function handleFileUpload(e, type) {
+    e.preventDefault();
+    const file = type === 'logs' ? logFile : csvFile;
+    if (!file) return;
+    setUploading(true);
+    const formData = new FormData();
+    formData.append('file', file);
+    try {
+      const token = localStorage.getItem('gym_access');
+      const apiUrl = import.meta.env.VITE_API_URL || 'http://127.0.0.1:8000/api';
+      const endpoint = type === 'logs' ? 'log-csv-uploads' : 'exercise-csv-uploads';
+      const response = await fetch(`${apiUrl}/${endpoint}/`, {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}` },
+        body: formData
+      });
+      if (!response.ok) throw new Error("Upload failed");
+      const res = await response.json();
+      if (type === 'logs') {
+        setLogUploadStatus(res);
+        setLogFile(null);
+      } else {
+        setUploadStatus(res);
+        setCsvFile(null);
+      }
+      setMessage(t(lang, 'uploadSuccess'));
+    } catch (err) {
+      setMessage(err.message);
+    } finally {
+      setUploading(false);
+    }
+  }
+
+  async function downloadTemplate() {
+    try {
+      const token = localStorage.getItem('gym_access');
+      const apiUrl = import.meta.env.VITE_API_URL || 'http://127.0.0.1:8000/api';
+      const response = await fetch(`${apiUrl}/logs-csv-template/`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      if (!response.ok) throw new Error("Failed to download template");
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'exercise_logs_template.csv';
+      a.click();
+    } catch (err) {
+      alert(err.message);
+    }
+  }
+
 
   async function handleCsvAction() {
     if (!csvRequest || (!csvRequest.is_approved && csvRequest.id == null)) {
@@ -130,11 +198,7 @@ export default function Settings({ preferences, setPreferences, lang }) {
 
   return (
     <section className="stack">
-      <article className="hero-card sheet-hero">
-        <p className="eyebrow">{t(lang, 'securityPreferences')}</p>
-        <h2>{user?.name}</h2>
-        <p className="muted">{t(lang, 'settingsHelp')}</p>
-      </article>
+
 
       <form className="glass-card form-stack" onSubmit={save}>
         <label className="switch-row">
@@ -142,9 +206,25 @@ export default function Settings({ preferences, setPreferences, lang }) {
           <input type="checkbox" checked={!!form.goals_paused} onChange={(e) => update('goals_paused', e.target.checked)} />
         </label>
 
+        <label className="field"><span>{t(lang, 'recommendLink')}</span>
+          <input 
+            type="url" 
+            placeholder="https://..." 
+            value={form.recommended_link} 
+            onChange={(e) => update('recommended_link', e.target.value)} 
+            disabled={user?.is_test_user}
+          />
+          <small className="muted">{t(lang, 'linkHelp')}</small>
+        </label>
+
         <label className="field"><span>{t(lang, 'theme')}</span><select value={form.theme} onChange={(e) => update('theme', e.target.value)}><option value="dark">{t(lang, 'dark')}</option><option value="light">{t(lang, 'light')}</option></select></label>
         <label className="field"><span>Font Size</span><select value={form.font_size || 'medium'} onChange={(e) => update('font_size', e.target.value)}><option value="small">Small</option><option value="medium">Medium</option><option value="big">Big</option></select></label>
         <label className="field"><span>{t(lang, 'language')}</span><select value={form.language} onChange={(e) => update('language', e.target.value)}><option value="en">English</option><option value="es">Español</option></select></label>
+        
+        <label className="field"><span>{t(lang, 'profilePictureUrl')}</span>
+          <input type="url" value={form.profile_pic_url_pending} onChange={(e) => update('profile_pic_url_pending', e.target.value)} placeholder="https://..." />
+          <small className="muted">Pending admin approval</small>
+        </label>
         
         <div className="paste-input">
           <label className="field"><span>Height (cm)</span><input inputMode="numeric" value={form.height_cm} onChange={(e) => update('height_cm', e.target.value.replace(/\D/g, ''))} placeholder="e.g. 175" /></label>
@@ -194,13 +274,20 @@ export default function Settings({ preferences, setPreferences, lang }) {
         </article>
       )}
 
+      {user?.is_test_user && (
+        <article className="glass-card form-stack" style={{ borderColor: 'var(--brand-2)', background: 'rgba(234, 179, 8, 0.05)' }}>
+          <p className="eyebrow" style={{ color: 'var(--brand-2)' }}>{t(lang, 'testUserMessage')}</p>
+          <p style={{ margin: 0 }}>{t(lang, 'contactMe')}</p>
+        </article>
+      )}
+
       <article className="glass-card form-stack">
         <p className="eyebrow">Data Export</p>
         <p className="muted">Request to download your exercise logs as a CSV file. Once approved by an admin, it will be available here for 24 hours.</p>
         <button 
           className={csvBtnClass} 
           onClick={handleCsvAction}
-          disabled={csvDisabled}
+          disabled={csvDisabled || user?.is_test_user}
           style={csvRequest?.is_approved ? { backgroundColor: 'var(--success)', color: 'white', border: 'none' } : {}}
         >
           {csvBtnText}
@@ -208,8 +295,38 @@ export default function Settings({ preferences, setPreferences, lang }) {
       </article>
 
 
+      <article className="glass-card form-stack" style={{ borderLeft: '4px solid var(--line)' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+          <div>
+            <p className="eyebrow">{t(lang, 'uploadLogCSV')}</p>
+            <p className="muted" style={{ fontSize: '0.8rem', margin: '0.4rem 0' }}>{t(lang, 'uploadLogCSVHelp')}</p>
+          </div>
+          <button className="small-btn" onClick={downloadTemplate} type="button" style={{ fontSize: '0.7rem' }}>Template</button>
+        </div>
+        <div style={{ display: 'flex', gap: '0.8rem', alignItems: 'center' }}>
+          <label className="custom-file-upload" style={{ flex: 1 }}>
+            <input type="file" accept=".csv" onChange={(e) => setLogFile(e.target.files[0])} disabled={user?.is_test_user} />
+            <span>{logFile ? logFile.name : 'Choose CSV File'}</span>
+          </label>
+          <button className="primary-btn" type="button" onClick={(e) => handleFileUpload(e, 'logs')} disabled={uploading || !logFile || user?.is_test_user} style={{ padding: '0.8rem' }}>
+            {uploading ? <div className="spinner" /> : <Save size={18} />}
+          </button>
+        </div>
+        {logUploadStatus && (
+          <p className="muted" style={{ marginTop: '0.5rem', fontSize: '0.75rem' }}>
+            Status: <strong style={{ textTransform: 'capitalize' }}>{logUploadStatus.status}</strong> 
+            {logUploadStatus.admin_notes && ` — ${logUploadStatus.admin_notes}`}
+          </p>
+        )}
+      </article>
 
-      <button className="logout-btn" onClick={logout}><LogOut size={18} /> {t(lang, 'logout')}</button>
+
+
+      <div style={{ padding: '2rem 0' }}>
+        <button onClick={logout} className="logout-btn primary-btn" style={{ width: '100%', background: 'transparent', color: 'var(--danger)', border: '1px solid var(--danger)' }}>
+          <LogOut size={18} /> {t(lang, 'logout')}
+        </button>
+      </div>
     </section>
   );
 }

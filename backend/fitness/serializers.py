@@ -2,13 +2,19 @@ from datetime import datetime
 
 from rest_framework import serializers
 
-from .models import BodyMeasurement, DailyProgress, Exercise, ExerciseLog, GoalExercise, GoalPlan, CSVRequest, Notification
+from .models import BodyMeasurement, DailyProgress, Exercise, ExerciseLog, GoalExercise, GoalPlan, CSVRequest, Notification, ExerciseCSVUpload, LogCSVUpload
 
 class CSVRequestSerializer(serializers.ModelSerializer):
     class Meta:
         model = CSVRequest
         fields = ('id', 'user', 'is_approved', 'created_at', 'approved_at')
         read_only_fields = ('id', 'user', 'created_at', 'approved_at')
+
+class LogCSVUploadSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = LogCSVUpload
+        fields = ('id', 'user', 'file', 'status', 'admin_notes', 'created_at')
+        read_only_fields = ('id', 'user', 'status', 'admin_notes', 'created_at')
 
 class NotificationSerializer(serializers.ModelSerializer):
     class Meta:
@@ -158,3 +164,10 @@ class HomeDaySerializer(serializers.Serializer):
     goals = HomeGoalPlanSerializer(many=True)
     progress = DailyProgressSerializer(allow_null=True)
     logs = ExerciseLogSerializer(many=True)
+
+
+class ExerciseCSVUploadSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ExerciseCSVUpload
+        fields = ('id', 'status', 'admin_notes', 'created_at')
+        read_only_fields = ('id', 'status', 'admin_notes', 'created_at')

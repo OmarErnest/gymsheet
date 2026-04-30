@@ -125,13 +125,13 @@ class ExerciseLog(models.Model):
 class BodyMeasurement(models.Model):
     class BodyPart(models.TextChoices):
         BICEPS = 'biceps', 'Biceps'
+        FOREARMS = 'forearms', 'Forearms'
         CHEST = 'chest', 'Chest'
         WAIST = 'waist', 'Waist'
         HIPS = 'hips', 'Hips'
         THIGH = 'thigh', 'Thigh'
         CALF = 'calf', 'Calf'
         SHOULDERS = 'shoulders', 'Shoulders'
-        WEIGHT = 'weight', 'Body weight'
         OTHER = 'other', 'Other'
 
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='body_measurements')
@@ -194,3 +194,41 @@ class MaintenanceNotification(models.Model):
 
     def __str__(self):
         return f"Maintenance: {self.start_time} - {self.end_time}"
+
+
+class ExerciseCSVUpload(models.Model):
+    class Status(models.TextChoices):
+        PENDING = 'pending', 'Pending'
+        APPROVED = 'approved', 'Approved'
+        REJECTED = 'rejected', 'Rejected'
+
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='csv_uploads')
+    file = models.FileField(upload_to='exercise_uploads/')
+    status = models.CharField(max_length=12, choices=Status.choices, default=Status.PENDING)
+    admin_notes = models.TextField(blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ('-created_at',)
+
+    def __str__(self):
+        return f'{self.user} exercise upload — {self.status}'
+
+
+class LogCSVUpload(models.Model):
+    class Status(models.TextChoices):
+        PENDING = 'pending', 'Pending'
+        APPROVED = 'approved', 'Approved'
+        REJECTED = 'rejected', 'Rejected'
+
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='log_csv_uploads')
+    file = models.FileField(upload_to='log_uploads/')
+    status = models.CharField(max_length=12, choices=Status.choices, default=Status.PENDING)
+    admin_notes = models.TextField(blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ('-created_at',)
+
+    def __str__(self):
+        return f'{self.user} log upload — {self.status}'

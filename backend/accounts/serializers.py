@@ -5,10 +5,22 @@ from .models import User, UserPreference
 
 
 class UserPublicSerializer(serializers.ModelSerializer):
+    current_rank = serializers.SerializerMethodField()
+    has_link = serializers.SerializerMethodField()
+
     class Meta:
         model = User
-        fields = ('id', 'email', 'name', 'profile_pic_url', 'gender', 'auth_mode', 'is_approved')
+        fields = ('id', 'email', 'name', 'profile_pic_url', 'profile_pic_url_pending', 'gender', 'auth_mode', 'is_approved', 'current_rank', 'has_link')
         read_only_fields = ('id', 'is_approved')
+
+    def get_current_rank(self, obj):
+        from fitness.leaderboard import get_leaderboard_data
+        data = get_leaderboard_data()
+        user_info = next((u for u in data if u['id'] == obj.id), None)
+        return user_info['rank'] if user_info else None
+
+    def get_has_link(self, obj):
+        return bool(getattr(obj.preferences, 'recommended_link', ''))
 
 
 class RegisterSerializer(serializers.ModelSerializer):
@@ -63,21 +75,31 @@ class UserPreferenceSerializer(serializers.ModelSerializer):
     leaderboard_message = serializers.CharField(source='user.leaderboard_message', required=False, allow_blank=True)
     new_pin = serializers.CharField(write_only=True, required=False, allow_blank=True)
     new_password = serializers.CharField(write_only=True, required=False, allow_blank=True)
+    profile_pic_url_pending = serializers.CharField(source='user.profile_pic_url_pending', required=False, allow_blank=True)
 
     class Meta:
         model = UserPreference
-        fields = ('theme', 'language', 'goals_paused', 'font_size', 'auth_mode', 'new_pin', 'new_password', 'leaderboard_message', 'height_cm', 'weight_kg')
+        fields = ('theme', 'language', 'goals_paused', 'font_size', 'auth_mode', 'new_pin', 'new_password', 'leaderboard_message', 'height_cm', 'weight_kg', 'recommended_link', 'profile_pic_url_pending')
 
     def validate(self, attrs):
+        import re
         user_data = attrs.get('user', {})
         auth_mode = user_data.get('auth_mode')
         new_pin = attrs.get('new_pin', '')
         new_password = attrs.get('new_password', '')
+        recommended_link = attrs.get('recommended_link', '')
         if auth_mode == User.AuthMode.PIN and new_pin:
             if not new_pin.isdigit() or len(new_pin) != 6:
                 raise serializers.ValidationError({'new_pin': 'PIN must be exactly 6 digits.'})
         if auth_mode == User.AuthMode.PASSWORD and new_password:
             validate_password(new_password)
+        if recommended_link:
+            allowed = re.compile(
+                r'^https?://(www\.)?(youtube\.com|youtu\.be|music\.youtube\.com|open\.spotify\.com'
+                r'|mercadolibre\.com(\.\w+)?|amazon\.com(\.\w+)?|amazon\.\w{2,3})'
+            )
+            if not allowed.match(recommended_link):
+                raise serializers.ValidationError({'recommended_link': 'Only YouTube, Spotify, MercadoLibre, and Amazon links are allowed.'})
         return attrs
 
     def update(self, instance, validated_data):
@@ -93,6 +115,8 @@ class UserPreferenceSerializer(serializers.ModelSerializer):
             user.auth_mode = user_data['auth_mode']
         if 'leaderboard_message' in user_data:
             user.leaderboard_message = user_data['leaderboard_message']
+        if 'profile_pic_url_pending' in user_data:
+            user.profile_pic_url_pending = user_data['profile_pic_url_pending']
         if new_pin:
             user.set_pin(new_pin)
         if new_password:

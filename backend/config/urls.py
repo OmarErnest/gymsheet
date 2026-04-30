@@ -14,6 +14,10 @@ from fitness.views import (
     ExportCSVView,
     CSVRequestViewSet,
     NotificationViewSet,
+    ExerciseCSVUploadViewSet,
+    LogCSVUploadViewSet,
+    LogCSVTemplateView,
+    ExerciseCSVUploadApproveView,
 )
 
 router = DefaultRouter()
@@ -24,6 +28,8 @@ router.register(r'exercise-logs', ExerciseLogViewSet, basename='exercise-log')
 router.register(r'body-measurements', BodyMeasurementViewSet, basename='body-measurement')
 router.register(r'csv-requests', CSVRequestViewSet, basename='csv-request')
 router.register(r'notifications', NotificationViewSet, basename='notification')
+router.register(r'exercise-csv-uploads', ExerciseCSVUploadViewSet, basename='exercise-csv-upload')
+router.register(r'log-csv-uploads', LogCSVUploadViewSet, basename='log-csv-upload')
 
 urlpatterns = [
     path('admin/', admin.site.urls),
@@ -37,5 +43,7 @@ urlpatterns = [
     path('api/home/days/', HomeDaysView.as_view(), name='home-days'),
     path('api/leaderboard/', LeaderboardView.as_view(), name='leaderboard'),
     path('api/export-csv/', ExportCSVView.as_view(), name='export-csv'),
+    path('api/logs-csv-template/', LogCSVTemplateView.as_view(), name='logs-csv-template'),
+    path('api/exercise-csv-uploads/<int:pk>/approve/', ExerciseCSVUploadApproveView.as_view(), name='exercise-csv-approve'),
     path('api/', include(router.urls)),
 ]

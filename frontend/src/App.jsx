@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
+import { ExternalLink } from 'lucide-react';
 import BottomNav from './components/BottomNav.jsx';
 import Skeleton from './components/Skeleton.jsx';
 import { useAuth } from './state/AuthContext.jsx';
@@ -28,6 +29,8 @@ export default function App() {
     document.documentElement.dataset.font = preferences.font_size || 'medium';
   }, [preferences.theme, preferences.font_size]);
 
+
+
   const labels = useMemo(
     () => ({
       home: t(lang, 'home'),
@@ -48,8 +51,11 @@ export default function App() {
           <img src="/logo.png" alt="GymSheet logo" />
         </div>
         <div />
-        <div className="avatar" aria-label="Current user">
-          {user.profile_pic_url ? <img src={user.profile_pic_url} alt="" /> : user.name?.charAt(0)}
+        <div className={`avatar-container ${user.current_rank === 1 ? 'border-gold' : user.current_rank === 2 ? 'border-silver' : user.current_rank === 3 ? 'border-bronze' : user.has_link ? 'border-green' : ''}`} aria-label="Current user">
+          <div className="avatar">
+            {user.profile_pic_url ? <img src={user.profile_pic_url} alt="" /> : user.name?.charAt(0)}
+          </div>
+          {user.has_link && <div className="link-badge" style={{ width: '14px', height: '14px', bottom: '-2px', right: '-2px', borderWidth: '1px' }}><ExternalLink size={8} /></div>}
         </div>
       </header>
 

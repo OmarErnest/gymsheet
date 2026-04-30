@@ -16,6 +16,7 @@ class User(AbstractUser):
     email = models.EmailField(unique=True)
     name = models.CharField(max_length=160)
     profile_pic_url = models.URLField(blank=True)
+    profile_pic_url_pending = models.URLField(blank=True)
     gender = models.CharField(max_length=12, choices=Gender.choices, blank=True)
     is_approved = models.BooleanField(default=False)
     auth_mode = models.CharField(max_length=12, choices=AuthMode.choices, default=AuthMode.PIN)
@@ -66,6 +67,7 @@ class UserPreference(models.Model):
     font_size = models.CharField(max_length=10, choices=FontSize.choices, default=FontSize.MEDIUM)
     height_cm = models.PositiveIntegerField(null=True, blank=True)
     weight_kg = models.DecimalField(max_digits=5, decimal_places=2, null=True, blank=True)
+    recommended_link = models.URLField(blank=True)
 
     def __str__(self):
         return f'{self.user.email} preferences'
