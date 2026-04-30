@@ -11,3 +11,6 @@ build/
 .pytest_cache/
 .DS_Store
 secret_instructions.md
+data.json
+change_email.py
+

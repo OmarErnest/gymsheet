@@ -69,7 +69,7 @@ class ResetTestEnvView(APIView):
     permission_classes = [IsAuthenticated]
 
     def post(self, request):
-        if request.user.email not in ['admin@gym.sheet', 'josema@gym.sheet']:
+        if not request.user.is_superuser:
             return Response({'detail': 'Not admin'}, status=status.HTTP_403_FORBIDDEN)
         
         try:

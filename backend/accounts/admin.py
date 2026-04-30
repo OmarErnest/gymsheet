@@ -13,7 +13,7 @@ def approve_users(modeladmin, request, queryset):
 def reset_dummy_data(modeladmin, request, queryset):
     from fitness.models import ExerciseLog, GoalPlan, DailyProgress, BodyMeasurement
     for user in queryset:
-        if user.email == "dummy@gym.sheet":
+        if user.is_test_user:
             ExerciseLog.objects.filter(user=user).delete()
             GoalPlan.objects.filter(user=user).delete()
             DailyProgress.objects.filter(user=user).delete()
