@@ -1,5 +1,8 @@
 # GymJourney: An Integrated Fitness Tracking System
 
+**Live Application:** [https://gymsheetapp.onrender.com/](https://gymsheetapp.onrender.com/)  
+*Last Deployment Update: April 30, 2026*
+
 GymJourney is a full-stack application designed for longitudinal fitness data management and community-driven performance benchmarking. It provides a technical framework for goal-setting, anthropometric tracking, and relative strength analysis.
 
 ## Core Architecture
