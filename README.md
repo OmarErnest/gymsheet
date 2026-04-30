@@ -25,8 +25,9 @@ The database architecture leverages normalized relational tables to maintain int
 
 ### Frontend (React/Vite)
 1. Dependency management: `npm install`
-2. Development server: `npm run dev`
-3. Access point: `http://localhost:5173`
+2. ExecutionPolicy Unrestricted -Scope CurrentUser (for powershell permisions)
+3. Development server: `npm run dev`
+4. Access point: `http://localhost:5173`
 
 ## Technical Stack
 - **Backend**: Django, Django REST Framework
