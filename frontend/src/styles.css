@@ -113,16 +113,29 @@ input[type=number] { -moz-appearance: textfield; appearance: textfield; }
 }
 .login-card { width: min(100%, 430px); padding: 1.2rem; }
 .login-logo {
-  width: 64px;
-  height: 64px;
+  width: 72px;
+  height: 72px;
   border-radius: var(--radius-lg);
   display: grid;
   place-items: center;
   background: linear-gradient(135deg, var(--brand), var(--brand-2));
-  color: #052e16;
-  margin-bottom: 1rem;
+  overflow: hidden;
+  box-shadow: 0 4px 12px rgba(34, 197, 94, 0.2);
 }
-.login-logo svg { width: 34px; height: 34px; }
+.login-logo img { width: 44px; height: 44px; object-fit: contain; }
+
+.theme-toggle-btn {
+  width: 44px;
+  height: 44px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--line);
+  background: var(--card-strong);
+  color: var(--text);
+  display: grid;
+  place-items: center;
+  transition: all 0.2s ease;
+}
+.theme-toggle-btn:hover { background: color-mix(in srgb, var(--brand) 10%, var(--card-strong)); border-color: var(--brand); }
 
 .glass-card, .hero-card, .day-card, .rank-card {
   background: var(--card);

@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { Table2, Eye, EyeOff } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { Table2, Eye, EyeOff, Sun, Moon } from 'lucide-react';
 import { useAuth } from '../state/AuthContext.jsx';
 import { t } from '../i18n.js';
 
@@ -7,6 +7,7 @@ export default function Login() {
   const { loginPin, loginPassword, testEnvLogin } = useAuth();
   const [lang, setLang] = useState('en');
   const [mode, setMode] = useState('pin');
+  const [localTheme, setLocalTheme] = useState('dark');
   const [form, setForm] = useState({
     email: '',
     pin: '',
@@ -15,6 +16,14 @@ export default function Login() {
   const [message, setMessage] = useState('');
   const [loading, setLoading] = useState(false);
   const [showSecret, setShowSecret] = useState(false);
+
+  // Apply theme to the main element via data-theme
+  useEffect(() => {
+    document.documentElement.setAttribute('data-theme', localTheme);
+    return () => {
+      // Restore default or whatever App.jsx does
+    };
+  }, [localTheme]);
 
   function update(field, value) {
     setForm((prev) => ({ ...prev, [field]: value }));
@@ -51,9 +60,20 @@ export default function Login() {
   return (
     <main className="login-screen">
       <section className="login-card glass-card">
-        <div className="login-logo">
-          <img src="/logo.png" alt="GymSheet" style={{ width: '80px', height: '80px', objectFit: 'contain' }} />
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1rem' }}>
+          <div className="login-logo">
+            <img src="/logo.png" alt="GymSheet" />
+          </div>
+          <button 
+            type="button" 
+            className="theme-toggle-btn"
+            onClick={() => setLocalTheme(prev => prev === 'dark' ? 'light' : 'dark')}
+            aria-label="Toggle theme"
+          >
+            {localTheme === 'dark' ? <Sun size={20} /> : <Moon size={20} />}
+          </button>
         </div>
+
         <h1>{t(lang, 'appName')}</h1>
 
         <div className="segmented">
