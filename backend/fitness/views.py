@@ -447,4 +447,9 @@ class AdminMessageViewSet(viewsets.ModelViewSet):
         return AdminMessage.objects.filter(user=self.request.user).order_by('-created_at')
 
     def perform_create(self, serializer):
+        # Anti-spam: Max 3 unread messages per user
+        unread_count = AdminMessage.objects.filter(user=self.request.user, is_read=False).count()
+        if unread_count >= 3:
+            from rest_framework.exceptions import ValidationError
+            raise ValidationError("You have too many unread messages pending. Please wait for an admin to reply.")
         serializer.save(user=self.request.user)

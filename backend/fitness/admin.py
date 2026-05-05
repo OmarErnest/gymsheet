@@ -178,5 +178,6 @@ class BroadcastNotificationAdmin(admin.ModelAdmin):
 
 @admin.register(AdminMessage)
 class AdminMessageAdmin(admin.ModelAdmin):
-    list_display = ('user', 'message', 'created_at')
+    list_display = ('user', 'message', 'is_read', 'created_at')
+    list_editable = ('is_read',)
     readonly_fields = ('user', 'message', 'created_at')

@@ -12,7 +12,7 @@ class AdminMessageSerializer(serializers.ModelSerializer):
     user_email = serializers.EmailField(source='user.email', read_only=True)
     class Meta:
         model = AdminMessage
-        fields = ('id', 'user', 'user_email', 'message', 'created_at')
+        fields = ('id', 'user', 'user_email', 'message', 'is_read', 'created_at')
         read_only_fields = ('id', 'user', 'user_email', 'created_at')
 
 class BroadcastNotificationSerializer(serializers.ModelSerializer):
