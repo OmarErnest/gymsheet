@@ -336,8 +336,8 @@ export default function Profile({ preferences, lang }) {
       </div>
 
       {activeTab === 'strength' && (
-        <article className="glass-card profile-section">
-          <div style={{ textAlign: 'center', marginBottom: '1.5rem' }}>
+        <article className="glass-card profile-section" style={{ padding: '1.2rem 0.8rem' }}>
+          <div style={{ textAlign: 'center', marginBottom: '1rem' }}>
             <p className="eyebrow">{t(lang, 'reviewProgress')}</p>
             <h2>{t(lang, 'strengthGraph')}</h2>
             <div className="tab-pill-box" style={{ margin: '0.8rem auto 0', width: 'fit-content' }}>
@@ -356,10 +356,10 @@ export default function Profile({ preferences, lang }) {
               {filteredExercises.map((exercise) => <option key={exercise.id} value={exercise.id}>{exercise.name}</option>)}
             </select>
           </div>
-          <div className="chart-box" style={{ height: '300px', marginTop: '1.5rem', background: 'transparent', border: 'none' }}>
+          <div className="chart-box" style={{ height: '360px', marginTop: '1rem', background: 'transparent', border: 'none' }}>
             {graphMode === 'bar' && (chartData.length ? (
               <ResponsiveContainer width="100%" height="100%">
-                <AreaChart data={chartData}>
+                <AreaChart data={chartData} margin={{ top: 10, right: 10, left: -15, bottom: 0 }}>
                   <defs>
                     <linearGradient id="colorWeight" x1="0" y1="0" x2="0" y2="1">
                       <stop offset="5%" stopColor="var(--brand)" stopOpacity={0.4}/>
@@ -372,12 +372,13 @@ export default function Profile({ preferences, lang }) {
                     axisLine={false} 
                     tickLine={false} 
                     tick={{ fill: 'var(--muted)', fontSize: 10 }}
-                    dy={10}
+                    minTickGap={20}
                   />
                   <YAxis 
                     axisLine={false} 
                     tickLine={false} 
                     tick={{ fill: 'var(--muted)', fontSize: 10 }}
+                    width={35}
                   />
                   <Tooltip 
                     contentStyle={{ background: 'var(--bg-soft)', borderRadius: '12px', border: '1px solid var(--line)', color: 'var(--text)' }}
@@ -390,6 +391,7 @@ export default function Profile({ preferences, lang }) {
                     strokeWidth={3}
                     fillOpacity={1} 
                     fill="url(#colorWeight)" 
+                    animationDuration={1000}
                   />
                 </AreaChart>
               </ResponsiveContainer>
