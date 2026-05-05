@@ -25,6 +25,6 @@
     "eslint": "latest",
     "eslint-plugin-react-hooks": "latest",
     "eslint-plugin-react-refresh": "latest",
-    "vite-plugin-pwa": "^1.2.0"
+    "vite-plugin-pwa": "latest"
   }
 }
