@@ -2,7 +2,16 @@ from datetime import datetime
 
 from rest_framework import serializers
 
-from .models import BodyMeasurement, DailyProgress, Exercise, ExerciseLog, GoalExercise, GoalPlan, CSVRequest, Notification, ExerciseCSVUpload, LogCSVUpload, GlobalNotice
+from .models import (
+    BodyMeasurement, DailyProgress, Exercise, ExerciseLog, GoalExercise, 
+    GoalPlan, CSVRequest, Notification, ExerciseCSVUpload, LogCSVUpload, 
+    GlobalNotice, BroadcastNotification
+)
+
+class BroadcastNotificationSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = BroadcastNotification
+        fields = '__all__'
 
 class CSVRequestSerializer(serializers.ModelSerializer):
     class Meta:

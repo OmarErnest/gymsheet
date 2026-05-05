@@ -12,6 +12,7 @@ export default function EventManager() {
 
     const checkNotices = async () => {
       try {
+        // Check Global Notices (Pop-up + Notification)
         const notices = await api('/global-notices/');
         if (notices && notices.length > 0) {
           const latest = notices[0];
@@ -21,6 +22,23 @@ export default function EventManager() {
               open: true,
               image: '/icons/events/Notice.png',
               title: latest.title,
+              message: latest.message
+            });
+            localStorage.setItem(seenKey, 'true');
+            return; // Only show one pop-up at a time
+          }
+        }
+
+        // Check Broadcast Notifications (Custom messages to everyone)
+        const broadcasts = await api('/broadcast-notifications/');
+        if (broadcasts && broadcasts.length > 0) {
+          const latest = broadcasts[0];
+          const seenKey = `seen_broadcast_${latest.id}`;
+          if (!localStorage.getItem(seenKey)) {
+            setModal({
+              open: true,
+              image: '/icons/events/Notice.png',
+              title: 'New Announcement',
               message: latest.message
             });
             localStorage.setItem(seenKey, 'true');

@@ -25,6 +25,7 @@ from .serializers import (
     ExerciseCSVUploadSerializer,
     LogCSVUploadSerializer,
     GlobalNoticeSerializer,
+    BroadcastNotificationSerializer,
 )
 from .models import BodyMeasurement, DailyProgress, Exercise, ExerciseLog, GoalPlan, CSVRequest, Notification, ExerciseCSVUpload, LogCSVUpload, GlobalNotice
 
@@ -423,3 +424,9 @@ class GlobalNoticeViewSet(viewsets.ReadOnlyModelViewSet):
 
     def get_queryset(self):
         return GlobalNotice.objects.filter(is_active=True).order_by('-created_at')
+class BroadcastNotificationViewSet(viewsets.ReadOnlyModelViewSet):
+    serializer_class = BroadcastNotificationSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        return BroadcastNotification.objects.all().order_by('-created_at')
