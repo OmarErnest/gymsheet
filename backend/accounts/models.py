@@ -15,15 +15,12 @@ class User(AbstractUser):
 
     email = models.EmailField(unique=True)
     name = models.CharField(max_length=160)
-    profile_pic_url = models.URLField(blank=True)
-    profile_pic_url_pending = models.URLField(blank=True)
+    profile_pic_url = models.CharField(max_length=500, blank=True)
+    profile_pic_url_pending = models.CharField(max_length=500, blank=True)
     gender = models.CharField(max_length=12, choices=Gender.choices, blank=True)
     is_approved = models.BooleanField(default=False)
     auth_mode = models.CharField(max_length=12, choices=AuthMode.choices, default=AuthMode.PIN)
     pin_hash = models.CharField(max_length=180, blank=True)
-    leaderboard_message = models.CharField(max_length=255, blank=True)
-    leaderboard_message_approved = models.BooleanField(default=False)
-    leaderboard_message_week = models.DateField(null=True, blank=True)
     is_test_user = models.BooleanField(default=False)
 
     USERNAME_FIELD = 'email'

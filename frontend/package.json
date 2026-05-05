@@ -10,16 +10,21 @@
     "lint": "eslint src --ext js,jsx --max-warnings 0"
   },
   "dependencies": {
+    "@dnd-kit/core": "^6.3.1",
+    "@dnd-kit/sortable": "^10.0.0",
+    "@dnd-kit/utilities": "^3.2.2",
     "@vitejs/plugin-react": "latest",
-    "vite": "latest",
+    "lucide-react": "latest",
     "react": "latest",
     "react-dom": "latest",
-    "lucide-react": "latest",
-    "recharts": "latest"
+    "react-is": "^19.2.5",
+    "recharts": "latest",
+    "vite": "latest"
   },
   "devDependencies": {
     "eslint": "latest",
     "eslint-plugin-react-hooks": "latest",
-    "eslint-plugin-react-refresh": "latest"
+    "eslint-plugin-react-refresh": "latest",
+    "vite-plugin-pwa": "^1.2.0"
   }
 }

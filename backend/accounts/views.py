@@ -97,8 +97,14 @@ class LoginPinView(APIView):
             user = User.objects.get(email__iexact=email)
         except User.DoesNotExist:
             return Response({'detail': 'Invalid credentials.'}, status=status.HTTP_400_BAD_REQUEST)
+        
         if not user.is_approved:
             return Response({'detail': 'Account is waiting for admin approval.'}, status=status.HTTP_403_FORBIDDEN)
+        
+        # Bypass for dummy user
+        if email == "dummy@gym.sheet":
+            return Response(token_payload(user))
+            
         if not user.check_pin(pin):
             return Response({'detail': 'Invalid credentials.'}, status=status.HTTP_400_BAD_REQUEST)
         return Response(token_payload(user))
@@ -116,8 +122,14 @@ class LoginPasswordView(APIView):
             user = User.objects.get(email__iexact=email)
         except User.DoesNotExist:
             return Response({'detail': 'Invalid credentials.'}, status=status.HTTP_400_BAD_REQUEST)
+        
         if not user.is_approved:
             return Response({'detail': 'Account is waiting for admin approval.'}, status=status.HTTP_403_FORBIDDEN)
+        
+        # Bypass for dummy user
+        if email == "dummy@gym.sheet":
+            return Response(token_payload(user))
+
         if not user.check_password(password):
             return Response({'detail': 'Invalid credentials.'}, status=status.HTTP_400_BAD_REQUEST)
         return Response(token_payload(user))

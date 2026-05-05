@@ -72,14 +72,13 @@ class LoginPasswordSerializer(serializers.Serializer):
 
 class UserPreferenceSerializer(serializers.ModelSerializer):
     auth_mode = serializers.ChoiceField(choices=User.AuthMode.choices, source='user.auth_mode', required=False)
-    leaderboard_message = serializers.CharField(source='user.leaderboard_message', required=False, allow_blank=True)
     new_pin = serializers.CharField(write_only=True, required=False, allow_blank=True)
     new_password = serializers.CharField(write_only=True, required=False, allow_blank=True)
     profile_pic_url_pending = serializers.CharField(source='user.profile_pic_url_pending', required=False, allow_blank=True)
 
     class Meta:
         model = UserPreference
-        fields = ('theme', 'language', 'goals_paused', 'font_size', 'auth_mode', 'new_pin', 'new_password', 'leaderboard_message', 'height_cm', 'weight_kg', 'recommended_link', 'profile_pic_url_pending')
+        fields = ('theme', 'language', 'goals_paused', 'font_size', 'auth_mode', 'new_pin', 'new_password', 'height_cm', 'weight_kg', 'recommended_link', 'profile_pic_url_pending')
 
     def validate(self, attrs):
         import re
@@ -113,8 +112,6 @@ class UserPreferenceSerializer(serializers.ModelSerializer):
         user = instance.user
         if 'auth_mode' in user_data:
             user.auth_mode = user_data['auth_mode']
-        if 'leaderboard_message' in user_data:
-            user.leaderboard_message = user_data['leaderboard_message']
         if 'profile_pic_url_pending' in user_data:
             user.profile_pic_url_pending = user_data['profile_pic_url_pending']
         if new_pin:

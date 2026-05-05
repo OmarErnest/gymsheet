@@ -1,7 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Crown, Trophy, ExternalLink, Users } from 'lucide-react';
 import { useAuth } from '../state/AuthContext.jsx';
-
 import { api } from '../api/client.js';
 import Skeleton from '../components/Skeleton.jsx';
 import { t } from '../i18n.js';
@@ -18,7 +17,6 @@ export default function Global({ lang }) {
       .finally(() => setLoading(false));
   }, []);
 
-
   const handleLinkClick = (link, name) => {
     if (window.confirm(`Do you want to leave the app to visit ${name}'s recommendation?\n\nLink: ${link}`)) {
       window.open(link, '_blank', 'noopener,noreferrer');
@@ -33,28 +31,25 @@ export default function Global({ lang }) {
     return "";
   };
 
+  const getIconUrl = (url) => {
+    if (!url) return null;
+    if (url.includes('http')) return url;
+    if (url.endsWith('.png')) return `/icons/${url}`;
+    return url;
+  };
+
   if (loading || !data) return <Skeleton count={4} />;
   
   const rowsAll = data.leaderboard || [];
-  const championMessage = data.champion_message;
 
-  // Split real and beta
   const realUsers = rowsAll.filter(u => !u.is_test_user);
   const betaUsers = rowsAll.filter(u => u.is_test_user);
 
-  // Top 10 real users
   let rows = realUsers.slice(0, 10);
-
-  // If self is not in top 10, add self
   const self = realUsers.find(u => u.id === user?.id);
-  if (self && !rows.find(u => u.id === user.id)) {
-    rows.push(self);
-  }
+  if (self && !rows.find(u => u.id === user.id)) rows.push(self);
 
-  if (showBeta) {
-    rows = [...rows, ...betaUsers];
-  }
-
+  if (showBeta) rows = [...rows, ...betaUsers];
 
   return (
     <section className="stack">
@@ -66,21 +61,6 @@ export default function Global({ lang }) {
         </div>
       </div>
 
-      {championMessage && (
-        <article className="glass-card" style={{ display: 'flex', alignItems: 'center', gap: '1rem', borderColor: 'var(--brand)', background: 'rgba(0,0,0, 0.2)' }}>
-          <div className="avatar-container" onClick={() => data.champion_link && handleLinkClick(data.champion_link, championMessage.name)}>
-            <div className={`avatar big ${getBorderClass(1, !!data.champion_link)}`}>
-              {championMessage.profile_pic_url ? <img src={championMessage.profile_pic_url} alt="" /> : championMessage.name?.charAt(0)}
-            </div>
-            {data.champion_link && <div className="link-badge"><ExternalLink size={12} /></div>}
-          </div>
-          <div>
-            <p className="eyebrow" style={{ color: 'var(--brand)', margin: 0 }}>Message from last week's Champion</p>
-            <p style={{ fontStyle: 'italic', margin: '0.4rem 0', fontSize: '1.1rem' }}>"{championMessage.message}"</p>
-            <small className="muted">- {championMessage.name}</small>
-          </div>
-        </article>
-      )}
 
       <div className="rank-list">
         {rows.map((row, index) => {
@@ -99,7 +79,7 @@ export default function Global({ lang }) {
                 <div className="rank-number">#{row.rank}</div>
                 <div className={`avatar-container ${getBorderClass(row.rank, hasLink)}`} onClick={() => hasLink && row.rank <= 10 && handleLinkClick(row.recommended_link, row.name)}>
                   <div className="avatar big">
-                    {row.profile_pic_url ? <img src={row.profile_pic_url} alt="" /> : row.name?.charAt(0)}
+                    {row.profile_pic_url ? <img src={getIconUrl(row.profile_pic_url)} alt="" /> : row.name?.charAt(0)}
                   </div>
                   {hasLink && row.rank <= 10 && <div className="link-badge"><ExternalLink size={12} /></div>}
                 </div>
@@ -118,16 +98,11 @@ export default function Global({ lang }) {
       </div>
 
       <div style={{ display: 'flex', justifyContent: 'center', marginTop: '2rem' }}>
-        <button 
-          className={`chip ${showBeta ? 'active' : ''}`} 
-          onClick={() => setShowBeta(!showBeta)}
-          style={{ gap: '0.4rem', padding: '0.6rem 1rem' }}
-        >
+        <button className={`chip ${showBeta ? 'active' : ''}`} onClick={() => setShowBeta(!showBeta)} style={{ gap: '0.4rem', padding: '0.6rem 1rem' }}>
           <Users size={14} />
           {showBeta ? 'Hide Beta Users' : t(lang, 'showBeta')}
         </button>
       </div>
-
     </section>
   );
 }

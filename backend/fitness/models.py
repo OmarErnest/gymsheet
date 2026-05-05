@@ -118,6 +118,45 @@ class ExerciseLog(models.Model):
         ordering = ('-date', '-created_at')
         indexes = [models.Index(fields=['user', 'exercise', 'date'])]
 
+    def save(self, *args, **kwargs):
+        super().save(*args, **kwargs)
+        # Check if all goal exercises for this day are logged
+        from .models import GoalExercise, DailyProgress
+        
+        # Get all exercises that were supposed to be done today
+        today_goals = GoalPlan.objects.filter(user=self.user)
+        required_ex_ids = set()
+        for plan in today_goals:
+            if plan.matches_date(self.date):
+                for ge in plan.goal_exercises.all():
+                    required_ex_ids.add(ge.exercise_id)
+        
+        if required_ex_ids:
+            logged_ex_ids = set(ExerciseLog.objects.filter(user=self.user, date=self.date).values_list('exercise_id', flat=True))
+            if required_ex_ids.issubset(logged_ex_ids):
+                DailyProgress.objects.update_or_create(
+                    user=self.user, date=self.date,
+                    defaults={'completed': True}
+                )
+            else:
+                pass
+
+    def delete(self, *args, **kwargs):
+        user = self.user
+        date = self.date
+        super().delete(*args, **kwargs)
+        # Re-check completion
+        today_goals = GoalPlan.objects.filter(user=user)
+        required_ex_ids = set()
+        for plan in today_goals:
+            if plan.matches_date(date):
+                for ge in plan.goal_exercises.all():
+                    required_ex_ids.add(ge.exercise_id)
+        if required_ex_ids:
+            logged_ex_ids = set(ExerciseLog.objects.filter(user=user, date=date).values_list('exercise_id', flat=True))
+            if not required_ex_ids.issubset(logged_ex_ids):
+                DailyProgress.objects.filter(user=user, date=date).update(completed=False)
+
     def __str__(self):
         return f'{self.user} {self.exercise} {self.weight_kg}kg'
 
