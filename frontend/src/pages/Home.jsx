@@ -80,47 +80,6 @@ export default function Home({ lang }) {
     loadInitial();
   }, [currentWeekStart]);
 
-  useEffect(() => {
-    if (!todayRef.current) return;
-    
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        // If today is visible, hide the button
-        if (entry.isIntersecting) {
-          setShowBackToPresent(false);
-        } else {
-          // If not visible, show button only if we've scrolled enough
-          const scrollPos = window.scrollY || document.documentElement.scrollTop;
-          if (scrollPos > 400) {
-            setShowBackToPresent(true);
-          }
-        }
-      },
-      { threshold: 0.1 }
-    );
-
-    observer.observe(todayRef.current);
-    
-    const handleScroll = () => {
-      if (!todayRef.current) return;
-      const rect = todayRef.current.getBoundingClientRect();
-      const isVisible = rect.top >= 0 && rect.bottom <= window.innerHeight;
-      
-      if (isVisible) {
-        setShowBackToPresent(false);
-      } else {
-        const scrollPos = window.scrollY || document.documentElement.scrollTop;
-        if (scrollPos > 400) setShowBackToPresent(true);
-        else setShowBackToPresent(false);
-      }
-    };
-
-    window.addEventListener('scroll', handleScroll, { passive: true });
-    return () => {
-      observer.disconnect();
-      window.removeEventListener('scroll', handleScroll);
-    };
-  }, [loading, days]); // Re-run when days load to find todayRef
 
   useEffect(() => {
     if (!loading && days.some(d => d.is_today)) {
@@ -398,28 +357,7 @@ export default function Home({ lang }) {
         })}
       </div>
 
-      {showBackToPresent && (
-        <button 
-          className="arrow-btn" 
-          onClick={scrollToToday}
-          style={{ 
-            position: 'fixed', 
-            top: '5.5rem', 
-            left: '50%', 
-            transform: 'translateX(-50%)', 
-            zIndex: 1000, 
-            width: '48px', 
-            height: '48px', 
-            background: 'var(--brand)', 
-            color: '#052e16',
-            boxShadow: '0 4px 20px rgba(var(--brand-rgb), 0.4)',
-            borderRadius: '24px',
-            transition: 'all 0.3s'
-          }}
-        >
-          <ChevronUp size={24} />
-        </button>
-      )}
+
 
       <div className="bubble-stack">
         <button 
