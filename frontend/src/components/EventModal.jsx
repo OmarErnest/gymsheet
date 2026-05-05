@@ -12,11 +12,12 @@ export default function EventModal({ isOpen, onClose, image, title, message, typ
         </button>
         
         <div style={{ padding: '1.5rem', textAlign: 'center' }}>
-          <div className="event-img-container" style={{ marginBottom: '1.5rem' }}>
+          <div className="event-img-container" style={{ marginBottom: '1.5rem', position: 'relative' }}>
+            <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', width: '80%', height: '80%', background: 'var(--brand)', filter: 'blur(40px)', opacity: 0.2, zIndex: -1 }}></div>
             <img 
               src={image} 
               alt={title} 
-              style={{ width: '100%', height: 'auto', borderRadius: 'var(--radius-lg)' }} 
+              style={{ width: '100%', height: 'auto', borderRadius: 'var(--radius-lg)', position: 'relative', zIndex: 1 }} 
             />
           </div>
           

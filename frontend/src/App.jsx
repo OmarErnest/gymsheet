@@ -57,7 +57,10 @@ export default function App() {
     
     // Load notifications
     api('/notifications/')
-      .then(res => setNotifications(res.results || res))
+      .then(res => {
+        const list = res.results || res;
+        setNotifications(list.filter(n => !n.is_read));
+      })
       .catch(() => {});
   }, [user]);
 
@@ -74,7 +77,7 @@ export default function App() {
   const markNotificationRead = async (id) => {
     try {
       await api(`/notifications/${id}/`, { method: 'PATCH', body: JSON.stringify({ is_read: true }) });
-      setNotifications((prev) => prev.map((n) => n.id === id ? { ...n, is_read: true } : n));
+      setNotifications((prev) => prev.filter((n) => n.id !== id));
     } catch (err) {}
   };
 
