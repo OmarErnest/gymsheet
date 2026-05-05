@@ -40,33 +40,80 @@ function extractError(data) {
   return msgs.join(' · ') || 'Request failed';
 }
 
+const OFFLINE_QUEUE_KEY = 'gym_offline_queue';
+
+function getQueue() {
+  try {
+    return JSON.parse(localStorage.getItem(OFFLINE_QUEUE_KEY) || '[]');
+  } catch {
+    return [];
+  }
+}
+
+function saveQueue(queue) {
+  localStorage.setItem(OFFLINE_QUEUE_KEY, JSON.stringify(queue));
+}
+
+export async function syncOfflineData() {
+  const queue = getQueue();
+  if (queue.length === 0) return;
+
+  const remaining = [];
+  for (const item of queue) {
+    try {
+      await api(item.path, {
+        method: item.method,
+        body: item.body,
+        _isSync: true, // Internal flag to avoid recursive queueing
+      });
+    } catch (err) {
+      remaining.push(item);
+    }
+  }
+  saveQueue(remaining);
+}
+
 export async function api(path, options = {}) {
   const token = getToken();
+  const method = options.method || 'GET';
   const headers = {
     'Content-Type': 'application/json',
     ...(options.headers || {}),
   };
   if (token) headers.Authorization = `Bearer ${token}`;
 
-  const response = await fetch(`${API_URL}${path}`, {
-    ...options,
-    headers,
-  });
+  try {
+    const response = await fetch(`${API_URL}${path}`, {
+      ...options,
+      headers,
+    });
 
-  let data = null;
-  const text = await response.text();
-  if (text) {
-    try {
-      data = JSON.parse(text);
-    } catch {
-      data = { detail: text };
+    let data = null;
+    const text = await response.text();
+    if (text) {
+      try {
+        data = JSON.parse(text);
+      } catch {
+        data = { detail: text };
+      }
     }
-  }
 
-  if (!response.ok) {
-    throw new Error(extractError(data));
+    if (!response.ok) {
+      throw new Error(extractError(data));
+    }
+    return data;
+  } catch (err) {
+    // Queue mutations if network error (not 4xx/5xx from server, but fetch failure)
+    if (err instanceof TypeError && method !== 'GET' && !options._isSync) {
+      const queue = getQueue();
+      queue.push({ path, method, body: options.body, timestamp: Date.now() });
+      saveQueue(queue);
+      console.warn("Offline: Request queued", path);
+      // We still throw but maybe with a special flag
+      throw new Error("Offline. Changes queued for sync.");
+    }
+    throw err;
   }
-  return data;
 }
 
 export async function publicApi(path, body) {

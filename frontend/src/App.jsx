@@ -4,7 +4,7 @@ import BottomNav from './components/BottomNav.jsx';
 import Skeleton from './components/Skeleton.jsx';
 import FloatingStopwatch from './components/FloatingStopwatch.jsx';
 import { useAuth } from './state/AuthContext.jsx';
-import { api } from './api/client.js';
+import { api, syncOfflineData } from './api/client.js';
 import { t } from './i18n.js';
 import Login from './pages/Login.jsx';
 import Home from './pages/Home.jsx';
@@ -21,6 +21,19 @@ export default function App() {
   const [showNotifications, setShowNotifications] = useState(false);
 
   const lang = preferences.language || 'en';
+
+  useEffect(() => {
+    // Initial sync
+    syncOfflineData();
+
+    // Listen for online events
+    const handleOnline = () => {
+      syncOfflineData();
+    };
+    window.addEventListener('online', handleOnline);
+
+    return () => window.removeEventListener('online', handleOnline);
+  }, []);
 
   useEffect(() => {
     if (user) {
