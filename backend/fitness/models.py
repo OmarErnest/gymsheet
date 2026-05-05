@@ -271,6 +271,25 @@ class LogCSVUpload(models.Model):
 
     def __str__(self):
         return f'{self.user} log upload — {self.status}'
+
+class BroadcastNotification(models.Model):
+    message = models.TextField()
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def save(self, *args, **kwargs):
+        is_new = self.pk is None
+        super().save(*args, **kwargs)
+        if is_new:
+            from django.contrib.auth import get_user_model
+            User = get_user_model()
+            notifications = [
+                Notification(user=user, message=self.message)
+                for user in User.objects.all()
+            ]
+            Notification.objects.bulk_create(notifications)
+
+    def __str__(self):
+        return self.message[:50]
 class GlobalNotice(models.Model):
     title = models.CharField(max_length=100)
     message = models.TextField()
@@ -287,7 +306,7 @@ class GlobalNotice(models.Model):
             msg = f"ADMIN NOTICE: {self.title} - {self.message}"
             notifications = [
                 Notification(user=user, message=msg)
-                for user in User.objects.filter(is_approved=True)
+                for user in User.objects.all()
             ]
             Notification.objects.bulk_create(notifications)
 

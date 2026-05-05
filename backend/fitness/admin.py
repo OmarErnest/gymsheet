@@ -1,6 +1,11 @@
 from django.contrib import admin
 
-from .models import BodyMeasurement, DailyProgress, Exercise, ExerciseCSVUpload, ExerciseLog, GoalExercise, GoalPlan, Notification, MaintenanceNotification, LogCSVUpload, CSVRequest
+from .models import (
+    BodyMeasurement, DailyProgress, Exercise, ExerciseCSVUpload, 
+    ExerciseLog, GoalExercise, GoalPlan, Notification, 
+    MaintenanceNotification, LogCSVUpload, CSVRequest, 
+    GlobalNotice, BroadcastNotification
+)
 
 
 class GoalExerciseInline(admin.TabularInline):
@@ -162,3 +167,11 @@ class LogCSVUploadAdmin(admin.ModelAdmin):
     search_fields = ('user__email', 'user__name')
     actions = [approve_log_uploads, reject_csv_uploads]
     readonly_fields = ('user', 'file', 'created_at')
+@admin.register(GlobalNotice)
+class GlobalNoticeAdmin(admin.ModelAdmin):
+    list_display = ('title', 'is_active', 'created_at')
+    list_filter = ('is_active',)
+
+@admin.register(BroadcastNotification)
+class BroadcastNotificationAdmin(admin.ModelAdmin):
+    list_display = ('message', 'created_at')
