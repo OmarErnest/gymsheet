@@ -6,7 +6,7 @@ import { t } from '../i18n.js';
 
 const CHARACTER_ICONS = [
   'Android16.png', 'Babidi.png', 'Captain.png', 'Doctor.png', 'Hercule.png',
-  'Jeice.png', 'Nappa.png', 'Piccolo.png', 'Racoome.png', 'Radiz.png'
+  'Jeice.png', 'Nappa.png', 'Piccolo.png', 'Racoome.png', 'Radiz.png', 'Korin.png'
 ];
 
 export default function Settings({ preferences, setPreferences, lang }) {
