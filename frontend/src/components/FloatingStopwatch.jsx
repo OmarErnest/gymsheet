@@ -1,37 +1,17 @@
-import { useState, useEffect, useRef } from 'react';
 import { Play, Pause, RotateCcw, X, Timer } from 'lucide-react';
+import { useStopwatch } from '../state/StopwatchContext.jsx';
 
 export default function FloatingStopwatch() {
-  const [isOpen, setIsOpen] = useState(false);
-  const [time, setTime] = useState(0); // in milliseconds
-  const [isRunning, setIsRunning] = useState(false);
-  const [isMinimized, setIsMinimized] = useState(true);
+  const { 
+    time, 
+    isRunning, 
+    setIsRunning, 
+    isMinimized, 
+    setIsMinimized, 
+    formatTimeFull,
+    reset 
+  } = useStopwatch();
   
-  const timerRef = useRef(null);
-
-  useEffect(() => {
-    if (isRunning) {
-      timerRef.current = setInterval(() => {
-        setTime(prev => prev + 10);
-      }, 10);
-    } else {
-      clearInterval(timerRef.current);
-    }
-    return () => clearInterval(timerRef.current);
-  }, [isRunning]);
-
-  const formatTime = (ms) => {
-    const minutes = Math.floor(ms / 60000);
-    const seconds = Math.floor((ms % 60000) / 1000);
-    const hundredths = Math.floor((ms % 1000) / 10);
-    return `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}.${hundredths.toString().padStart(2, '0')}`;
-  };
-
-  const handleReset = () => {
-    setTime(0);
-    setIsRunning(false);
-  };
-
   if (isMinimized) {
     return (
       <button 
@@ -90,7 +70,7 @@ export default function FloatingStopwatch() {
       </div>
       
       <div style={{ fontSize: '2rem', fontFamily: 'monospace', textAlign: 'center', margin: '0.2rem 0', fontWeight: '900', color: 'var(--text)' }}>
-        {formatTime(time)}
+        {formatTimeFull(time)}
       </div>
       
       <div style={{ display: 'grid', gridTemplateColumns: '1fr auto', gap: '0.8rem' }}>
@@ -106,7 +86,7 @@ export default function FloatingStopwatch() {
           {isRunning ? <><Pause size={18} /> Pause</> : <><Play size={18} /> Start</>}
         </button>
         <button 
-          onClick={handleReset} 
+          onClick={reset} 
           className="small-btn"
           style={{ width: '44px', height: '44px', borderRadius: '12px' }}
         >

@@ -25,6 +25,9 @@ export default function EventManager() {
               message: latest.message
             });
             localStorage.setItem(seenKey, 'true');
+            window.dispatchEvent(new CustomEvent('add-local-notification', { 
+              detail: { message: `Notice: ${latest.title} - ${latest.message}`, type: 'notice' } 
+            }));
             return; // Only show one pop-up at a time
           }
         }
@@ -42,6 +45,9 @@ export default function EventManager() {
               message: latest.message
             });
             localStorage.setItem(seenKey, 'true');
+            window.dispatchEvent(new CustomEvent('add-local-notification', { 
+              detail: { message: `Announcement: ${latest.message}`, type: 'notice' } 
+            }));
           }
         }
       } catch (err) {
@@ -62,6 +68,9 @@ export default function EventManager() {
               message: 'Congratulations! You were the #1 trainer last week. Keep up the amazing work!'
             });
             localStorage.setItem(weekKey, 'true');
+            window.dispatchEvent(new CustomEvent('add-local-notification', { 
+              detail: { message: `Champion: You were the #1 trainer last week!`, type: 'congrats' } 
+            }));
           }
         }
       } catch (err) {
@@ -73,16 +82,12 @@ export default function EventManager() {
     checkChampion();
 
     const handleHydrate = () => {
-      const todayKey = `hydrate_seen_${new Date().toISOString().slice(0, 10)}`;
-      if (!localStorage.getItem(todayKey)) {
-        setModal({
-          open: true,
-          image: '/icons/events/Hydrate.png',
-          title: 'Stay Hydrated!',
-          message: 'You are crushing your workout! Remember to drink some water to stay at peak performance.'
-        });
-        localStorage.setItem(todayKey, 'true');
-      }
+      setModal({
+        open: true,
+        image: '/icons/events/Hydrate.png',
+        title: 'Stay Hydrated!',
+        message: 'You are crushing your workout! Remember to drink some water to stay at peak performance.'
+      });
     };
 
     window.addEventListener('trigger-hydration', handleHydrate);

@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { LogOut, Save, Eye, EyeOff, FileText, User as UserIcon, ChevronDown } from 'lucide-react';
+import { LogOut, Save, Eye, EyeOff, FileText, User as UserIcon, ChevronDown, FileDown } from 'lucide-react';
 import { api } from '../api/client.js';
 import { useAuth } from '../state/AuthContext.jsx';
 import { t } from '../i18n.js';
@@ -330,7 +330,7 @@ export default function Settings({ preferences, setPreferences, lang }) {
                   title="Download Template"
                   style={{ width: '50px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
                 >
-                  <Save size={18} />
+                  <FileDown size={18} />
                 </a>
               </div>
             </div>
@@ -351,7 +351,7 @@ export default function Settings({ preferences, setPreferences, lang }) {
         <div style={{ display: 'grid', gap: '1rem' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', opacity: 0.8 }}>
             <span>{t(lang, 'version')}</span>
-            <strong className="brand">v-03a.19</strong>
+            <strong className="brand">v-03a.21</strong>
           </div>
 
           <hr style={{ border: 'none', borderTop: '1px solid var(--line)', margin: '0.5rem 0' }} />
@@ -386,16 +386,15 @@ export default function Settings({ preferences, setPreferences, lang }) {
           <hr style={{ border: 'none', borderTop: '1px solid var(--line)', margin: '0.5rem 0' }} />
 
           {/* Contact Admin */}
-          <div style={{ display: 'grid', gap: '0.8rem' }}>
-            <div style={{ fontWeight: '900', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-              <FileText size={16} /> {t(lang, 'messageAdmin')}
-            </div>
-            <textarea 
-              placeholder={t(lang, 'writeToAdmin')}
-              className="glass-input"
-              style={{ minHeight: '80px', fontSize: '0.9rem' }}
-              id="adminMessageInput"
-            />
+            <label className="field">
+              <span>{t(lang, 'messageAdmin')}</span>
+              <textarea 
+                placeholder={t(lang, 'writeToAdmin')}
+                className="glass-input"
+                style={{ minHeight: '120px', fontSize: '0.9rem', resize: 'vertical' }}
+                id="adminMessageInput"
+              />
+            </label>
             <button 
               className="primary-btn" 
               onClick={async (e) => {
@@ -413,7 +412,6 @@ export default function Settings({ preferences, setPreferences, lang }) {
               <Save size={16} /> {t(lang, 'send')}
             </button>
           </div>
-        </div>
       </article>
 
       <div style={{ padding: '1rem 0 3rem' }}>

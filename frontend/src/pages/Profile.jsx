@@ -93,6 +93,7 @@ export default function Profile({ preferences, lang }) {
   
   const [selectedCategory, setSelectedCategory] = useState('');
   const [selectedExercise, setSelectedExercise] = useState('');
+  const [selectedPeriod, setSelectedPeriod] = useState('all'); // all, year, 90, 30, 7
 
   const [activeTab, setActiveTab] = useState('strength');
   const [graphMode, setGraphMode] = useState('bar'); 
@@ -143,10 +144,22 @@ export default function Profile({ preferences, lang }) {
   }, [selectedCategory, exercises]);
 
   const chartData = useMemo(() => {
+    const now = new Date();
     const filtered = logs.filter((log) => {
       const matchesCat = !selectedCategory || log.exercise_detail?.category === selectedCategory;
       const matchesEx = !selectedExercise || String(log.exercise) === String(selectedExercise);
-      return matchesCat && matchesEx;
+      if (!matchesCat || !matchesEx) return false;
+
+      if (selectedPeriod === 'all') return true;
+      const logDate = new Date(log.date);
+      const diffTime = Math.abs(now - logDate);
+      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+      if (selectedPeriod === 'year') return diffDays <= 365;
+      if (selectedPeriod === '90') return diffDays <= 90;
+      if (selectedPeriod === '30') return diffDays <= 30;
+      if (selectedPeriod === '7') return diffDays <= 7;
+      return true;
     });
 
     const grouped = {};
@@ -177,12 +190,24 @@ export default function Profile({ preferences, lang }) {
   }, [logs, lang]);
 
   const filteredLogsList = useMemo(() => {
+    const now = new Date();
     return logs.filter((log) => {
       const matchesCat = !selectedCategory || log.exercise_detail?.category === selectedCategory;
       const matchesEx = !selectedExercise || String(log.exercise) === String(selectedExercise);
-      return matchesCat && matchesEx;
+      if (!matchesCat || !matchesEx) return false;
+
+      if (selectedPeriod === 'all') return true;
+      const logDate = new Date(log.date);
+      const diffTime = Math.abs(now - logDate);
+      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+      if (selectedPeriod === 'year') return diffDays <= 365;
+      if (selectedPeriod === '90') return diffDays <= 90;
+      if (selectedPeriod === '30') return diffDays <= 30;
+      if (selectedPeriod === '7') return diffDays <= 7;
+      return true;
     }).sort((a, b) => b.date.localeCompare(a.date));
-  }, [logs, selectedExercise, selectedCategory]);
+  }, [logs, selectedExercise, selectedCategory, selectedPeriod]);
 
   async function createExercise(event) {
     event.preventDefault();
@@ -353,7 +378,14 @@ export default function Profile({ preferences, lang }) {
             </select>
             <select style={{ flex: 1 }} value={selectedExercise} onChange={(e) => setSelectedExercise(e.target.value)}>
               <option value="">{t(lang, 'allExercises')}</option>
-              {filteredExercises.map((exercise) => <option key={exercise.id} value={exercise.id}>{exercise.name}</option>)}
+              {filteredExercises.map((exercise) => <option key={exercise.id} value={exercise.id}>{t(lang, exercise.name)}</option>)}
+            </select>
+            <select style={{ flex: 0.8 }} value={selectedPeriod} onChange={(e) => setSelectedPeriod(e.target.value)}>
+              <option value="all">{t(lang, 'allTime')}</option>
+              <option value="year">{t(lang, 'lastYear')}</option>
+              <option value="90">90 {t(lang, 'days')}</option>
+              <option value="30">30 {t(lang, 'days')}</option>
+              <option value="7">{t(lang, 'last7Days')}</option>
             </select>
           </div>
           <div className="chart-box" style={{ height: '360px', marginTop: '1rem', background: 'transparent', border: 'none' }}>
@@ -505,8 +537,8 @@ export default function Profile({ preferences, lang }) {
                       <select required value={item.exercise} onChange={(e) => updateGoalExercise(index, 'exercise', e.target.value)}><option value="" disabled>Pick</option>{availableExercises.map((ex) => <option key={ex.id} value={ex.id}>{ex.name}</option>)}</select>
                     </div>
                     <div style={{ display: 'flex', gap: '0.5rem', marginTop: '0.8rem' }}>
-                      <input type="number" placeholder="Sets" value={item.sets} onChange={(e) => updateGoalExercise(index, 'sets', e.target.value)} style={{ width: '100%', textAlign: 'center' }} />
-                      <input type="number" placeholder="Reps" value={item.reps} onChange={(e) => updateGoalExercise(index, 'reps', e.target.value)} style={{ width: '100%', textAlign: 'center' }} />
+                      <input type="number" placeholder="Sets" value={item.sets} onChange={(e) => updateGoalExercise(index, 'sets', e.target.value)} className="input-bubble" style={{ width: '100%', textAlign: 'center' }} />
+                      <input type="number" placeholder="Reps" value={item.reps} onChange={(e) => updateGoalExercise(index, 'reps', e.target.value)} className="input-bubble" style={{ width: '100%', textAlign: 'center' }} />
                       <button className="small-btn danger-btn" type="button" onClick={() => removeGoalExercise(index)}><Trash2 size={16} /></button>
                     </div>
                   </div>
@@ -531,8 +563,18 @@ export default function Profile({ preferences, lang }) {
             <button className="small-btn" onClick={() => setShowFrontBody(!showFrontBody)} style={{ position: 'absolute', bottom: '1rem', right: '1rem' }}><RefreshCw size={20} /></button>
           </div>
           <form onSubmit={createMeasurement} className="form-stack" style={{ marginTop: '1rem' }}>
-            <select value={measurementForm.body_part} onChange={(e) => setMeasurementForm({ ...measurementForm, body_part: e.target.value })}>{bodyParts.map(p => <option key={p} value={p}>{t(lang, p)}</option>)}</select>
-            <input type="number" step="0.1" placeholder="cm" value={measurementForm.value_cm} onChange={(e) => setMeasurementForm({ ...measurementForm, value_cm: e.target.value })} required />
+            <label className="field">
+              <span>{t(lang, 'bodyPart')}</span>
+              <select value={measurementForm.body_part} onChange={(e) => setMeasurementForm({ ...measurementForm, body_part: e.target.value })}>{bodyParts.map(p => <option key={p} value={p}>{t(lang, p)}</option>)}</select>
+            </label>
+            <label className="field">
+              <span>{t(lang, 'valueCm')}</span>
+              <input type="number" step="0.1" placeholder="cm" value={measurementForm.value_cm} onChange={(e) => setMeasurementForm({ ...measurementForm, value_cm: e.target.value })} required />
+            </label>
+            <label className="field">
+              <span>{t(lang, 'date')}</span>
+              <input type="date" value={measurementForm.date} onChange={(e) => setMeasurementForm({ ...measurementForm, date: e.target.value })} required />
+            </label>
             <button className="primary-btn">{t(lang, 'saveMeasure')}</button>
           </form>
         </article>

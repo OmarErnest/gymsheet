@@ -71,6 +71,8 @@ export async function syncOfflineData() {
     }
   }
   saveQueue(remaining);
+  window.dispatchEvent(new CustomEvent('queue-updated', { detail: remaining.length }));
+  window.dispatchEvent(new CustomEvent('sync-status', { detail: 'finished' }));
 }
 
 const CACHE_KEY_PREFIX = 'gym_cache_';
@@ -134,8 +136,9 @@ export async function api(path, options = {}) {
       const queue = getQueue();
       queue.push({ path, method, body: options.body, timestamp: Date.now() });
       saveQueue(queue);
+      window.dispatchEvent(new CustomEvent('queue-updated', { detail: queue.length }));
       console.warn("Offline: Request queued", path);
-      throw new Error("Offline. Changes queued for sync.");
+      return { _queued: true }; // Return success-like object to prevent UI crash
     }
     throw err;
   }

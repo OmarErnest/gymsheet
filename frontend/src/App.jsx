@@ -1,8 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Mail, Bell } from 'lucide-react';
 import BottomNav from './components/BottomNav.jsx';
 import Skeleton from './components/Skeleton.jsx';
-import FloatingStopwatch from './components/FloatingStopwatch.jsx';
+import { Mail, Bell, RefreshCw } from 'lucide-react';
 import { useAuth } from './state/AuthContext.jsx';
 import { api, syncOfflineData } from './api/client.js';
 import { t } from './i18n.js';
@@ -82,6 +81,39 @@ export default function App() {
   };
 
   const unreadCount = notifications.filter((n) => !n.is_read).length;
+  const [syncPending, setSyncPending] = useState(0);
+
+  useEffect(() => {
+    const handleAddNotif = (e) => {
+      setNotifications(prev => {
+        if (e.detail.type === 'hydrate' && prev.some(n => n.type === 'hydrate')) {
+          return prev;
+        }
+        const newNotif = {
+          id: `local-${Date.now()}`,
+          message: e.detail.message,
+          type: e.detail.type,
+          is_read: false,
+          created_at: new Date().toISOString(),
+          _isLocal: true
+        };
+        return [newNotif, ...prev].slice(0, 10);
+      });
+    };
+    const handleQueue = (e) => setSyncPending(e.detail);
+
+    window.addEventListener('add-local-notification', handleAddNotif);
+    window.addEventListener('queue-updated', handleQueue);
+    return () => {
+      window.removeEventListener('add-local-notification', handleAddNotif);
+      window.removeEventListener('queue-updated', handleQueue);
+    };
+  }, []);
+
+  const clearAllNotifications = () => {
+    setNotifications([]);
+    setShowNotifications(false);
+  };
 
   const labels = useMemo(
     () => ({
@@ -156,6 +188,17 @@ export default function App() {
         <div /> {/* Spacer for grid */}
         
         <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+          {syncPending > 0 && (
+            <button 
+              className="sync-btn pending" 
+              onClick={() => syncOfflineData()}
+              title="Sync Pending"
+              style={{ background: 'rgba(var(--brand-rgb), 0.1)', color: 'var(--brand)', border: '1px solid var(--brand)', borderRadius: '999px', padding: '4px 10px', fontSize: '0.7rem', fontWeight: '900', display: 'flex', alignItems: 'center', gap: '4px' }}
+            >
+              <RefreshCw size={12} className="spin" />
+              {syncPending} PENDING
+            </button>
+          )}
           <button className="avatar-btn" onClick={() => setShowNotifications(!showNotifications)}>
             <div className={`avatar-container ${user.current_rank === 1 ? 'border-gold' : user.current_rank === 2 ? 'border-silver' : user.current_rank === 3 ? 'border-bronze' : user.has_link ? 'border-green' : ''}`} aria-label="Current user">
               <div className="avatar">
@@ -165,20 +208,26 @@ export default function App() {
             </div>
 
             {showNotifications && (
-              <div className="glass-card shadow-xl" onClick={(e) => e.stopPropagation()} style={{ position: 'absolute', top: '100%', right: 0, width: '280px', zIndex: 1100, marginTop: '1rem', padding: '1rem', display: 'flex', flexDirection: 'column', gap: '0.8rem', maxHeight: '400px', overflowY: 'auto', cursor: 'default' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <div className="glass-card shadow-xl" onClick={(e) => e.stopPropagation()} style={{ position: 'absolute', top: '100%', right: 0, width: '300px', zIndex: 1100, marginTop: '1rem', padding: '1rem', display: 'flex', flexDirection: 'column', gap: '0.8rem', maxHeight: '450px', overflowY: 'auto', cursor: 'default' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid var(--line)', paddingBottom: '0.5rem' }}>
                   <h4 style={{ margin: 0 }}>Notifications</h4>
-                  <button onClick={() => setShowNotifications(false)} style={{ background: 'none', border: 'none', color: 'var(--muted)', cursor: 'pointer' }}>Close</button>
+                  <div style={{ display: 'flex', gap: '0.5rem' }}>
+                    <button onClick={clearAllNotifications} style={{ background: 'none', border: 'none', color: 'var(--danger)', cursor: 'pointer', fontSize: '0.7rem', fontWeight: 'bold' }}>Clear All</button>
+                    <button onClick={() => setShowNotifications(false)} style={{ background: 'none', border: 'none', color: 'var(--muted)', cursor: 'pointer', fontSize: '0.7rem' }}>Close</button>
+                  </div>
                 </div>
-                {notifications.length === 0 ? <p className="muted" style={{ fontSize: '0.8rem', textAlign: 'center' }}>No notifications</p> : null}
+                {notifications.length === 0 ? <p className="muted" style={{ fontSize: '0.8rem', textAlign: 'center', padding: '1rem' }}>No notifications</p> : null}
                 {notifications.map((n) => (
-                  <div key={n.id} style={{ padding: '0.6rem', background: n.is_read ? 'rgba(255,255,255,0.02)' : 'rgba(var(--brand-rgb), 0.1)', borderRadius: '12px', display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
-                    <p style={{ margin: 0, fontSize: '0.85rem', lineHeight: '1.4', textAlign: 'left' }}>{n.message}</p>
-                    {!n.is_read && (
-                      <button onClick={() => markNotificationRead(n.id)} style={{ background: 'none', border: 'none', color: 'var(--brand)', cursor: 'pointer', fontSize: '0.75rem', fontWeight: 'bold', alignSelf: 'flex-end' }}>
-                        Mark Read
-                      </button>
-                    )}
+                  <div key={n.id} style={{ padding: '0.7rem', background: n.is_read ? 'rgba(255,255,255,0.02)' : 'rgba(var(--brand-rgb), 0.05)', border: n.is_read ? '1px solid transparent' : '1px solid rgba(var(--brand-rgb), 0.2)', borderRadius: '12px', display: 'flex', flexDirection: 'column', gap: '0.4rem', transition: 'all 0.2s' }}>
+                    <p style={{ margin: 0, fontSize: '0.85rem', lineHeight: '1.4', textAlign: 'left', color: 'var(--text)' }}>{n.message}</p>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <span style={{ fontSize: '0.65rem', opacity: 0.5 }}>{new Date(n.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                      {!n.is_read && (
+                        <button onClick={() => markNotificationRead(n.id)} style={{ background: 'none', border: 'none', color: 'var(--brand)', cursor: 'pointer', fontSize: '0.75rem', fontWeight: '900' }}>
+                          Mark Read
+                        </button>
+                      )}
+                    </div>
                   </div>
                 ))}
               </div>

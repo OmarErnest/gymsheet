@@ -1,5 +1,5 @@
 import { useEffect, useState, useRef } from 'react';
-import { CheckCircle2, ChevronUp, ChevronDown, Save, Play, Square, Droplets, Timer, ChevronLeft, ChevronRight, Trophy } from 'lucide-react';
+import { Save, Plus, Trash2, CheckCircle2, ChevronRight, ChevronLeft, Trophy, Play, Timer, Pause, RotateCcw, Droplets, Square } from 'lucide-react';
 import { api } from '../api/client.js';
 import Skeleton from '../components/Skeleton.jsx';
 import { t } from '../i18n.js';
@@ -38,12 +38,13 @@ export default function Home({ lang }) {
   const [days, setDays] = useState([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [activeTimer, setActiveTimer] = useState(null); // { id: exerciseId, time: seconds }
   const [saveMessage, setSaveMessage] = useState('');
   const [error, setError] = useState('');
   const [inlineLogs, setInlineLogs] = useState({});
   const [showBackToPresent, setShowBackToPresent] = useState(false);
   const [completedCount, setCompletedCount] = useState(0);
-  
+
   // Week Navigation State
   const [currentWeekStart, setCurrentWeekStart] = useState(() => {
     const d = new Date();
@@ -54,7 +55,6 @@ export default function Home({ lang }) {
   // Workout State
   const [workoutActive, setWorkoutActive] = useState(localStorage.getItem('workout_active') === 'true');
   const [workoutStart, setWorkoutStart] = useState(localStorage.getItem('workout_start'));
-  const [hydrationReminder, setHydrationReminder] = useState(null);
 
   const todayRef = useRef(null);
 
@@ -69,6 +69,7 @@ export default function Home({ lang }) {
       const res = await api(`/home/days/?start=${iso(start)}&end=${iso(end)}`);
       setDays(res);
       setInlineLogs(buildInitialLogs(res));
+      return res;
     } catch (err) {
       setError(err.message);
     } finally {
@@ -98,12 +99,11 @@ export default function Home({ lang }) {
       const interval = setInterval(() => {
         const now = new Date().getTime();
         const diffMins = (now - startTime) / (1000 * 60);
-        
+
         if (diffMins > 0 && diffMins <= 150 && Math.floor(diffMins) % 30 === 0) {
-          setHydrationReminder('Time to hydrate! 💧');
-          setTimeout(() => setHydrationReminder(null), 10000);
+          window.dispatchEvent(new CustomEvent('trigger-hydration'));
         }
-        
+
         if (diffMins > 150) {
           stopWorkout();
         }
@@ -112,12 +112,6 @@ export default function Home({ lang }) {
     }
   }, [workoutActive, workoutStart]);
 
-  useEffect(() => {
-    if (completedCount > 0 && completedCount % 2 === 0) {
-      setHydrationReminder('Excellent progress! Time for some water 💧');
-      setTimeout(() => setHydrationReminder(null), 8000);
-    }
-  }, [completedCount]);
 
   const startWorkout = () => {
     const now = new Date().toISOString();
@@ -158,17 +152,18 @@ export default function Home({ lang }) {
     } else if (field === 'duration') {
       value = raw.replace(/[^0-9:]/g, '');
     }
-    setInlineLogs((prev) => {
-      const isNewLog = !prev[itemId]?.log_id && (field === 'weight_kg' || field === 'duration');
-      if (isNewLog && value !== '') {
-        setCompletedCount(c => c + 1);
-      }
-      return {
-        ...prev,
-        [itemId]: { ...prev[itemId], [field]: value },
-      };
-    });
+    setInlineLogs((prev) => ({
+      ...prev,
+      [itemId]: { ...prev[itemId], [field]: value },
+    }));
   }
+
+  const handleTimerFinish = (id, seconds) => {
+    const mm = Math.floor(seconds / 60).toString().padStart(2, '0');
+    const ss = (seconds % 60).toString().padStart(2, '0');
+    handleChange(id, 'duration', `${mm}:${ss}`);
+    setActiveTimer(null);
+  };
 
   async function saveAll() {
     setSaving(true);
@@ -221,10 +216,16 @@ export default function Home({ lang }) {
       }
       await Promise.all(ops);
       setSaveMessage(`Saved ✓`);
-      if (sessionLogsCount >= 2) {
-        window.checkHydration?.();
+
+      await loadInitial();
+      
+      // Hydration Trigger: GLOBAL total logs count is divisible by 3
+      const allLogsRes = await api('/exercise-logs/');
+      const totalGlobalLogs = allLogsRes.count || allLogsRes.length || 0;
+      
+      if (totalGlobalLogs > 0 && totalGlobalLogs % 3 === 0) {
+        window.dispatchEvent(new CustomEvent('trigger-hydration'));
       }
-      loadInitial();
     } catch (err) {
       setSaveMessage(err.message);
     } finally {
@@ -251,12 +252,6 @@ export default function Home({ lang }) {
         <button className="arrow-btn" onClick={() => changeWeek(1)}><ChevronRight size={20} /></button>
       </div>
 
-      {hydrationReminder && (
-        <div className="save-toast" style={{ background: 'var(--bg-soft)', color: '#60a5fa', borderColor: '#3b82f6', bottom: '160px' }}>
-          <Droplets size={16} />
-          <span>{hydrationReminder}</span>
-        </div>
-      )}
 
       <div className="days-feed">
         {days.map((day) => {
@@ -264,10 +259,10 @@ export default function Home({ lang }) {
           const showStart = day.is_today && !isCompleted;
 
           return (
-            <article 
-              key={day.date} 
+            <article
+              key={day.date}
               ref={day.is_today ? todayRef : null}
-              className={day.is_today ? 'day-card today' : 'day-card'} 
+              className={day.is_today ? 'day-card today' : 'day-card'}
               style={{ marginBottom: 'clamp(1rem, 4vw, 1.5rem)' }}
             >
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
@@ -277,7 +272,7 @@ export default function Home({ lang }) {
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
                   {showStart && (
-                    <button 
+                    <button
                       onClick={workoutActive ? stopWorkout : startWorkout}
                       className={workoutActive ? 'small-btn danger' : 'small-btn primary'}
                       style={{ gap: '0.4rem', padding: '0.4rem 0.8rem', height: '34px', fontSize: '0.75rem', borderRadius: '999px' }}
@@ -300,14 +295,24 @@ export default function Home({ lang }) {
                         {goal.goal_exercises?.map((item) => {
                           const isTimeBased = item.exercise_detail?.is_time_based;
                           const logVal = inlineLogs[item.id] || {};
-                          
+
                           return (
                             <div key={item.id} className="exercise-item-old">
                               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                                 <div style={{ flex: 1 }}>
                                   <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-                                    <strong style={{ fontSize: '0.95rem' }}>{item.exercise_detail?.name}</strong>
-                                    {isTimeBased && <Timer size={12} style={{ color: 'var(--brand)' }} />}
+                                    <strong style={{ fontSize: '0.95rem' }}>{t(lang, item.exercise_detail?.name)}</strong>
+                                    {item.exercise_detail?.youtube_url && (
+                                      <a
+                                        href={item.exercise_detail.youtube_url}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        style={{ color: 'var(--brand)', display: 'flex', alignItems: 'center' }}
+                                        title="Watch Video"
+                                      >
+                                        <Play size={16} fill="var(--brand)" />
+                                      </a>
+                                    )}
                                   </div>
                                   <p style={{ fontSize: '0.75rem', opacity: 0.6, margin: '0.1rem 0' }}>
                                     {item.sets}x{item.reps} · {t(lang, item.exercise_detail?.category)}
@@ -321,7 +326,7 @@ export default function Home({ lang }) {
                               </div>
 
                               <div style={{ display: 'flex', gap: '0.6rem' }}>
-                                <input 
+                                <input
                                   placeholder="S"
                                   className="input-bubble"
                                   type="number"
@@ -329,7 +334,7 @@ export default function Home({ lang }) {
                                   onChange={(e) => handleChange(item.id, 'sets', e.target.value)}
                                   style={{ flex: 1, minHeight: '40px' }}
                                 />
-                                <input 
+                                <input
                                   placeholder="R"
                                   className="input-bubble"
                                   type="number"
@@ -338,15 +343,15 @@ export default function Home({ lang }) {
                                   style={{ flex: 1, minHeight: '40px' }}
                                 />
                                 {isTimeBased ? (
-                                  <input 
+                                  <input
                                     placeholder="MM:SS"
                                     className="input-bubble"
                                     value={logVal.duration || ''}
                                     onChange={(e) => handleChange(item.id, 'duration', e.target.value)}
-                                    style={{ flex: 2, minHeight: '40px' }}
+                                    style={{ flex: 1.5, minHeight: '40px' }}
                                   />
                                 ) : (
-                                  <input 
+                                  <input
                                     placeholder="kg"
                                     className="input-bubble"
                                     type="number"
@@ -354,6 +359,25 @@ export default function Home({ lang }) {
                                     onChange={(e) => handleChange(item.id, 'weight_kg', e.target.value)}
                                     style={{ flex: 2, minHeight: '40px' }}
                                   />
+                                )}
+                                {isTimeBased && (
+                                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem', flex: 1.5 }}>
+                                    {activeTimer?.id === item.id ? (
+                                      <InlineTimer
+                                        initialSeconds={activeTimer.time}
+                                        onFinish={(s) => handleTimerFinish(item.id, s)}
+                                        onCancel={() => setActiveTimer(null)}
+                                      />
+                                    ) : (
+                                      <button
+                                        className="small-btn"
+                                        onClick={() => setActiveTimer({ id: item.id, time: 0 })}
+                                        style={{ height: '40px', background: 'rgba(var(--brand-rgb), 0.1)', color: 'var(--brand)', border: '1px solid var(--brand)', display: 'flex', justifyContent: 'center', alignItems: 'center' }}
+                                      >
+                                        <Timer size={18} />
+                                      </button>
+                                    )}
+                                  </div>
                                 )}
                               </div>
                             </div>
@@ -369,12 +393,10 @@ export default function Home({ lang }) {
         })}
       </div>
 
-
-
       <div className="bubble-stack">
-        <button 
-          className="fab-save" 
-          onClick={saveAll} 
+        <button
+          className="fab-save"
+          onClick={saveAll}
           disabled={saving}
           style={{ position: 'static', width: '64px', height: '64px' }}
         >
@@ -389,5 +411,56 @@ export default function Home({ lang }) {
         </div>
       )}
     </section>
+  );
+}
+
+function InlineTimer({ initialSeconds, onFinish, onCancel }) {
+  const [seconds, setSeconds] = useState(initialSeconds || 0);
+  const [isActive, setIsActive] = useState(initialSeconds > 0);
+  const [originalTime, setOriginalTime] = useState(initialSeconds || 0);
+
+  useEffect(() => {
+    let interval = null;
+    if (isActive && seconds > 0) {
+      interval = setInterval(() => {
+        setSeconds((s) => s - 1);
+      }, 1000);
+    } else if (isActive && seconds === 0) {
+      onFinish(originalTime);
+    }
+    return () => clearInterval(interval);
+  }, [isActive, seconds, onFinish, originalTime]);
+
+  const handleStop = () => {
+    onFinish(originalTime - seconds);
+  };
+
+  const increments = [15, 30, 45, 60, 75, 90, 105, 120, 135, 150, 165, 180];
+
+  return (
+    <div className="glass-card" style={{ padding: '0.6rem', border: '1px solid var(--brand)', borderRadius: '12px', background: 'rgba(var(--brand-rgb), 0.05)', minWidth: '160px' }}>
+      {seconds === 0 && !isActive ? (
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '0.3rem' }}>
+          {increments.map(s => (
+            <button key={s} onClick={() => { setSeconds(s); setOriginalTime(s); setIsActive(true); }} className="small-btn" style={{ fontSize: '0.7rem', padding: '4px' }}>{s}s</button>
+          ))}
+          <button onClick={onCancel} className="small-btn" style={{ gridColumn: 'span 4', color: 'var(--danger)', fontSize: '0.7rem' }}>Cancel</button>
+        </div>
+      ) : (
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.5rem' }}>
+          <span style={{ fontSize: '1rem', fontWeight: '900', fontFamily: 'monospace', color: 'var(--brand)' }}>
+            {Math.floor(seconds / 60)}:{(seconds % 60).toString().padStart(2, '0')}
+          </span>
+          <div style={{ display: 'flex', gap: '0.3rem' }}>
+            <button onClick={() => setIsActive(!isActive)} className="small-btn" style={{ padding: '4px' }}>
+              {isActive ? <Pause size={14} /> : <Play size={14} />}
+            </button>
+            <button onClick={handleStop} className="small-btn" style={{ padding: '4px', background: 'var(--danger)', color: 'white' }}>
+              Stop
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
   );
 }
