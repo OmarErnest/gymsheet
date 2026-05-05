@@ -6,7 +6,8 @@ import { t } from '../i18n.js';
 
 const CHARACTER_ICONS = [
   'Android16.png', 'Babidi.png', 'Captain.png', 'Doctor.png', 'Hercule.png',
-  'Jeice.png', 'Nappa.png', 'Piccolo.png', 'Racoome.png', 'Radiz.png', 'Korin.png'
+  'Jeice.png', 'Nappa.png', 'Piccolo.png', 'Racoome.png', 'Radiz.png', 'Korin.png',
+  'Tao.png', 'Tien.png'
 ];
 
 export default function Settings({ preferences, setPreferences, lang }) {
@@ -172,15 +173,19 @@ export default function Settings({ preferences, setPreferences, lang }) {
           
           {showIcons && (
             <div className="icon-grid" style={{ 
-              display: 'grid', 
-              gridTemplateColumns: 'repeat(auto-fill, minmax(60px, 1fr))', 
+              display: 'flex', 
               gap: '1rem', 
               marginTop: '1rem',
-              padding: '1rem',
-              background: 'rgba(0,0,0,0.2)',
-              borderRadius: '16px',
-              animation: 'slideDown 0.3s ease-out'
+              padding: '1.2rem 1rem',
+              background: 'rgba(var(--brand-rgb), 0.05)',
+              borderRadius: '20px',
+              animation: 'slideDown 0.3s ease-out',
+              overflowX: 'auto',
+              WebkitOverflowScrolling: 'touch',
+              scrollbarWidth: 'none',
+              msOverflowStyle: 'none'
             }}>
+              <style>{`.icon-grid::-webkit-scrollbar { display: none; }`}</style>
               <button 
                 type="button" 
                 onClick={() => update('profile_pic_url', '')}
@@ -188,18 +193,20 @@ export default function Settings({ preferences, setPreferences, lang }) {
                   padding: '0', 
                   background: form.profile_pic_url === '' ? 'var(--brand)' : 'var(--card-strong)', 
                   border: 'none',
-                  borderRadius: '12px', 
-                  aspectRatio: '1', 
+                  borderRadius: '16px', 
+                  minWidth: '64px',
+                  height: '64px',
+                  flexShrink: 0,
                   display: 'flex', 
                   alignItems: 'center', 
                   justifyContent: 'center', 
                   cursor: 'pointer',
-                  transition: 'all 0.2s',
-                  boxShadow: form.profile_pic_url === '' ? '0 0 15px var(--brand)' : 'none',
+                  transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                  boxShadow: form.profile_pic_url === '' ? '0 8px 20px rgba(var(--brand-rgb), 0.4)' : 'none',
                   transform: form.profile_pic_url === '' ? 'scale(1.1)' : 'scale(1)'
                 }}
               >
-                <UserIcon size={24} color={form.profile_pic_url === '' ? '#052e16' : 'var(--muted)'} />
+                <UserIcon size={28} color={form.profile_pic_url === '' ? '#052e16' : 'var(--muted)'} />
               </button>
               {CHARACTER_ICONS.map(icon => (
                 <button 
@@ -210,12 +217,14 @@ export default function Settings({ preferences, setPreferences, lang }) {
                     padding: '0', 
                     background: 'var(--card-strong)', 
                     border: form.profile_pic_url === icon ? '3px solid var(--brand)' : '2px solid transparent', 
-                    borderRadius: '12px', 
+                    borderRadius: '16px', 
                     overflow: 'hidden', 
-                    aspectRatio: '1', 
+                    minWidth: '64px',
+                    height: '64px',
+                    flexShrink: 0,
                     cursor: 'pointer',
-                    transition: 'all 0.2s',
-                    boxShadow: form.profile_pic_url === icon ? '0 0 15px var(--brand)' : 'none',
+                    transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                    boxShadow: form.profile_pic_url === icon ? '0 8px 20px rgba(var(--brand-rgb), 0.4)' : 'none',
                     transform: form.profile_pic_url === icon ? 'scale(1.1)' : 'scale(1)'
                   }}
                 >
@@ -351,7 +360,10 @@ export default function Settings({ preferences, setPreferences, lang }) {
         <div style={{ display: 'grid', gap: '1rem' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', opacity: 0.8 }}>
             <span>{t(lang, 'version')}</span>
-            <strong className="brand">v-03a.21</strong>
+            <span style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+              <strong className="brand" style={{ fontWeight: '900' }}>v-03a.22</strong>
+              <small className="muted" style={{ fontWeight: '800', opacity: 0.8 }}>05.05.26</small>
+            </span>
           </div>
 
           <hr style={{ border: 'none', borderTop: '1px solid var(--line)', margin: '0.5rem 0' }} />

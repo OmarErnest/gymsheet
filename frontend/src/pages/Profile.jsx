@@ -201,13 +201,29 @@ export default function Profile({ preferences, lang }) {
   }, [logs, selectedExercise, selectedCategory, selectedPeriod]);
 
   const pieData = useMemo(() => {
-    const counts = {};
+    const dataGroup = {}; // name -> { totalWeight, count }
+    
     filteredLogsList.forEach(log => {
-      const cat = log.exercise_detail?.category || 'other';
-      counts[cat] = (counts[cat] || 0) + 1;
+      // If an exercise is selected, we might want to compare it with others in same category? 
+      // User says "tell the ration of different exercises when I filter it... it cannot only show category"
+      // If category is selected, show exercises in that category.
+      // If no category selected, show categories.
+      const name = selectedCategory 
+        ? t(lang, log.exercise_detail?.name) 
+        : t(lang, log.exercise_detail?.category || 'other');
+      
+      if (!dataGroup[name]) {
+        dataGroup[name] = { totalWeight: 0, count: 0 };
+      }
+      dataGroup[name].totalWeight += Number(log.weight_kg || 0);
+      dataGroup[name].count += 1;
     });
-    return Object.entries(counts).map(([name, value]) => ({ name: t(lang, name), value }));
-  }, [filteredLogsList, lang]);
+
+    return Object.entries(dataGroup).map(([name, stats]) => ({
+      name,
+      value: Number((stats.totalWeight / stats.count).toFixed(1)) || 0
+    })).sort((a, b) => b.value - a.value).slice(0, 8); // Limit to top 8 for readability
+  }, [filteredLogsList, lang, selectedCategory]);
 
   async function createExercise(event) {
     event.preventDefault();
@@ -328,7 +344,7 @@ export default function Profile({ preferences, lang }) {
 
   if (loading && exercises.length === 0) return (
     <div className="loading-screen">
-      <img src="/logo.png" className="loading-logo-spin" alt="" />
+      <img src="/icon.png" className="loading-logo-spin" alt="" />
       <h2 style={{ letterSpacing: '2px', fontWeight: '900', color: 'var(--brand)' }}>LOADING PROFILE...</h2>
     </div>
   );
@@ -527,11 +543,35 @@ export default function Profile({ preferences, lang }) {
             <label className="field"><span>{t(lang, 'startDate')}</span><input type="date" value={goalForm.start_date} onChange={(e) => setGoalForm({ ...goalForm, start_date: e.target.value })} required /></label>
             <label className="field"><span>{t(lang, 'repeat')}</span><select value={goalForm.repeat_type} onChange={(e) => setGoalForm({ ...goalForm, repeat_type: e.target.value })}><option value="once">{t(lang, 'oneDayOnly')}</option><option value="weekly">{t(lang, 'weekly')}</option></select></label>
             {goalForm.repeat_type === 'weekly' && <div className="weekday-row">{weekdays.map(([label, value]) => <button className={goalForm.weekdays.includes(value) ? 'chip active' : 'chip'} type="button" key={value} onClick={() => toggleWeekday(value)}>{label}</button>)}</div>}
-            <div className="goal-builder" style={{ marginTop: '1rem' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
-                <strong>Exercises ({goalForm.goal_exercises.length}/10)</strong>
-                <button className="small-btn" type="button" onClick={addGoalExercise} disabled={goalForm.goal_exercises.length >= 10}><Plus size={16} /></button>
+            <div className="goal-builder" style={{ marginTop: '1.5rem' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
+                <strong style={{ fontSize: '0.9rem', opacity: 0.7 }}>Exercises ({goalForm.goal_exercises.length}/10)</strong>
               </div>
+              
+              <button 
+                className="dotted-btn" 
+                type="button" 
+                onClick={addGoalExercise} 
+                disabled={goalForm.goal_exercises.length >= 10}
+                style={{ 
+                  width: '100%', 
+                  marginBottom: '1.5rem', 
+                  padding: '1.2rem', 
+                  border: '2px dashed var(--line)', 
+                  borderRadius: '16px', 
+                  background: 'rgba(255,255,255,0.02)',
+                  color: 'var(--brand)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '0.8rem',
+                  cursor: 'pointer',
+                  transition: 'all 0.2s'
+                }}
+              >
+                <Plus size={20} />
+                <span style={{ fontWeight: '900', fontSize: '1rem', letterSpacing: '0.5px' }}>{t(lang, 'addExercise')}</span>
+              </button>
               {goalForm.goal_exercises.map((item, index) => {
                 const availableExercises = item.categoryFilter ? exercises.filter(ex => ex.category === item.categoryFilter) : exercises;
                 return (

@@ -835,24 +835,42 @@ input[type=number] { -moz-appearance: textfield; appearance: textfield; }
 
 .skeleton-stack { display: grid; gap: 1rem; }
 .skeleton-card {
-  min-height: 132px;
-  border-radius: var(--radius-lg);
-  background: var(--card);
+  min-height: 160px;
+  border-radius: 24px;
+  background: var(--bg-soft);
   border: 1px solid var(--line);
-  padding: 1rem;
+  padding: 1.5rem;
   overflow: hidden;
+  position: relative;
 }
 .sk-line {
-  height: 16px;
-  width: 82%;
+  height: 14px;
+  width: 90%;
   border-radius: 999px;
-  background: linear-gradient(90deg, transparent, var(--card-strong), transparent);
-  animation: shimmer 1.25s infinite;
-  margin-top: 0.8rem;
+  background: var(--card-strong);
+  position: relative;
+  overflow: hidden;
+  margin-top: 1rem;
 }
-.sk-line.short { width: 38%; }
-.sk-line.tiny { width: 58%; height: 12px; }
-@keyframes shimmer { from { transform: translateX(-60%); } to { transform: translateX(80%); } }
+.sk-line::after {
+  content: "";
+  position: absolute;
+  top: 0; right: 0; bottom: 0; left: 0;
+  transform: translateX(-100%);
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.05),
+    transparent
+  );
+  animation: shimmer 1.8s infinite;
+}
+.sk-line.header { width: 45%; height: 20px; margin-top: 0; }
+.sk-line.circle { width: 32px; height: 32px; margin-top: 0; border-radius: 50%; }
+.sk-line.short { width: 40%; }
+@keyframes shimmer {
+  100% { transform: translateX(100%); }
+}
 
 @media (max-width: 600px) {
   .screen { padding: 0.5rem; }
@@ -932,4 +950,42 @@ select option { color: var(--text); }
   max-height: 80vh;
   overflow-y: auto;
   border: 1px solid var(--brand);
+}
+
+@keyframes edit-pulse {
+  0% { box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.4); }
+  70% { box-shadow: 0 0 0 10px rgba(34, 197, 94, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(34, 197, 94, 0); }
+}
+
+.edit-pulse {
+  animation: edit-pulse 2s infinite;
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.spin {
+  animation: spin 3s linear infinite;
+}
+
+@keyframes pulse-subtle {
+  0% { opacity: 0.6; }
+  50% { opacity: 1; }
+  100% { opacity: 0.6; }
+}
+
+.dotted-btn {
+  background: transparent !important;
+  border: 2px dashed var(--line) !important;
+  color: var(--brand) !important;
+  transition: all 0.3s ease !important;
+}
+
+.dotted-btn:hover {
+  border-color: var(--brand) !important;
+  background: rgba(var(--brand-rgb), 0.05) !important;
+  transform: translateY(-2px);
 }

@@ -1,5 +1,5 @@
 import { useEffect, useState, useRef } from 'react';
-import { Save, Plus, Trash2, CheckCircle2, ChevronRight, ChevronLeft, Trophy, Play, Timer, Pause, RotateCcw, Droplets, Square } from 'lucide-react';
+import { Save, Plus, Trash2, CheckCircle2, ChevronRight, ChevronLeft, Trophy, Play, Timer, Pause, RotateCcw, Droplets, Square, Settings } from 'lucide-react';
 import { api } from '../api/client.js';
 import Skeleton from '../components/Skeleton.jsx';
 import { t } from '../i18n.js';
@@ -41,9 +41,12 @@ export default function Home({ lang }) {
   const [activeTimer, setActiveTimer] = useState(null); // { id: exerciseId, time: seconds }
   const [saveMessage, setSaveMessage] = useState('');
   const [error, setError] = useState('');
-  const [inlineLogs, setInlineLogs] = useState({});
-  const [showBackToPresent, setShowBackToPresent] = useState(false);
   const [completedCount, setCompletedCount] = useState(0);
+  const [editMode, setEditMode] = useState(false);
+  const [allExercises, setAllExercises] = useState([]);
+  const [todayOverrides, setTodayOverrides] = useState({}); // { goalId: [ { exercise_detail, sets, reps, is_time_based } ] }
+  const [inlineLogs, setInlineLogs] = useState({});
+  const [firstLoad, setFirstLoad] = useState(true);
 
   // Week Navigation State
   const [currentWeekStart, setCurrentWeekStart] = useState(() => {
@@ -51,6 +54,8 @@ export default function Home({ lang }) {
     d.setDate(d.getDate() - (d.getDay() === 0 ? 6 : d.getDay() - 1));
     return d;
   });
+
+  const [showBackToPresent, setShowBackToPresent] = useState(false);
 
   // Workout State
   const [workoutActive, setWorkoutActive] = useState(localStorage.getItem('workout_active') === 'true');
@@ -69,16 +74,22 @@ export default function Home({ lang }) {
       const res = await api(`/home/days/?start=${iso(start)}&end=${iso(end)}`);
       setDays(res);
       setInlineLogs(buildInitialLogs(res));
+      
+      const isPresentWeek = res.some(d => d.is_today);
+      setShowBackToPresent(!isPresentWeek);
+
       return res;
     } catch (err) {
       setError(err.message);
     } finally {
       setLoading(false);
+      setFirstLoad(false);
     }
   }
 
   useEffect(() => {
     loadInitial();
+    api('/exercises/').then(res => setAllExercises(res.results || res)).catch(() => {});
   }, [currentWeekStart]);
 
 
@@ -134,15 +145,6 @@ export default function Home({ lang }) {
     setCurrentWeekStart(d);
   };
 
-  const scrollToToday = () => {
-    if (todayRef.current) {
-      todayRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' });
-    } else {
-      const todayEl = document.querySelector('.day-card.today');
-      if (todayEl) todayEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
-    }
-  };
-
   function handleChange(itemId, field, raw) {
     let value = raw;
     if (field === 'sets' || field === 'reps') {
@@ -173,37 +175,43 @@ export default function Home({ lang }) {
       const ops = [];
       days.forEach(day => {
         (day.goals || []).forEach((goal) => {
-          (goal.goal_exercises || []).forEach((item) => {
-            const logVal = inlineLogs[item.id];
-            if (!logVal) return;
+          const overrides = todayOverrides[goal.id] || [];
+          const allCurrent = [...(goal.goal_exercises || []), ...overrides];
+          
+          allCurrent.forEach((item) => {
+            // If it's a replaced item, skip the original
+            if (!item._isExtra && overrides.some(o => o._replacedId === item.id)) return;
+
+            const logVal = inlineLogs[item.id || `extra-${allCurrent.indexOf(item)}` ];
+            if (!logVal && !item._isExtra) return;
+            
             const isTimeBased = item.exercise_detail?.is_time_based;
             const hasValue = isTimeBased
-              ? (logVal.duration !== undefined && logVal.duration !== '')
-              : (logVal.weight_kg !== undefined && logVal.weight_kg !== '');
+              ? (logVal?.duration !== undefined && logVal?.duration !== '')
+              : (logVal?.weight_kg !== undefined && logVal?.weight_kg !== '');
 
-            if (!hasValue) {
-              if (logVal.log_id) {
+            if (!hasValue && !item._isExtra) {
+              if (logVal?.log_id) {
                 ops.push(api(`/exercise-logs/${logVal.log_id}/`, { method: 'DELETE' }));
               }
               return;
             }
 
-            const cleanWeight = String(logVal.weight_kg || '').replace(/\.$/, '') || '0';
+            const cleanWeight = String(logVal?.weight_kg || item.weight_kg || '').replace(/\.$/, '') || '0';
             const payload = {
               exercise: item.exercise_detail.id,
               date: day.date,
-              sets: logVal.sets !== undefined && logVal.sets !== '' ? Number(logVal.sets) : item.sets,
-              reps: logVal.reps !== undefined && logVal.reps !== '' ? Number(logVal.reps) : item.reps,
+              sets: logVal?.sets !== undefined && logVal?.sets !== '' ? Number(logVal.sets) : item.sets,
+              reps: logVal?.reps !== undefined && logVal?.reps !== '' ? Number(logVal.reps) : item.reps,
               weight_kg: isTimeBased ? 0 : cleanWeight,
-              duration: isTimeBased ? logVal.duration : '',
-              source_goal_plan: item.goal_plan || null,
+              duration: isTimeBased ? (logVal?.duration || '') : '',
+              source_goal_plan: goal.id || null, // Best effort link to goal
             };
 
-            if (logVal.log_id) {
+            if (logVal?.log_id) {
               ops.push(api(`/exercise-logs/${logVal.log_id}/`, { method: 'PATCH', body: JSON.stringify(payload) }));
-            } else {
+            } else if (hasValue || item._isExtra) {
               ops.push(api('/exercise-logs/', { method: 'POST', body: JSON.stringify(payload) }));
-              // If logging today, increment session count for hydration
               if (day.is_today) sessionLogsCount++;
             }
           });
@@ -212,6 +220,7 @@ export default function Home({ lang }) {
 
       if (ops.length === 0) {
         setSaveMessage('Nothing to save');
+        setSaving(false);
         return;
       }
       await Promise.all(ops);
@@ -233,9 +242,9 @@ export default function Home({ lang }) {
     }
   }
 
-  if (loading) return (
+  if (loading && firstLoad) return (
     <div className="loading-screen">
-      <img src="/logo.png" className="loading-logo-spin" alt="" />
+      <img src="/icon.png" className="loading-logo-spin" alt="" />
       <h2 style={{ letterSpacing: '2px', fontWeight: '900', color: 'var(--brand)' }}>LOADING FEED...</h2>
     </div>
   );
@@ -246,17 +255,34 @@ export default function Home({ lang }) {
 
       <div className="nav-arrows">
         <button className="arrow-btn" onClick={() => changeWeek(-1)}><ChevronLeft size={20} /></button>
-        <span style={{ fontWeight: '900', fontSize: '0.9rem', color: 'var(--brand)', minWidth: '140px', textAlign: 'center' }}>
-          {currentWeekStart.toLocaleDateString(lang, { month: 'short', day: 'numeric' }).toUpperCase()}
-        </span>
+        <div style={{ textAlign: 'center' }}>
+          <span style={{ fontWeight: '900', fontSize: '0.9rem', color: 'var(--brand)', minWidth: '140px', display: 'block' }}>
+            {currentWeekStart.toLocaleDateString(lang, { month: 'short', day: 'numeric' }).toUpperCase()}
+          </span>
+          {showBackToPresent && (
+            <button onClick={() => {
+              const d = new Date();
+              d.setDate(d.getDate() - (d.getDay() === 0 ? 6 : d.getDay() - 1));
+              setCurrentWeekStart(d);
+              setShowBackToPresent(false);
+            }} style={{ background: 'none', border: 'none', color: 'var(--brand)', fontSize: '0.65rem', fontWeight: '900', cursor: 'pointer', padding: '2px 8px', borderRadius: '4px', background: 'rgba(var(--brand-rgb), 0.1)' }}>
+              BACK TO PRESENT
+            </button>
+          )}
+        </div>
         <button className="arrow-btn" onClick={() => changeWeek(1)}><ChevronRight size={20} /></button>
       </div>
 
 
       <div className="days-feed">
-        {days.map((day) => {
+        {loading ? (
+          <div className="stack" style={{ padding: '0 1rem' }}>
+            <Skeleton count={3} />
+          </div>
+        ) : days.map((day) => {
           const isCompleted = day.progress?.completed;
           const showStart = day.is_today && !isCompleted;
+          const isCurrentWeek = days.some(d => d.is_today);
 
           return (
             <article
@@ -271,7 +297,24 @@ export default function Home({ lang }) {
                   <span style={{ fontSize: '0.8rem', color: 'var(--muted)', fontWeight: '800' }}>{day.label.split(',')[1]}</span>
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
-                  {showStart && (
+                  {isCurrentWeek && (
+                    <button
+                      onClick={() => setEditMode(!editMode)}
+                      className={editMode ? 'small-btn active' : 'small-btn'}
+                      style={{ 
+                        padding: '0.5rem', 
+                        borderRadius: '12px', 
+                        background: editMode ? 'var(--brand)' : 'rgba(255,255,255,0.05)',
+                        color: editMode ? '#052e16' : 'var(--text)',
+                        border: 'none',
+                        boxShadow: editMode ? '0 0 15px var(--brand)' : 'none',
+                        transition: 'all 0.3s ease'
+                      }}
+                    >
+                      <Settings size={18} className={editMode ? 'spin' : ''} />
+                    </button>
+                  )}
+                  {showStart && !editMode && (
                     <button
                       onClick={workoutActive ? stopWorkout : startWorkout}
                       className={workoutActive ? 'small-btn danger' : 'small-btn primary'}
@@ -281,111 +324,183 @@ export default function Home({ lang }) {
                       {workoutActive ? 'End' : 'Start'}
                     </button>
                   )}
-                  {isCompleted && <CheckCircle2 size={18} className="success" />}
+                  {isCompleted && !editMode && <CheckCircle2 size={18} className="success" />}
                 </div>
               </div>
 
-              {day.goals.length === 0 ? (
+              {(!day.goals || day.goals.length === 0) ? (
                 <p className="muted" style={{ textAlign: 'center', padding: '1rem 0', fontSize: '0.85rem' }}>{t(lang, 'noGoals')}</p>
               ) : (
                 <div className="goals-container" style={{ display: 'grid', gap: '1rem' }}>
-                  {day.goals.map((goal) => (
-                    <div key={goal.id}>
-                      <div className="exercise-stack" style={{ display: 'grid', gap: '0.8rem' }}>
-                        {goal.goal_exercises?.map((item) => {
-                          const isTimeBased = item.exercise_detail?.is_time_based;
-                          const logVal = inlineLogs[item.id] || {};
+                  {(day.goals || []).map((goal) => {
+                    const overrides = todayOverrides[goal.id] || [];
+                    const allCurrentExercises = [...(goal.goal_exercises || []), ...overrides];
+                    const isLocked = !isCurrentWeek;
 
-                          return (
-                            <div key={item.id} className="exercise-item-old">
-                              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                                <div style={{ flex: 1 }}>
-                                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-                                    <strong style={{ fontSize: '0.95rem' }}>{t(lang, item.exercise_detail?.name)}</strong>
-                                    {item.exercise_detail?.youtube_url && (
-                                      <a
-                                        href={item.exercise_detail.youtube_url}
-                                        target="_blank"
-                                        rel="noopener noreferrer"
-                                        style={{ color: 'var(--brand)', display: 'flex', alignItems: 'center' }}
-                                        title="Watch Video"
-                                      >
-                                        <Play size={16} fill="var(--brand)" />
-                                      </a>
-                                    )}
+                    return (
+                      <div key={goal.id} className={editMode && isCurrentWeek ? 'edit-pulse' : ''} style={{ 
+                        border: editMode && isCurrentWeek ? '1px solid var(--brand)' : 'none',
+                        borderRadius: '16px',
+                        padding: editMode && isCurrentWeek ? '0.5rem' : '0',
+                        background: editMode && isCurrentWeek ? 'rgba(var(--brand-rgb), 0.02)' : 'transparent'
+                      }}>
+                        <div className="exercise-stack" style={{ display: 'grid', gap: '0.8rem' }}>
+                          {allCurrentExercises.map((item, idx) => {
+                            // If this is an original item that has been replaced, don't show it
+                            if (!item._isExtra && overrides.some(o => o._replacedId === item.id)) return null;
+
+                            const isExtra = !!item._isExtra;
+                            const isTimeBased = item.exercise_detail?.is_time_based;
+                            const logKey = item.id || `extra-${idx}`;
+                            const logVal = inlineLogs[logKey] || {};
+
+                            return (
+                              <div key={item.id || `extra-${idx}`} className="exercise-item-old">
+                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                                  <div style={{ flex: 1 }}>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                                      {editMode && isCurrentWeek ? (
+                                        <select 
+                                          style={{ background: 'none', border: '1px solid var(--line)', color: 'var(--brand)', fontWeight: '900', fontSize: '0.9rem', padding: '2px 4px', borderRadius: '4px' }}
+                                          value={item.exercise_detail?.id}
+                                          onChange={(e) => {
+                                            const newEx = allExercises.find(ex => String(ex.id) === e.target.value);
+                                            if (isExtra) {
+                                              setTodayOverrides(prev => ({
+                                                ...prev,
+                                                [goal.id]: prev[goal.id].map((it, i) => i === (idx - (goal.goal_exercises?.length || 0)) ? { ...it, exercise_detail: newEx } : it)
+                                              }));
+                                            } else {
+                                              // Replace existing
+                                              setTodayOverrides(prev => ({
+                                                ...prev,
+                                                [goal.id]: [...(prev[goal.id] || []), { ...item, exercise_detail: newEx, _isExtra: true, _replacedId: item.id }]
+                                              }));
+                                            }
+                                          }}
+                                        >
+                                          {allExercises.map(ex => <option key={ex.id} value={ex.id}>{t(lang, ex.name)}</option>)}
+                                        </select>
+                                      ) : (
+                                        <strong style={{ fontSize: '0.95rem' }}>{t(lang, item.exercise_detail?.name)}</strong>
+                                      )}
+                                      {item.exercise_detail?.youtube_url && (
+                                        <a
+                                          href={item.exercise_detail.youtube_url}
+                                          target="_blank"
+                                          rel="noopener noreferrer"
+                                          style={{ color: 'var(--brand)', display: 'flex', alignItems: 'center' }}
+                                          title="Watch Video"
+                                        >
+                                          <Play size={16} fill="var(--brand)" />
+                                        </a>
+                                      )}
+                                    </div>
+                                    <p style={{ fontSize: '0.75rem', opacity: 0.6, margin: '0.1rem 0' }}>
+                                      {item.sets}x{item.reps} · {t(lang, item.exercise_detail?.category)}
+                                    </p>
                                   </div>
-                                  <p style={{ fontSize: '0.75rem', opacity: 0.6, margin: '0.1rem 0' }}>
-                                    {item.sets}x{item.reps} · {t(lang, item.exercise_detail?.category)}
-                                  </p>
+                                  {item.personal_best && (
+                                    <div style={{ fontSize: '0.65rem', color: 'var(--brand)', fontWeight: '900', background: 'rgba(34, 197, 94, 0.1)', padding: '4px 10px', borderRadius: '999px', border: '1px solid var(--brand)', display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
+                                      <Trophy size={12} /> {item.personal_best}kg
+                                    </div>
+                                  )}
                                 </div>
-                                {item.personal_best && (
-                                  <div style={{ fontSize: '0.65rem', color: 'var(--brand)', fontWeight: '900', background: 'rgba(34, 197, 94, 0.1)', padding: '4px 10px', borderRadius: '999px', border: '1px solid var(--brand)', display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
-                                    <Trophy size={12} /> {item.personal_best}kg
-                                  </div>
-                                )}
-                              </div>
 
-                              <div style={{ display: 'flex', gap: '0.6rem' }}>
-                                <input
-                                  placeholder="S"
-                                  className="input-bubble"
-                                  type="number"
-                                  value={logVal.sets ?? item.sets}
-                                  onChange={(e) => handleChange(item.id, 'sets', e.target.value)}
-                                  style={{ flex: 1, minHeight: '40px' }}
-                                />
-                                <input
-                                  placeholder="R"
-                                  className="input-bubble"
-                                  type="number"
-                                  value={logVal.reps ?? item.reps}
-                                  onChange={(e) => handleChange(item.id, 'reps', e.target.value)}
-                                  style={{ flex: 1, minHeight: '40px' }}
-                                />
-                                {isTimeBased ? (
+                                <div style={{ display: 'flex', gap: '0.6rem' }}>
                                   <input
-                                    placeholder="MM:SS"
-                                    className="input-bubble"
-                                    value={logVal.duration || ''}
-                                    onChange={(e) => handleChange(item.id, 'duration', e.target.value)}
-                                    style={{ flex: 1.5, minHeight: '40px' }}
-                                  />
-                                ) : (
-                                  <input
-                                    placeholder="kg"
+                                    placeholder="S"
                                     className="input-bubble"
                                     type="number"
-                                    value={logVal.weight_kg || ''}
-                                    onChange={(e) => handleChange(item.id, 'weight_kg', e.target.value)}
-                                    style={{ flex: 2, minHeight: '40px' }}
+                                    disabled={isLocked}
+                                    value={logVal.sets ?? item.sets}
+                                    onChange={(e) => handleChange(item.id || `extra-${idx}`, 'sets', e.target.value)}
+                                    style={{ flex: 1, minHeight: '40px' }}
                                   />
-                                )}
-                                {isTimeBased && (
-                                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem', flex: 1.5 }}>
-                                    {activeTimer?.id === item.id ? (
-                                      <InlineTimer
-                                        initialSeconds={activeTimer.time}
-                                        onFinish={(s) => handleTimerFinish(item.id, s)}
-                                        onCancel={() => setActiveTimer(null)}
-                                      />
-                                    ) : (
-                                      <button
-                                        className="small-btn"
-                                        onClick={() => setActiveTimer({ id: item.id, time: 0 })}
-                                        style={{ height: '40px', background: 'rgba(var(--brand-rgb), 0.1)', color: 'var(--brand)', border: '1px solid var(--brand)', display: 'flex', justifyContent: 'center', alignItems: 'center' }}
-                                      >
-                                        <Timer size={18} />
-                                      </button>
-                                    )}
-                                  </div>
-                                )}
+                                  <input
+                                    placeholder="R"
+                                    className="input-bubble"
+                                    type="number"
+                                    disabled={isLocked}
+                                    value={logVal.reps ?? item.reps}
+                                    onChange={(e) => handleChange(item.id || `extra-${idx}`, 'reps', e.target.value)}
+                                    style={{ flex: 1, minHeight: '40px' }}
+                                  />
+                                  {isTimeBased ? (
+                                    <input
+                                      placeholder="MM:SS"
+                                      className="input-bubble"
+                                      disabled={isLocked}
+                                      value={logVal.duration || ''}
+                                      onChange={(e) => handleChange(item.id || `extra-${idx}`, 'duration', e.target.value)}
+                                      style={{ flex: 1.5, minHeight: '40px' }}
+                                    />
+                                  ) : (
+                                    <input
+                                      placeholder="kg"
+                                      className="input-bubble"
+                                      type="number"
+                                      disabled={isLocked}
+                                      value={logVal.weight_kg || ''}
+                                      onChange={(e) => handleChange(item.id || `extra-${idx}`, 'weight_kg', e.target.value)}
+                                      style={{ flex: 2, minHeight: '40px' }}
+                                    />
+                                  )}
+                                  {isTimeBased && (
+                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem', flex: 1.5, position: 'relative' }}>
+                                      {activeTimer?.id === (item.id || `extra-${idx}`) ? (
+                                        <InlineTimer
+                                          initialSeconds={activeTimer.time}
+                                          onFinish={(s) => handleTimerFinish(item.id || `extra-${idx}`, s)}
+                                          onCancel={() => setActiveTimer(null)}
+                                        />
+                                      ) : (
+                                        <button
+                                          className="small-btn"
+                                          disabled={isLocked}
+                                          onClick={() => setActiveTimer({ id: item.id || `extra-${idx}`, time: 0 })}
+                                          style={{ height: '40px', background: 'rgba(var(--brand-rgb), 0.1)', color: 'var(--brand)', border: '1px solid var(--brand)', display: 'flex', justifyContent: 'center', alignItems: 'center' }}
+                                        >
+                                          <Timer size={18} />
+                                        </button>
+                                      )}
+                                    </div>
+                                  )}
+                                </div>
                               </div>
-                            </div>
-                          );
-                        })}
+                            );
+                          })}
+                          
+                          {editMode && isCurrentWeek && allCurrentExercises.length < 10 && (
+                            <button 
+                              className="dotted-btn"
+                              onClick={() => {
+                                const firstEx = allExercises[0];
+                                setTodayOverrides(prev => ({
+                                  ...prev,
+                                  [goal.id]: [...(prev[goal.id] || []), { exercise_detail: firstEx, sets: 4, reps: 10, _isExtra: true }]
+                                }));
+                              }}
+                              style={{ 
+                                padding: '1rem', 
+                                border: '2px dashed var(--line)', 
+                                borderRadius: '16px', 
+                                background: 'transparent',
+                                color: 'var(--brand)',
+                                fontWeight: '800',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                gap: '0.5rem'
+                              }}
+                            >
+                              <Plus size={18} /> Add Exercise
+                            </button>
+                          )}
+                        </div>
                       </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               )}
             </article>
@@ -438,7 +553,19 @@ function InlineTimer({ initialSeconds, onFinish, onCancel }) {
   const increments = [15, 30, 45, 60, 75, 90, 105, 120, 135, 150, 165, 180];
 
   return (
-    <div className="glass-card" style={{ padding: '0.6rem', border: '1px solid var(--brand)', borderRadius: '12px', background: 'rgba(var(--brand-rgb), 0.05)', minWidth: '160px' }}>
+    <div className="glass-card" style={{ 
+      position: 'absolute',
+      top: '100%',
+      right: 0,
+      zIndex: 10,
+      padding: '0.6rem', 
+      border: '1px solid var(--brand)', 
+      borderRadius: '12px', 
+      background: 'var(--bg-soft)', 
+      minWidth: '180px',
+      boxShadow: '0 8px 32px rgba(0,0,0,0.5)',
+      marginTop: '0.5rem'
+    }}>
       {seconds === 0 && !isActive ? (
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '0.3rem' }}>
           {increments.map(s => (

@@ -78,8 +78,62 @@ export default function EventManager() {
       }
     };
 
+    const checkWeeklyEvents = async () => {
+      try {
+        // Current Week
+        const now = new Date();
+        const start = new Date(now);
+        start.setDate(now.getDate() - (now.getDay() === 0 ? 6 : now.getDay() - 1));
+        const end = new Date(start);
+        end.setDate(start.getDate() + 6);
+        
+        const currentDays = await api(`/home/days/?start=${start.toISOString().slice(0,10)}&end=${end.toISOString().slice(0,10)}`);
+        const allCompleted = currentDays.every(d => d.goals.length === 0 || d.progress?.completed);
+        const hasGoals = currentDays.some(d => d.goals.length > 0);
+
+        if (hasGoals && allCompleted) {
+          const weekKey = `sleep_seen_${start.toISOString().slice(0,10)}`;
+          if (!localStorage.getItem(weekKey)) {
+            setModal({
+              open: true,
+              image: '/icons/events/Sleep.png',
+              title: 'Weekly Goal Met!',
+              message: 'Great, now prioritize sleep to recover'
+            });
+            localStorage.setItem(weekKey, 'true');
+          }
+        }
+
+        // Previous Week
+        const prevStart = new Date(start);
+        prevStart.setDate(start.getDate() - 7);
+        const prevEnd = new Date(prevStart);
+        prevEnd.setDate(prevStart.getDate() + 6);
+
+        const prevDays = await api(`/home/days/?start=${prevStart.toISOString().slice(0,10)}&end=${prevEnd.toISOString().slice(0,10)}`);
+        const prevAllCompleted = prevDays.every(d => d.goals.length === 0 || d.progress?.completed);
+        const prevHasGoals = prevDays.some(d => d.goals.length > 0);
+
+        if (prevHasGoals && prevAllCompleted) {
+          const prevWeekKey = `perfect_seen_${prevStart.toISOString().slice(0,10)}`;
+          if (!localStorage.getItem(prevWeekKey)) {
+            setModal({
+              open: true,
+              image: '/icons/events/Perfect.png',
+              title: 'Perfect Performance!',
+              message: 'Just what a perfect life form, interested in fighting?'
+            });
+            localStorage.setItem(prevWeekKey, 'true');
+          }
+        }
+      } catch (err) {
+        console.error("Weekly check failed", err);
+      }
+    };
+
     checkNotices();
     checkChampion();
+    checkWeeklyEvents();
 
     const handleHydrate = () => {
       setModal({

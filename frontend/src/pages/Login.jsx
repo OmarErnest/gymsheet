@@ -62,7 +62,7 @@ export default function Login() {
       <section className="login-card glass-card">
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1rem' }}>
           <div className="login-logo">
-            <img src="/logo.png" alt="GymSheet" />
+            <img src="/icon.png" alt="GymSheet" />
           </div>
           <button 
             type="button" 

@@ -101,6 +101,10 @@ export default function App() {
       });
     };
     const handleQueue = (e) => setSyncPending(e.detail);
+    
+    // Check initial queue length
+    const q = JSON.parse(localStorage.getItem('gym_offline_queue') || '[]');
+    setSyncPending(q.length);
 
     window.addEventListener('add-local-notification', handleAddNotif);
     window.addEventListener('queue-updated', handleQueue);
@@ -109,6 +113,16 @@ export default function App() {
       window.removeEventListener('queue-updated', handleQueue);
     };
   }, []);
+
+  // Auto-sync effect
+  useEffect(() => {
+    if (syncPending > 0) {
+      const interval = setInterval(() => {
+        if (navigator.onLine) syncOfflineData();
+      }, 10000);
+      return () => clearInterval(interval);
+    }
+  }, [syncPending]);
 
   const clearAllNotifications = () => {
     setNotifications([]);
@@ -136,7 +150,7 @@ export default function App() {
 
   if (booting) return (
     <div className="loading-screen">
-      <img src="/logo.png" className="loading-logo-spin" alt="" />
+      <img src="/icon.png" className="loading-logo-spin" alt="" />
       <h2 style={{ letterSpacing: '2px', fontWeight: '900', color: 'var(--brand)' }}>LOADING...</h2>
     </div>
   );
@@ -148,7 +162,7 @@ export default function App() {
         <div className="glass-card modal-content" style={{ padding: '2rem', textAlign: 'center' }}>
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '1rem', marginBottom: '1.5rem' }}>
             <div className="login-logo" style={{ background: 'var(--brand)', boxShadow: 'none' }}>
-              <img src="/logo.png" alt="" />
+              <img src="/icon.png" alt="" />
             </div>
             <h2 style={{ margin: 0 }}>{t(lang, 'legalDisclaimer')}</h2>
           </div>
@@ -178,7 +192,7 @@ export default function App() {
         <div className="brand-mark" style={{ background: 'none', border: 'none', width: 'auto', display: 'flex', gap: '0.6rem', alignItems: 'center' }}>
           <div style={{ position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
             <div style={{ position: 'absolute', width: '36px', height: '36px', background: 'var(--brand)', filter: 'blur(15px)', opacity: 0.3 }}></div>
-            <img src="/logo.png" style={{ width: '42px', height: '42px', objectFit: 'contain', position: 'relative', zIndex: 1 }} alt="GymSheet logo" />
+            <img src="/icon.png" style={{ width: '42px', height: '42px', objectFit: 'contain', position: 'relative', zIndex: 1 }} alt="GymSheet logo" />
           </div>
           <h2 style={{ fontSize: '1.5rem', margin: 0, fontWeight: '1000', letterSpacing: '-1.5px', color: 'var(--text)', display: 'flex', alignItems: 'center' }}>
             GYM<span style={{ color: 'var(--brand)' }}>SHEET</span>
@@ -193,10 +207,22 @@ export default function App() {
               className="sync-btn pending" 
               onClick={() => syncOfflineData()}
               title="Sync Pending"
-              style={{ background: 'rgba(var(--brand-rgb), 0.1)', color: 'var(--brand)', border: '1px solid var(--brand)', borderRadius: '999px', padding: '4px 10px', fontSize: '0.7rem', fontWeight: '900', display: 'flex', alignItems: 'center', gap: '4px' }}
+              style={{ 
+                background: 'rgba(var(--brand-rgb), 0.05)', 
+                color: 'var(--brand)', 
+                border: '1px solid var(--line)', 
+                borderRadius: '8px', 
+                padding: '6px 10px', 
+                fontSize: '0.65rem', 
+                fontWeight: '900', 
+                display: 'flex', 
+                alignItems: 'center', 
+                gap: '6px',
+                animation: 'pulse-subtle 2s infinite'
+              }}
             >
               <RefreshCw size={12} className="spin" />
-              {syncPending} PENDING
+              {lang === 'es' ? 'SINCRONIZANDO' : 'SYNCING'}...
             </button>
           )}
           <button className="avatar-btn" onClick={() => setShowNotifications(!showNotifications)}>
