@@ -26,8 +26,13 @@ from .serializers import (
     LogCSVUploadSerializer,
     GlobalNoticeSerializer,
     BroadcastNotificationSerializer,
+    AdminMessageSerializer,
 )
-from .models import BodyMeasurement, DailyProgress, Exercise, ExerciseLog, GoalPlan, CSVRequest, Notification, ExerciseCSVUpload, LogCSVUpload, GlobalNotice
+from .models import (
+    BodyMeasurement, DailyProgress, Exercise, ExerciseLog, GoalPlan, 
+    CSVRequest, Notification, ExerciseCSVUpload, LogCSVUpload, GlobalNotice,
+    BroadcastNotification, AdminMessage
+)
 
 
 class IsNotTestUser(IsAuthenticated):
@@ -430,3 +435,16 @@ class BroadcastNotificationViewSet(viewsets.ReadOnlyModelViewSet):
 
     def get_queryset(self):
         return BroadcastNotification.objects.all().order_by('-created_at')
+
+class AdminMessageViewSet(viewsets.ModelViewSet):
+    serializer_class = AdminMessageSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        # Admins see all, users see their own
+        if self.request.user.is_staff:
+            return AdminMessage.objects.all().order_by('-created_at')
+        return AdminMessage.objects.filter(user=self.request.user).order_by('-created_at')
+
+    def perform_create(self, serializer):
+        serializer.save(user=self.request.user)

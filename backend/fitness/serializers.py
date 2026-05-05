@@ -5,8 +5,15 @@ from rest_framework import serializers
 from .models import (
     BodyMeasurement, DailyProgress, Exercise, ExerciseLog, GoalExercise, 
     GoalPlan, CSVRequest, Notification, ExerciseCSVUpload, LogCSVUpload, 
-    GlobalNotice, BroadcastNotification
+    GlobalNotice, BroadcastNotification, AdminMessage
 )
+
+class AdminMessageSerializer(serializers.ModelSerializer):
+    user_email = serializers.EmailField(source='user.email', read_only=True)
+    class Meta:
+        model = AdminMessage
+        fields = ('id', 'user', 'user_email', 'message', 'created_at')
+        read_only_fields = ('id', 'user', 'user_email', 'created_at')
 
 class BroadcastNotificationSerializer(serializers.ModelSerializer):
     class Meta:

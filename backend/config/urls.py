@@ -20,6 +20,7 @@ from fitness.views import (
     ExerciseCSVUploadApproveView,
     GlobalNoticeViewSet,
     BroadcastNotificationViewSet,
+    AdminMessageViewSet,
 )
 
 router = DefaultRouter()
@@ -34,6 +35,7 @@ router.register(r'exercise-csv-uploads', ExerciseCSVUploadViewSet, basename='exe
 router.register(r'log-csv-uploads', LogCSVUploadViewSet, basename='log-csv-upload')
 router.register(r'global-notices', GlobalNoticeViewSet, basename='global-notice')
 router.register(r'broadcast-notifications', BroadcastNotificationViewSet, basename='broadcast-notification')
+router.register(r'admin-messages', AdminMessageViewSet, basename='admin-message')
 
 urlpatterns = [
     path('admin/', admin.site.urls),

@@ -4,7 +4,7 @@ from .models import (
     BodyMeasurement, DailyProgress, Exercise, ExerciseCSVUpload, 
     ExerciseLog, GoalExercise, GoalPlan, Notification, 
     MaintenanceNotification, LogCSVUpload, CSVRequest, 
-    GlobalNotice, BroadcastNotification
+    GlobalNotice, BroadcastNotification, AdminMessage
 )
 
 
@@ -175,3 +175,8 @@ class GlobalNoticeAdmin(admin.ModelAdmin):
 @admin.register(BroadcastNotification)
 class BroadcastNotificationAdmin(admin.ModelAdmin):
     list_display = ('message', 'created_at')
+
+@admin.register(AdminMessage)
+class AdminMessageAdmin(admin.ModelAdmin):
+    list_display = ('user', 'message', 'created_at')
+    readonly_fields = ('user', 'message', 'created_at')

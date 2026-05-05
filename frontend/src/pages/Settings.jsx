@@ -344,26 +344,83 @@ export default function Settings({ preferences, setPreferences, lang }) {
         </div>
       </article>
 
-      <div style={{ padding: '1rem 0' }}>
+      {/* About Section */}
+      <article className="glass-card form-stack" style={{ borderLeft: '4px solid var(--brand-2)' }}>
+        <h3 className="eyebrow">{t(lang, 'about')}</h3>
+        
+        <div style={{ display: 'grid', gap: '1rem' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', opacity: 0.8 }}>
+            <span>{t(lang, 'version')}</span>
+            <strong className="brand">v-03a.19</strong>
+          </div>
+
+          <hr style={{ border: 'none', borderTop: '1px solid var(--line)', margin: '0.5rem 0' }} />
+
+          {/* FAQ */}
+          <details className="faq-item">
+            <summary style={{ fontWeight: '800', cursor: 'pointer', padding: '0.5rem 0' }}>{t(lang, 'faq')}</summary>
+            <div style={{ padding: '0.5rem 0', display: 'grid', gap: '1rem', fontSize: '0.9rem', opacity: 0.9 }}>
+              <div>
+                <p style={{ fontWeight: '700', marginBottom: '0.2rem' }}>Q: {t(lang, 'faq1Q')}</p>
+                <p>{t(lang, 'faq1A')}</p>
+              </div>
+              <div>
+                <p style={{ fontWeight: '700', marginBottom: '0.2rem' }}>Q: {t(lang, 'faq2Q')}</p>
+                <p>{t(lang, 'faq2A')}</p>
+              </div>
+              <div>
+                <p style={{ fontWeight: '700', marginBottom: '0.2rem' }}>Q: {t(lang, 'faq3Q')}</p>
+                <p>{t(lang, 'faq3A')}</p>
+              </div>
+            </div>
+          </details>
+
+          {/* Legal Disclaimer */}
+          <details className="faq-item">
+            <summary style={{ fontWeight: '800', cursor: 'pointer', padding: '0.5rem 0' }}>{t(lang, 'legalDisclaimer')}</summary>
+            <p style={{ padding: '0.5rem 0', fontSize: '0.85rem', lineHeight: '1.6', opacity: 0.8 }}>
+              {t(lang, 'legalDisclaimerText').replace('support@gymsheet.com', 'admin@gymsheet.app')}
+            </p>
+          </details>
+
+          <hr style={{ border: 'none', borderTop: '1px solid var(--line)', margin: '0.5rem 0' }} />
+
+          {/* Contact Admin */}
+          <div style={{ display: 'grid', gap: '0.8rem' }}>
+            <div style={{ fontWeight: '900', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+              <FileText size={16} /> {t(lang, 'messageAdmin')}
+            </div>
+            <textarea 
+              placeholder={t(lang, 'writeToAdmin')}
+              className="glass-input"
+              style={{ minHeight: '80px', fontSize: '0.9rem' }}
+              id="adminMessageInput"
+            />
+            <button 
+              className="primary-btn" 
+              onClick={async (e) => {
+                const input = document.getElementById('adminMessageInput');
+                if (!input.value.trim()) return;
+                try {
+                  await api('/admin-messages/', { method: 'POST', body: JSON.stringify({ message: input.value }) });
+                  input.value = '';
+                  setMessage(t(lang, 'messageSent'));
+                } catch (err) {
+                  alert(err.message);
+                }
+              }}
+            >
+              <Save size={16} /> {t(lang, 'send')}
+            </button>
+          </div>
+        </div>
+      </article>
+
+      <div style={{ padding: '1rem 0 3rem' }}>
         <button onClick={logout} className="logout-btn primary-btn" style={{ width: '100%', background: 'transparent', color: 'var(--danger)', border: '1px solid var(--danger)' }}>
           <LogOut size={18} /> {t(lang, 'logout')}
         </button>
       </div>
-
-      <button type="button" className="fab-save" onClick={() => setShowLegal(true)} style={{ bottom: 'calc(6.5rem + env(safe-area-inset-bottom, 0px))', right: '1.5rem', background: 'linear-gradient(135deg, var(--brand), var(--brand-2))' }}><FileText size={28} /></button>
-      
-      {showLegal && (
-        <div className="modal-overlay" onClick={() => setShowLegal(false)}>
-          <div className="glass-card modal-content" onClick={e => e.stopPropagation()}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.8rem', marginBottom: '1rem' }}>
-              <FileText className="brand" />
-              <h3 style={{ margin: 0 }}>{t(lang, 'legalDisclaimer')}</h3>
-            </div>
-            <p style={{ lineHeight: '1.6', fontSize: '0.9rem', marginBottom: '1.5rem' }}>{t(lang, 'legalDisclaimerText')}</p>
-            <button className="primary-btn" onClick={() => setShowLegal(false)}>OK</button>
-          </div>
-        </div>
-      )}
     </section>
   );
 }
