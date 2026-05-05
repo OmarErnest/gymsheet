@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Area, AreaChart, ResponsiveContainer, Tooltip, XAxis, YAxis, PieChart, Pie, Cell, CartesianGrid } from 'recharts';
+import { Area, AreaChart, ResponsiveContainer, Tooltip, XAxis, YAxis, PieChart, Pie, Cell, CartesianGrid, Radar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis } from 'recharts';
 import { Plus, Trash2, Edit2, RefreshCw, Activity, Map as MapIcon, PlusCircle, Target, List, BarChart3, PieChart as PieIcon, GripVertical, Timer, Weight, Zap } from 'lucide-react';
 import { api } from '../api/client.js';
 import LinkInput from '../components/LinkInput.jsx';
@@ -180,15 +180,6 @@ export default function Profile({ preferences, lang }) {
       }));
   }, [logs, selectedExercise, selectedCategory]);
 
-  const pieData = useMemo(() => {
-    const counts = {};
-    logs.forEach(log => {
-      const cat = log.exercise_detail?.category || 'other';
-      counts[cat] = (counts[cat] || 0) + 1;
-    });
-    return Object.entries(counts).map(([name, value]) => ({ name: t(lang, name), value }));
-  }, [logs, lang]);
-
   const filteredLogsList = useMemo(() => {
     const now = new Date();
     return logs.filter((log) => {
@@ -208,6 +199,15 @@ export default function Profile({ preferences, lang }) {
       return true;
     }).sort((a, b) => b.date.localeCompare(a.date));
   }, [logs, selectedExercise, selectedCategory, selectedPeriod]);
+
+  const pieData = useMemo(() => {
+    const counts = {};
+    filteredLogsList.forEach(log => {
+      const cat = log.exercise_detail?.category || 'other';
+      counts[cat] = (counts[cat] || 0) + 1;
+    });
+    return Object.entries(counts).map(([name, value]) => ({ name: t(lang, name), value }));
+  }, [filteredLogsList, lang]);
 
   async function createExercise(event) {
     event.preventDefault();
@@ -430,26 +430,30 @@ export default function Profile({ preferences, lang }) {
             ) : <p className="muted" style={{ textAlign: 'center', paddingTop: '4rem' }}>{t(lang, 'noLogs')}</p>)}
             {graphMode === 'pie' && (
               <ResponsiveContainer width="100%" height="100%">
-                <PieChart>
-                  <Pie 
-                    data={pieData} 
-                    dataKey="value" 
-                    nameKey="name" 
-                    cx="50%" 
-                    cy="50%" 
-                    innerRadius={60}
-                    outerRadius={80} 
-                    paddingAngle={5}
-                    stroke="none"
-                  >
-                    {pieData.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={`hsl(${140 + index * 40}, 70%, 50%)`} />
-                    ))}
-                  </Pie>
-                  <Tooltip 
-                    contentStyle={{ background: 'var(--bg-soft)', borderRadius: '12px', border: '1px solid var(--line)' }}
+                <RadarChart cx="50%" cy="50%" outerRadius="75%" data={pieData} margin={{ top: 10, right: 10, left: 10, bottom: 10 }}>
+                  <PolarGrid stroke="var(--line)" />
+                  <PolarAngleAxis 
+                    dataKey="name" 
+                    tick={{ fill: 'var(--text)', fontSize: 10, fontWeight: '700' }} 
                   />
-                </PieChart>
+                  <PolarRadiusAxis 
+                    angle={30} 
+                    domain={[0, 'auto']} 
+                    tick={false} 
+                    axisLine={false} 
+                  />
+                  <Radar
+                    name="Volume"
+                    dataKey="value"
+                    stroke="var(--brand)"
+                    fill="var(--brand)"
+                    fillOpacity={0.5}
+                    animationDuration={1500}
+                  />
+                  <Tooltip 
+                    contentStyle={{ background: 'var(--bg-soft)', borderRadius: '12px', border: '1px solid var(--line)', color: 'var(--text)' }}
+                  />
+                </RadarChart>
               </ResponsiveContainer>
             )}
             {graphMode === 'list' && (
