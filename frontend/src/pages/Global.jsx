@@ -58,6 +58,7 @@ export default function Global({ lang }) {
         <div>
           <h2>{t(lang, 'leaderboard')}</h2>
           {data.champion_name && <p className="muted" style={{ fontSize: '0.9rem' }}>Last week's #1: <strong>{data.champion_name}</strong></p>}
+          {!navigator.onLine && <p className="notice" style={{ marginTop: '0.5rem', fontSize: '0.8rem', padding: '0.3rem 0.6rem' }}>Showing offline/cached data</p>}
         </div>
       </div>
 

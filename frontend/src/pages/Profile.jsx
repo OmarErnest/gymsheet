@@ -83,7 +83,7 @@ export default function Profile({ preferences, lang }) {
   const [selectedExercise, setSelectedExercise] = useState('');
 
   const [activeTab, setActiveTab] = useState('strength');
-  const [graphMode, setGraphMode] = useState('pie'); 
+  const [graphMode, setGraphMode] = useState('bar'); 
   const [showFrontBody, setShowFrontBody] = useState(true);
   const [selectedDot, setSelectedDot] = useState(null);
 
@@ -329,8 +329,8 @@ export default function Profile({ preferences, lang }) {
             <p className="eyebrow">{t(lang, 'reviewProgress')}</p>
             <h2>{t(lang, 'strengthGraph')}</h2>
             <div className="tab-pill-box" style={{ margin: '0.8rem auto 0', width: 'fit-content' }}>
-              <button className={`tab-pill ${graphMode === 'pie' ? 'active' : ''}`} onClick={() => setGraphMode('pie')}><PieIcon size={18} /></button>
               <button className={`tab-pill ${graphMode === 'bar' ? 'active' : ''}`} onClick={() => setGraphMode('bar')}><BarChart3 size={18} /></button>
+              <button className={`tab-pill ${graphMode === 'pie' ? 'active' : ''}`} onClick={() => setGraphMode('pie')}><PieIcon size={18} /></button>
               <button className={`tab-pill ${graphMode === 'list' ? 'active' : ''}`} onClick={() => setGraphMode('list')}><List size={18} /></button>
             </div>
           </div>

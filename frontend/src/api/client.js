@@ -73,6 +73,8 @@ export async function syncOfflineData() {
   saveQueue(remaining);
 }
 
+const CACHE_KEY_PREFIX = 'gym_cache_';
+
 export async function api(path, options = {}) {
   const token = getToken();
   const method = options.method || 'GET';
@@ -82,6 +84,34 @@ export async function api(path, options = {}) {
   };
   if (token) headers.Authorization = `Bearer ${token}`;
 
+  // For GET, try network, fallback to cache if failure
+  if (method === 'GET') {
+    try {
+      const response = await fetch(`${API_URL}${path}`, {
+        ...options,
+        headers,
+      });
+      let data = null;
+      const text = await response.text();
+      if (text) {
+        try { data = JSON.parse(text); } catch { data = { detail: text }; }
+      }
+      if (response.ok) {
+        localStorage.setItem(CACHE_KEY_PREFIX + path, JSON.stringify(data));
+        return data;
+      }
+      throw new Error(extractError(data));
+    } catch (err) {
+      const cached = localStorage.getItem(CACHE_KEY_PREFIX + path);
+      if (cached) {
+        console.warn("Using offline cache for", path);
+        return JSON.parse(cached);
+      }
+      throw err;
+    }
+  }
+
+  // For mutations (POST/PUT/PATCH/DELETE)
   try {
     const response = await fetch(`${API_URL}${path}`, {
       ...options,
@@ -91,11 +121,7 @@ export async function api(path, options = {}) {
     let data = null;
     const text = await response.text();
     if (text) {
-      try {
-        data = JSON.parse(text);
-      } catch {
-        data = { detail: text };
-      }
+      try { data = JSON.parse(text); } catch { data = { detail: text }; }
     }
 
     if (!response.ok) {
@@ -103,13 +129,12 @@ export async function api(path, options = {}) {
     }
     return data;
   } catch (err) {
-    // Queue mutations if network error (not 4xx/5xx from server, but fetch failure)
-    if (err instanceof TypeError && method !== 'GET' && !options._isSync) {
+    // Queue mutations if network error
+    if (method !== 'GET' && !options._isSync) {
       const queue = getQueue();
       queue.push({ path, method, body: options.body, timestamp: Date.now() });
       saveQueue(queue);
       console.warn("Offline: Request queued", path);
-      // We still throw but maybe with a special flag
       throw new Error("Offline. Changes queued for sync.");
     }
     throw err;

@@ -24,8 +24,9 @@ from .serializers import (
     NotificationSerializer,
     ExerciseCSVUploadSerializer,
     LogCSVUploadSerializer,
+    GlobalNoticeSerializer,
 )
-from .models import BodyMeasurement, DailyProgress, Exercise, ExerciseLog, GoalPlan, CSVRequest, Notification, ExerciseCSVUpload, LogCSVUpload
+from .models import BodyMeasurement, DailyProgress, Exercise, ExerciseLog, GoalPlan, CSVRequest, Notification, ExerciseCSVUpload, LogCSVUpload, GlobalNotice
 
 
 class IsNotTestUser(IsAuthenticated):
@@ -415,3 +416,10 @@ class ExerciseCSVUploadApproveView(APIView):
             return Response({'detail': f'Approved. {created} exercise(s) added.'})
         except Exception as e:
             return Response({'detail': f'Error processing file: {str(e)}'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+class GlobalNoticeViewSet(viewsets.ReadOnlyModelViewSet):
+    serializer_class = GlobalNoticeSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        return GlobalNotice.objects.filter(is_active=True).order_by('-created_at')

@@ -173,6 +173,7 @@ export default function Home({ lang }) {
   async function saveAll() {
     setSaving(true);
     setSaveMessage('');
+    let sessionLogsCount = 0;
     try {
       const ops = [];
       days.forEach(day => {
@@ -184,7 +185,13 @@ export default function Home({ lang }) {
             const hasValue = isTimeBased
               ? (logVal.duration !== undefined && logVal.duration !== '')
               : (logVal.weight_kg !== undefined && logVal.weight_kg !== '');
-            if (!hasValue) return;
+
+            if (!hasValue) {
+              if (logVal.log_id) {
+                ops.push(api(`/exercise-logs/${logVal.log_id}/`, { method: 'DELETE' }));
+              }
+              return;
+            }
 
             const cleanWeight = String(logVal.weight_kg || '').replace(/\.$/, '') || '0';
             const payload = {
@@ -201,6 +208,8 @@ export default function Home({ lang }) {
               ops.push(api(`/exercise-logs/${logVal.log_id}/`, { method: 'PATCH', body: JSON.stringify(payload) }));
             } else {
               ops.push(api('/exercise-logs/', { method: 'POST', body: JSON.stringify(payload) }));
+              // If logging today, increment session count for hydration
+              if (day.is_today) sessionLogsCount++;
             }
           });
         });
@@ -212,6 +221,9 @@ export default function Home({ lang }) {
       }
       await Promise.all(ops);
       setSaveMessage(`Saved ✓`);
+      if (sessionLogsCount >= 2) {
+        window.checkHydration?.();
+      }
       loadInitial();
     } catch (err) {
       setSaveMessage(err.message);

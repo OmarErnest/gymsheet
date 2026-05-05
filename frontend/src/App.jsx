@@ -11,6 +11,7 @@ import Home from './pages/Home.jsx';
 import Profile from './pages/Profile.jsx';
 import Global from './pages/Global.jsx';
 import Settings from './pages/Settings.jsx';
+import EventManager from './components/EventManager.jsx';
 
 export default function App() {
   const { user, booting, logout } = useAuth();
@@ -32,7 +33,14 @@ export default function App() {
     };
     window.addEventListener('online', handleOnline);
 
-    return () => window.removeEventListener('online', handleOnline);
+    window.checkHydration = () => {
+      window.dispatchEvent(new CustomEvent('trigger-hydration'));
+    };
+
+    return () => {
+      window.removeEventListener('online', handleOnline);
+      delete window.checkHydration;
+    };
   }, []);
 
   useEffect(() => {
@@ -184,6 +192,7 @@ export default function App() {
       </main>
 
       <FloatingStopwatch />
+      <EventManager />
       <BottomNav active={activeTab} onChange={setActiveTab} labels={labels} />
     </div>
   );
