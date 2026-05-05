@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Area, AreaChart, ResponsiveContainer, Tooltip, XAxis, YAxis, PieChart, Pie, Cell, CartesianGrid, Radar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis } from 'recharts';
-import { Plus, Trash2, Edit2, RefreshCw, Activity, Map as MapIcon, PlusCircle, Target, List, BarChart3, PieChart as PieIcon, GripVertical, Timer, Weight, Zap } from 'lucide-react';
+import { Plus, Trash2, Edit2, RefreshCw, Activity, Map as MapIcon, PlusCircle, Target, List, BarChart3, Radar as RadarIcon, GripVertical, Timer, Weight, Zap } from 'lucide-react';
 import { api } from '../api/client.js';
 import LinkInput from '../components/LinkInput.jsx';
 import Skeleton from '../components/Skeleton.jsx';
@@ -367,7 +367,7 @@ export default function Profile({ preferences, lang }) {
             <h2>{t(lang, 'strengthGraph')}</h2>
             <div className="tab-pill-box" style={{ margin: '0.8rem auto 0', width: 'fit-content' }}>
               <button className={`tab-pill ${graphMode === 'bar' ? 'active' : ''}`} onClick={() => setGraphMode('bar')}><BarChart3 size={18} /></button>
-              <button className={`tab-pill ${graphMode === 'pie' ? 'active' : ''}`} onClick={() => setGraphMode('pie')}><PieIcon size={18} /></button>
+              <button className={`tab-pill ${graphMode === 'pie' ? 'active' : ''}`} onClick={() => setGraphMode('pie')}><RadarIcon size={18} /></button>
               <button className={`tab-pill ${graphMode === 'list' ? 'active' : ''}`} onClick={() => setGraphMode('list')}><List size={18} /></button>
             </div>
           </div>
