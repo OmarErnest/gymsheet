@@ -191,7 +191,6 @@ export default function App() {
         {activeTab === 'settings' && <Settings preferences={preferences} setPreferences={setPreferences} lang={lang} />}
       </main>
 
-      <FloatingStopwatch />
       <EventManager />
       <BottomNav active={activeTab} onChange={setActiveTab} labels={labels} />
     </div>

@@ -17,6 +17,18 @@ const bodyParts = ['biceps', 'forearms', 'chest', 'waist', 'hips', 'thigh', 'cal
 const weekdays = [
   ['Mon', 0], ['Tue', 1], ['Wed', 2], ['Thu', 3], ['Fri', 4], ['Sat', 5], ['Sun', 6],
 ];
+const weekdayNamesLong = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+
+function getGoalDayName(goal) {
+  if (goal.repeat_type === 'once') {
+    const d = new Date(goal.start_date + 'T12:00:00');
+    return weekdayNamesLong[(d.getDay() + 6) % 7];
+  }
+  if (goal.weekdays && goal.weekdays.length > 0) {
+    return goal.weekdays.map(d => weekdayNamesLong[d]).join(', ');
+  }
+  return 'No Day';
+}
 
 const emptyGoalExercise = () => ({ categoryFilter: '', exercise: '', sets: 4, reps: 10 });
 
@@ -58,7 +70,7 @@ function SortableGoalItem({ goal, lang, onEdit, onDelete }) {
           <div>
             <h4 style={{ margin: 0 }}>{goal.title}</h4>
             <p className="muted" style={{ margin: 0, fontSize: '0.8rem' }}>
-              {goal.repeat_type === 'weekly' ? t(lang, 'weekly') : t(lang, 'oneDayOnly')} - {goal.start_date}
+              {goal.repeat_type === 'weekly' ? t(lang, 'weekly') : t(lang, 'oneDayOnly')} - {getGoalDayName(goal)} ({goal.start_date})
             </p>
           </div>
         </div>
@@ -425,9 +437,26 @@ export default function Profile({ preferences, lang }) {
           <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
             <SortableContext items={goals.map(g => g.id)} strategy={verticalListSortingStrategy}>
               <div className="stack" style={{ gap: '1rem', marginTop: '1rem' }}>
-                {goals.map(g => (
-                  <SortableGoalItem key={g.id} goal={g} lang={lang} onEdit={(goal) => { setGoalForm({ ...goal, goal_exercises: goal.goal_exercises.map(ge => ({ categoryFilter: ge.exercise_detail?.category || '', exercise: ge.exercise, sets: ge.sets, reps: ge.reps })) }); setActiveTab('creategoal'); }} onDelete={deleteGoal} />
-                ))}
+                {(() => {
+                  let lastDayLabel = '';
+                  return goals.map((g) => {
+                    const currentDayLabel = getGoalDayName(g).split(',')[0]; // Use first day for grouping
+                    const showSeparator = currentDayLabel !== lastDayLabel;
+                    lastDayLabel = currentDayLabel;
+                    
+                    return (
+                      <div key={g.id}>
+                        {showSeparator && (
+                          <div className="day-separator" style={{ display: 'flex', alignItems: 'center', gap: '1rem', margin: '1.5rem 0 0.8rem', opacity: 0.6 }}>
+                            <span style={{ fontSize: '0.7rem', fontWeight: '900', textTransform: 'uppercase', color: 'var(--muted)', letterSpacing: '1px', whiteSpace: 'nowrap' }}>{currentDayLabel}</span>
+                            <div style={{ flex: 1, height: '1px', background: 'var(--line)' }} />
+                          </div>
+                        )}
+                        <SortableGoalItem goal={g} lang={lang} onEdit={(goal) => { setGoalForm({ ...goal, goal_exercises: goal.goal_exercises.map(ge => ({ categoryFilter: ge.exercise_detail?.category || '', exercise: ge.exercise, sets: ge.sets, reps: ge.reps })) }); setActiveTab('creategoal'); }} onDelete={deleteGoal} />
+                      </div>
+                    );
+                  });
+                })()}
               </div>
             </SortableContext>
           </DndContext>
