@@ -946,8 +946,47 @@ input[type=number] { -moz-appearance: textfield; appearance: textfield; }
 @media (max-width: 520px) {
   .stats-grid { grid-template-columns: 1fr; }
   .section-head { align-items: flex-start; flex-direction: column; }
-  .rank-card { align-items: flex-start; }
-  .rank-score { text-align: left; }
+  .rank-card { 
+    display: grid;
+    grid-template-columns: auto auto 1fr auto;
+    grid-template-areas: 
+      "rank ava name score"
+      "meta meta meta meta";
+    align-items: center;
+    gap: 0.6rem 0.85rem;
+    padding: 0.85rem;
+  }
+  .rank-number { grid-area: rank; width: 38px; height: 38px; font-size: 0.9rem; }
+  .avatar-container { grid-area: ava; }
+  .avatar.big { width: 44px; height: 44px; }
+  .rank-main { grid-area: name; min-width: 0; }
+  .rank-main h3 { font-size: 0.95rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .rank-meta { 
+    grid-area: meta; 
+    display: flex; 
+    justify-content: space-between; 
+    gap: 0.5rem;
+    background: rgba(255, 255, 255, 0.04);
+    padding: 0.5rem 0.8rem;
+    border-radius: var(--radius-md);
+    margin: 0;
+    border: 1px solid var(--line);
+  }
+  .rank-meta .pill { 
+    background: transparent; 
+    border: none; 
+    padding: 0; 
+    font-size: 0.82rem; 
+    font-weight: 800;
+    color: var(--brand-2);
+  }
+  .rank-score { 
+    grid-area: score; 
+    text-align: right; 
+    font-size: 1.1rem;
+    line-height: 1;
+  }
+  .rank-score small { font-size: 0.65rem; opacity: 0.7; }
 }
 
 select:invalid { color: var(--muted); }
