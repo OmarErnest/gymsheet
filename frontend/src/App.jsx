@@ -275,7 +275,7 @@ export default function App() {
         {activeTab === 'settings' && <Settings preferences={preferences} setPreferences={setPreferences} lang={lang} />}
       </main>
 
-      <EventManager />
+      <EventManager activeTab={activeTab} />
       <BottomNav active={activeTab} onChange={setActiveTab} labels={labels} />
     </div>
   );

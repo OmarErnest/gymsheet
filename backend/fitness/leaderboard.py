@@ -13,25 +13,38 @@ def get_leaderboard_data():
     users = User.objects.filter(is_approved=True).select_related('preferences')
     data = []
 
+    last_week_start = week_start - timedelta(days=7)
+    last_week_end = week_end - timedelta(days=7)
+
     for user in users:
+        # Current Week Score
         weekly_logs = list(
             ExerciseLog.objects.filter(user=user, date__range=[week_start, week_end])
         )
-
         logs_by_date = defaultdict(list)
         for log in weekly_logs:
             logs_by_date[log.date].append(log)
-
-        qualified_days = [
-            d for d, dlogs in logs_by_date.items() if len(dlogs) >= 2
-        ]
+        qualified_days = [d for d, dlogs in logs_by_date.items() if len(dlogs) >= 2]
         active_days_count = len(qualified_days)
-
         score = 10
         for d in qualified_days:
             for log in logs_by_date[d]:
                 score += float(log.weight_kg or 0) * (log.sets or 0) * (log.reps or 0)
         score = int(score)
+
+        # Last Week Score
+        last_weekly_logs = list(
+            ExerciseLog.objects.filter(user=user, date__range=[last_week_start, last_week_end])
+        )
+        last_logs_by_date = defaultdict(list)
+        for log in last_weekly_logs:
+            last_logs_by_date[log.date].append(log)
+        last_qualified_days = [d for d, dlogs in last_logs_by_date.items() if len(dlogs) >= 2]
+        last_score = 10
+        for d in last_qualified_days:
+            for log in last_logs_by_date[d]:
+                last_score += float(log.weight_kg or 0) * (log.sets or 0) * (log.reps or 0)
+        last_score = int(last_score)
 
         qualified_logs = [log for d in qualified_days for log in logs_by_date[d]]
         avg_weight = (
@@ -46,6 +59,7 @@ def get_leaderboard_data():
             'active_days': active_days_count,
             'average_lift_kg_this_week': round(avg_weight, 1),
             'score': score,
+            'last_week_score': last_score,
             'is_test_user': user.is_test_user,
             'recommended_link': getattr(user.preferences, 'recommended_link', '')
         })

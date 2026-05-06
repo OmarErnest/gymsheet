@@ -1048,3 +1048,13 @@ select option { color: var(--text); }
   background: rgba(var(--brand-rgb), 0.05) !important;
   transform: translateY(-2px);
 }
+
+.pixel-text {
+  font-family: 'Press Start 2P', cursive;
+  letter-spacing: -0.5px;
+  text-transform: uppercase;
+}
+
+.event-modal .pixel-text {
+  text-shadow: 2px 2px 0px rgba(0,0,0,0.2);
+}

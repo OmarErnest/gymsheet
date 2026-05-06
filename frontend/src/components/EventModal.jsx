@@ -21,15 +21,21 @@ export default function EventModal({ isOpen, onClose, image, title, message, typ
             />
           </div>
           
-          <h2 style={{ marginBottom: '0.5rem', color: 'var(--brand)' }}>{title}</h2>
-          <p className="muted" style={{ fontSize: '0.95rem', lineHeight: '1.5' }}>{message}</p>
+          <h2 className="pixel-text" style={{ marginBottom: '0.8rem', color: 'var(--brand)', fontSize: '1rem', lineHeight: '1.4' }}>{title}</h2>
+          <p className="pixel-text muted" style={{ fontSize: '0.65rem', lineHeight: '1.8', textAlign: 'left', wordBreak: 'break-word' }}>{message}</p>
+          
+          {subMessage && (
+            <p className="pixel-text" style={{ fontSize: '0.55rem', marginTop: '0.8rem', color: 'var(--muted)', opacity: 0.8 }}>
+              {subMessage}
+            </p>
+          )}
           
           <button 
-            className="primary-btn" 
+            className="primary-btn pixel-text" 
             onClick={onClose} 
-            style={{ marginTop: '1.5rem', width: '100%' }}
+            style={{ marginTop: '1.5rem', width: '100%', fontSize: '0.7rem' }}
           >
-            Got it!
+            CONTINUE
           </button>
         </div>
       </div>
