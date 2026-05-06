@@ -1,14 +1,50 @@
 import React, { useEffect, useState } from 'react';
 import { X } from 'lucide-react';
 
-export default function EventModal({ isOpen, onClose, image, title, message, type }) {
+export default function EventModal({ isOpen, onClose, image, title, message, subMessage, type }) {
+  const [displayText, setDisplayText] = useState('');
+  
+  useEffect(() => {
+    if (!isOpen) {
+      setDisplayText('');
+      return;
+    }
+
+    let i = 0;
+    const speed = 15; // Fast but visible typewriter effect
+    const interval = setInterval(() => {
+      setDisplayText(message.slice(0, i + 1));
+      i++;
+      if (i >= message.length) clearInterval(interval);
+    }, speed);
+
+    return () => clearInterval(interval);
+  }, [isOpen, message]);
+
   if (!isOpen) return null;
 
   return (
     <div className="modal-overlay" style={{ zIndex: 1100 }}>
-      <div className="modal-content event-modal glass-card animate-pop" style={{ padding: 0, overflow: 'hidden', maxWidth: '340px' }}>
-        <button className="close-modal" onClick={onClose} style={{ top: '10px', right: '10px' }}>
-          <X size={20} />
+      <div className="modal-content event-modal glass-card animate-pop" style={{ padding: 0, overflow: 'hidden', maxWidth: '340px', position: 'relative' }}>
+        <button 
+          className="close-modal" 
+          onClick={onClose} 
+          style={{ 
+            position: 'absolute',
+            top: '12px', 
+            right: '12px', 
+            left: 'auto', 
+            background: 'none', 
+            border: 'none', 
+            padding: 0,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            boxShadow: 'none',
+            zIndex: 10
+          }}
+        >
+          <X size={20} color="var(--brand)" />
         </button>
         
         <div style={{ padding: '1.5rem', textAlign: 'center' }}>
@@ -21,11 +57,13 @@ export default function EventModal({ isOpen, onClose, image, title, message, typ
             />
           </div>
           
-          <h2 className="pixel-text" style={{ marginBottom: '0.8rem', color: 'var(--brand)', fontSize: '1rem', lineHeight: '1.4' }}>{title}</h2>
-          <p className="pixel-text muted" style={{ fontSize: '0.65rem', lineHeight: '1.8', textAlign: 'left', wordBreak: 'break-word' }}>{message}</p>
+          <h2 className="pixel-text" style={{ marginBottom: '0.8rem', color: 'var(--brand)', fontSize: '0.9rem', lineHeight: '1.4' }}>{title}</h2>
+          <div className="pixel-text muted" style={{ fontSize: '0.6rem', lineHeight: '1.8', textAlign: 'left', wordBreak: 'break-word', minHeight: '3.6rem' }}>
+            {displayText}
+          </div>
           
           {subMessage && (
-            <p className="pixel-text" style={{ fontSize: '0.55rem', marginTop: '0.8rem', color: 'var(--muted)', opacity: 0.8 }}>
+            <p className="pixel-text" style={{ fontSize: '0.55rem', marginTop: '1rem', color: 'var(--muted)', opacity: 0.8 }}>
               {subMessage}
             </p>
           )}
