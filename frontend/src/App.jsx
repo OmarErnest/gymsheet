@@ -10,6 +10,7 @@ import Home from './pages/Home.jsx';
 import Profile from './pages/Profile.jsx';
 import Global from './pages/Global.jsx';
 import Settings from './pages/Settings.jsx';
+import Admin from './pages/Admin.jsx';
 import EventManager from './components/EventManager.jsx';
 
 export default function App() {
@@ -141,6 +142,7 @@ export default function App() {
       profile: t(lang, 'profile'),
       global: t(lang, 'global'),
       settings: t(lang, 'settings'),
+      admin: 'Admin',
     }),
     [lang]
   );
@@ -273,10 +275,11 @@ export default function App() {
         {activeTab === 'profile' && <Profile lang={lang} />}
         {activeTab === 'global' && <Global lang={lang} />}
         {activeTab === 'settings' && <Settings preferences={preferences} setPreferences={setPreferences} lang={lang} />}
+        {activeTab === 'admin' && <Admin lang={lang} />}
       </main>
 
-      <EventManager activeTab={activeTab} />
-      <BottomNav active={activeTab} onChange={setActiveTab} labels={labels} />
+      <EventManager activeTab={activeTab} user={user} />
+      <BottomNav active={activeTab} onChange={setActiveTab} labels={labels} isStaff={user?.is_staff} />
     </div>
   );
 }

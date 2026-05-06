@@ -377,8 +377,8 @@ export default function Settings({ preferences, setPreferences, lang }) {
           <div style={{ display: 'flex', justifyContent: 'space-between', opacity: 0.8 }}>
             <span>{t(lang, 'version')}</span>
             <span style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
-              <strong className="brand" style={{ fontWeight: '900' }}>v-03a.22</strong>
-              <small className="muted" style={{ fontWeight: '800', opacity: 0.8 }}>05.05.26</small>
+              <strong className="brand" style={{ fontWeight: '900' }}>v-03a.027</strong>
+              <small className="muted" style={{ fontWeight: '800', opacity: 0.8 }}>05.06.26</small>
             </span>
           </div>
 

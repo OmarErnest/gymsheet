@@ -103,13 +103,11 @@ export default function Home({ lang }) {
 
   useEffect(() => {
     if (!loading && days.some(d => d.is_today)) {
-      setTimeout(() => {
-        if (todayRef.current) {
-          todayRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
-        }
-      }, 600);
+      if (todayRef.current) {
+        todayRef.current.scrollIntoView({ behavior: 'auto', block: 'start' });
+      }
     }
-  }, [loading]);
+  }, [loading, days]);
 
   // Hydration logic
   useEffect(() => {
@@ -183,18 +181,18 @@ export default function Home({ lang }) {
     setSaveMessage('');
     let sessionLogsCount = 0;
     try {
-      const ops = [];
-      days.forEach(day => {
-        (day.goals || []).forEach((goal) => {
+      let opsCount = 0;
+      for (const day of days) {
+        for (const goal of day.goals || []) {
           const overrides = todayOverrides[goal.id] || [];
           const allCurrent = [...(goal.goal_exercises || []), ...overrides];
           
-          allCurrent.forEach((item) => {
+          for (const item of allCurrent) {
             // If it's a replaced item, skip the original
-            if (!item._isExtra && overrides.some(o => o._replacedId === item.id)) return;
+            if (!item._isExtra && overrides.some(o => o._replacedId === item.id)) continue;
 
             const logVal = inlineLogs[item.id || `extra-${allCurrent.indexOf(item)}` ];
-            if (!logVal && !item._isExtra) return;
+            if (!logVal && !item._isExtra) continue;
             
             const isTimeBased = item.exercise_detail?.is_time_based;
             const hasValue = isTimeBased
@@ -203,9 +201,10 @@ export default function Home({ lang }) {
 
             if (!hasValue && !item._isExtra) {
               if (logVal?.log_id) {
-                ops.push(api(`/exercise-logs/${logVal.log_id}/`, { method: 'DELETE' }));
+                await api(`/exercise-logs/${logVal.log_id}/`, { method: 'DELETE' });
+                opsCount++;
               }
-              return;
+              continue;
             }
 
             const cleanWeight = String(logVal?.weight_kg || item.weight_kg || '').replace(/\.$/, '') || '0';
@@ -216,25 +215,26 @@ export default function Home({ lang }) {
               reps: logVal?.reps !== undefined && logVal?.reps !== '' ? Number(logVal.reps) : item.reps,
               weight_kg: isTimeBased ? 0 : cleanWeight,
               duration: isTimeBased ? (logVal?.duration || '') : '',
-              source_goal_plan: goal.id || null, // Best effort link to goal
+              source_goal_plan: goal.id || null, 
             };
 
             if (logVal?.log_id) {
-              ops.push(api(`/exercise-logs/${logVal.log_id}/`, { method: 'PATCH', body: JSON.stringify(payload) }));
+              await api(`/exercise-logs/${logVal.log_id}/`, { method: 'PATCH', body: JSON.stringify(payload) });
+              opsCount++;
             } else if (hasValue || item._isExtra) {
-              ops.push(api('/exercise-logs/', { method: 'POST', body: JSON.stringify(payload) }));
+              await api('/exercise-logs/', { method: 'POST', body: JSON.stringify(payload) });
+              opsCount++;
               if (day.is_today) sessionLogsCount++;
             }
-          });
-        });
-      });
+          }
+        }
+      }
 
-      if (ops.length === 0) {
+      if (opsCount === 0) {
         setSaveMessage('Nothing to save');
         setSaving(false);
         return;
       }
-      await Promise.all(ops);
       setSaveMessage(`Saved ✓`);
 
       await loadInitial();
@@ -431,6 +431,7 @@ export default function Home({ lang }) {
                                     className="input-bubble"
                                     type="number"
                                     disabled={isLocked}
+                                    onFocus={(e) => e.target.select()}
                                     value={logVal.sets ?? item.sets}
                                     onChange={(e) => handleChange(item.id || `extra-${idx}`, 'sets', e.target.value)}
                                     style={{ flex: 1, minHeight: '40px' }}
@@ -440,6 +441,7 @@ export default function Home({ lang }) {
                                     className="input-bubble"
                                     type="number"
                                     disabled={isLocked}
+                                    onFocus={(e) => e.target.select()}
                                     value={logVal.reps ?? item.reps}
                                     onChange={(e) => handleChange(item.id || `extra-${idx}`, 'reps', e.target.value)}
                                     style={{ flex: 1, minHeight: '40px' }}
@@ -449,6 +451,7 @@ export default function Home({ lang }) {
                                       placeholder="MM:SS"
                                       className="input-bubble"
                                       disabled={isLocked}
+                                      onFocus={(e) => e.target.select()}
                                       value={logVal.duration || ''}
                                       onChange={(e) => handleChange(item.id || `extra-${idx}`, 'duration', e.target.value)}
                                       style={{ flex: 1.5, minHeight: '40px' }}
@@ -459,6 +462,7 @@ export default function Home({ lang }) {
                                       className="input-bubble"
                                       type="number"
                                       disabled={isLocked}
+                                      onFocus={(e) => e.target.select()}
                                       value={logVal.weight_kg || ''}
                                       onChange={(e) => handleChange(item.id || `extra-${idx}`, 'weight_kg', e.target.value)}
                                       style={{ flex: 2, minHeight: '40px' }}

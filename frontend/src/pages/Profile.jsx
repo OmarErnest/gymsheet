@@ -587,8 +587,8 @@ export default function Profile({ preferences, lang }) {
                       <select required value={item.exercise} onChange={(e) => updateGoalExercise(index, 'exercise', e.target.value)} style={{ textOverflow: 'ellipsis' }}><option value="" disabled>Pick Exercise</option>{availableExercises.map((ex) => <option key={ex.id} value={ex.id}>{ex.name}</option>)}</select>
                     </div>
                     <div className="goal-exercise-inputs">
-                      <input type="number" placeholder="Sets" value={item.sets} onChange={(e) => updateGoalExercise(index, 'sets', e.target.value)} className="input-bubble" style={{ width: '100%', textAlign: 'center' }} />
-                      <input type="number" placeholder="Reps" value={item.reps} onChange={(e) => updateGoalExercise(index, 'reps', e.target.value)} className="input-bubble" style={{ width: '100%', textAlign: 'center' }} />
+                      <input type="number" placeholder="Sets" value={item.sets} onFocus={(e) => e.target.select()} onChange={(e) => updateGoalExercise(index, 'sets', e.target.value)} className="input-bubble" style={{ width: '100%', textAlign: 'center' }} />
+                      <input type="number" placeholder="Reps" value={item.reps} onFocus={(e) => e.target.select()} onChange={(e) => updateGoalExercise(index, 'reps', e.target.value)} className="input-bubble" style={{ width: '100%', textAlign: 'center' }} />
                       <button className="small-btn danger-btn" type="button" onClick={() => removeGoalExercise(index)} style={{ minWidth: '46px' }}><Trash2 size={16} /></button>
                     </div>
                   </div>
@@ -603,13 +603,41 @@ export default function Profile({ preferences, lang }) {
       {activeTab === 'bodymap' && (
         <article className="glass-card profile-section">
           <p className="eyebrow">{t(lang, 'bodyMap')}</p>
-          <div className="body-map-container" style={{ position: 'relative' }}>
+          <div className="body-map">
             <img src={showFrontBody ? "/front_body.png" : "/back_body.png"} style={{ width: '100%', opacity: 0.8 }} />
-            {(showFrontBody ? frontDots : backDots).map(dot => (
-              <button key={dot.part} className={`body-point ${selectedDot === dot.part ? 'active' : ''}`} style={{ top: dot.top, left: dot.left, position: 'absolute' }} onClick={() => { setSelectedDot(dot.part); setMeasurementForm(p => ({ ...p, body_part: dot.part })); }}>
-                <div className="body-dot" />
-              </button>
-            ))}
+            {(showFrontBody ? frontDots : backDots).map(dot => {
+              const latest = measurements
+                .filter(m => m.body_part === dot.part)
+                .sort((a, b) => new Date(b.date) - new Date(a.date))[0];
+
+              return (
+                <button 
+                  key={dot.part} 
+                  className={`body-point ${selectedDot === dot.part ? 'active' : ''}`} 
+                  style={{ top: dot.top, left: dot.left, position: 'absolute' }} 
+                  onClick={() => { 
+                    setSelectedDot(dot.part); 
+                    setMeasurementForm(p => ({ 
+                      ...p, 
+                      body_part: dot.part,
+                      value_cm: latest ? latest.value_cm : ''
+                    })); 
+                  }}
+                >
+                  <div className="body-dot" />
+                  {selectedDot === dot.part && (
+                    <div className={`body-popup ${parseFloat(dot.left) > 50 ? 'on-left' : ''}`}>
+                      <h4 style={{ textTransform: 'capitalize' }}>{t(lang, dot.part)}</h4>
+                      {latest ? (
+                        <p>{latest.value_cm}cm <br/><small className="muted">{latest.date}</small></p>
+                      ) : (
+                        <p className="muted" style={{ fontSize: '0.7rem' }}>No data</p>
+                      )}
+                    </div>
+                  )}
+                </button>
+              );
+            })}
             <button className="small-btn" onClick={() => setShowFrontBody(!showFrontBody)} style={{ position: 'absolute', bottom: '1rem', right: '1rem' }}><RefreshCw size={20} /></button>
           </div>
           <form onSubmit={createMeasurement} className="form-stack" style={{ marginTop: '1rem' }}>
@@ -619,7 +647,7 @@ export default function Profile({ preferences, lang }) {
             </label>
             <label className="field">
               <span>{t(lang, 'valueCm')}</span>
-              <input type="number" step="0.1" placeholder="cm" value={measurementForm.value_cm} onChange={(e) => setMeasurementForm({ ...measurementForm, value_cm: e.target.value })} required />
+              <input type="number" step="0.1" placeholder="cm" value={measurementForm.value_cm} onFocus={(e) => e.target.select()} onChange={(e) => setMeasurementForm({ ...measurementForm, value_cm: e.target.value })} required />
             </label>
             <label className="field">
               <span>{t(lang, 'date')}</span>

@@ -127,18 +127,28 @@ export async function api(path, options = {}) {
     }
 
     if (!response.ok) {
+      if (response.status === 401) {
+        clearTokens();
+        // Discard the queue on 401 because the requests are invalid with an expired token
+        saveQueue([]);
+        window.location.href = '/'; // Force redirect to login
+        return { _error: 'Session expired' };
+      }
       throw new Error(extractError(data));
     }
     return data;
   } catch (err) {
-    // Queue mutations if network error
-    if (method !== 'GET' && !options._isSync) {
+    // ONLY queue mutations if it's a network failure (fetch throws TypeError)
+    // and NOT an HTTP error (which we throw above)
+    const isNetworkError = err instanceof TypeError || err.message === 'Failed to fetch' || err.name === 'TypeError';
+
+    if (isNetworkError && method !== 'GET' && !options._isSync) {
       const queue = getQueue();
       queue.push({ path, method, body: options.body, timestamp: Date.now() });
       saveQueue(queue);
       window.dispatchEvent(new CustomEvent('queue-updated', { detail: queue.length }));
-      console.warn("Offline: Request queued", path);
-      return { _queued: true }; // Return success-like object to prevent UI crash
+      console.warn("Offline: Request queued due to network error", path);
+      return { _queued: true };
     }
     throw err;
   }

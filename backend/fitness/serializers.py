@@ -5,7 +5,7 @@ from rest_framework import serializers
 from .models import (
     BodyMeasurement, DailyProgress, Exercise, ExerciseLog, GoalExercise, 
     GoalPlan, CSVRequest, Notification, ExerciseCSVUpload, LogCSVUpload, 
-    GlobalNotice, BroadcastNotification, AdminMessage
+    GlobalNotice, BroadcastNotification, AdminMessage, MaintenanceNotice
 )
 
 class AdminMessageSerializer(serializers.ModelSerializer):
@@ -194,4 +194,9 @@ class ExerciseCSVUploadSerializer(serializers.ModelSerializer):
 class GlobalNoticeSerializer(serializers.ModelSerializer):
     class Meta:
         model = GlobalNotice
+        fields = '__all__'
+
+class MaintenanceNoticeSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = MaintenanceNotice
         fields = '__all__'

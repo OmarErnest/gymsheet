@@ -155,3 +155,13 @@ class PreferencesView(APIView):
         serializer.is_valid(raise_exception=True)
         serializer.save()
         return Response(UserPreferenceSerializer(request.user.preferences).data)
+
+
+class UserListView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        if not request.user.is_staff:
+            return Response({'detail': 'Admin only.'}, status=status.HTTP_403_FORBIDDEN)
+        users = User.objects.all().order_by('name')
+        return Response(UserPublicSerializer(users, many=True).data)

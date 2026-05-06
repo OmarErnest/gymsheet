@@ -24,7 +24,7 @@ export default function EventModal({ isOpen, onClose, image, title, message, sub
   if (!isOpen) return null;
 
   return (
-    <div className="modal-overlay" style={{ zIndex: 1100 }}>
+    <div className="modal-overlay" style={{ zIndex: 2000 }}>
       <div className="modal-content event-modal glass-card animate-pop" style={{ padding: 0, overflow: 'hidden', maxWidth: '340px', position: 'relative' }}>
         <button 
           className="close-modal" 
@@ -58,7 +58,7 @@ export default function EventModal({ isOpen, onClose, image, title, message, sub
           </div>
           
           <h2 className="pixel-text" style={{ marginBottom: '0.8rem', color: 'var(--brand)', fontSize: '0.9rem', lineHeight: '1.4' }}>{title}</h2>
-          <div className="pixel-text muted" style={{ fontSize: '0.6rem', lineHeight: '1.8', textAlign: 'left', wordBreak: 'break-word', minHeight: '3.6rem' }}>
+          <div className="pixel-text muted" style={{ fontSize: '0.6rem', lineHeight: '1.8', textAlign: 'left', wordBreak: 'break-word', minHeight: '3.6rem', whiteSpace: 'pre-wrap' }}>
             {displayText}
           </div>
           

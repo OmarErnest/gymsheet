@@ -700,7 +700,7 @@ input[type=number] { -moz-appearance: textfield; appearance: textfield; }
     color-mix(in srgb, var(--bg-soft) 72%, transparent);
   background-size: 18px 18px;
   border: 1px solid var(--line);
-  overflow: hidden;
+  overflow: visible;
 }
 .body-map svg {
   width: 100%;

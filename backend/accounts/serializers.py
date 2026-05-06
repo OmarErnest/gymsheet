@@ -10,8 +10,8 @@ class UserPublicSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = User
-        fields = ('id', 'email', 'name', 'profile_pic_url', 'profile_pic_url_pending', 'gender', 'auth_mode', 'is_approved', 'current_rank', 'has_link')
-        read_only_fields = ('id', 'is_approved')
+        fields = ('id', 'email', 'name', 'profile_pic_url', 'profile_pic_url_pending', 'gender', 'auth_mode', 'is_approved', 'current_rank', 'has_link', 'is_staff')
+        read_only_fields = ('id', 'is_approved', 'is_staff')
 
     def get_current_rank(self, obj):
         from fitness.leaderboard import get_leaderboard_data

@@ -26,12 +26,14 @@ from .serializers import (
     LogCSVUploadSerializer,
     GlobalNoticeSerializer,
     BroadcastNotificationSerializer,
+    BroadcastNotificationSerializer,
     AdminMessageSerializer,
+    MaintenanceNoticeSerializer,
 )
 from .models import (
     BodyMeasurement, DailyProgress, Exercise, ExerciseLog, GoalPlan, 
     CSVRequest, Notification, ExerciseCSVUpload, LogCSVUpload, GlobalNotice,
-    BroadcastNotification, AdminMessage
+    BroadcastNotification, AdminMessage, MaintenanceNotice
 )
 
 
@@ -327,11 +329,22 @@ class NotificationViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated]
     
     def get_queryset(self):
-        return Notification.objects.filter(user=self.request.user)
+        if self.request.user.is_staff:
+            return Notification.objects.all().order_by('-created_at')
+        return Notification.objects.filter(user=self.request.user).order_by('-created_at')
+
+    def perform_create(self, serializer):
+        if self.request.user.is_staff:
+            target_user_id = self.request.data.get('user')
+            if target_user_id:
+                serializer.save(user_id=target_user_id)
+                return
+        serializer.save(user=self.request.user)
 
     @action(detail=False, methods=['get'])
     def unread_count(self, request):
-        count = self.get_queryset().filter(is_read=False).count()
+        # We only want the current user's unread count
+        count = Notification.objects.filter(user=request.user, is_read=False).count()
         return Response({'count': count})
 
 
@@ -423,18 +436,31 @@ class ExerciseCSVUploadApproveView(APIView):
         except Exception as e:
             return Response({'detail': f'Error processing file: {str(e)}'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
-class GlobalNoticeViewSet(viewsets.ReadOnlyModelViewSet):
+class GlobalNoticeViewSet(viewsets.ModelViewSet):
     serializer_class = GlobalNoticeSerializer
     permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
         return GlobalNotice.objects.filter(is_active=True).order_by('-created_at')
-class BroadcastNotificationViewSet(viewsets.ReadOnlyModelViewSet):
+
+    def perform_create(self, serializer):
+        if not self.request.user.is_staff:
+            from rest_framework.exceptions import PermissionDenied
+            raise PermissionDenied("Only staff can create global notices.")
+        serializer.save()
+
+class BroadcastNotificationViewSet(viewsets.ModelViewSet):
     serializer_class = BroadcastNotificationSerializer
     permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
         return BroadcastNotification.objects.all().order_by('-created_at')
+
+    def perform_create(self, serializer):
+        if not self.request.user.is_staff:
+            from rest_framework.exceptions import PermissionDenied
+            raise PermissionDenied("Only staff can create broadcast notifications.")
+        serializer.save()
 
 class AdminMessageViewSet(viewsets.ModelViewSet):
     serializer_class = AdminMessageSerializer
@@ -453,3 +479,17 @@ class AdminMessageViewSet(viewsets.ModelViewSet):
             from rest_framework.exceptions import ValidationError
             raise ValidationError("You have too many unread messages pending. Please wait for an admin to reply.")
         serializer.save(user=self.request.user)
+
+
+class MaintenanceNoticeViewSet(viewsets.ModelViewSet):
+    serializer_class = MaintenanceNoticeSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        return MaintenanceNotice.objects.filter(is_active=True).order_by('-created_at')
+
+    def perform_create(self, serializer):
+        if not self.request.user.is_staff:
+            from rest_framework.exceptions import PermissionDenied
+            raise PermissionDenied("Only staff can create maintenance notices.")
+        serializer.save()

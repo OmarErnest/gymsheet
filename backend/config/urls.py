@@ -2,7 +2,7 @@ from django.contrib import admin
 from django.urls import include, path
 from rest_framework.routers import DefaultRouter
 
-from accounts.views import LoginPasswordView, LoginPinView, MeView, PreferencesView, RegisterView, TestEnvView, ResetTestEnvView
+from accounts.views import LoginPasswordView, LoginPinView, MeView, PreferencesView, RegisterView, TestEnvView, ResetTestEnvView, UserListView
 from fitness.views import (
     BodyMeasurementViewSet,
     DailyProgressViewSet,
@@ -21,6 +21,7 @@ from fitness.views import (
     GlobalNoticeViewSet,
     BroadcastNotificationViewSet,
     AdminMessageViewSet,
+    MaintenanceNoticeViewSet,
 )
 
 router = DefaultRouter()
@@ -36,6 +37,7 @@ router.register(r'log-csv-uploads', LogCSVUploadViewSet, basename='log-csv-uploa
 router.register(r'global-notices', GlobalNoticeViewSet, basename='global-notice')
 router.register(r'broadcast-notifications', BroadcastNotificationViewSet, basename='broadcast-notification')
 router.register(r'admin-messages', AdminMessageViewSet, basename='admin-message')
+router.register(r'maintenance-notices', MaintenanceNoticeViewSet, basename='maintenance-notice')
 
 urlpatterns = [
     path('admin/', admin.site.urls),
@@ -51,5 +53,6 @@ urlpatterns = [
     path('api/export-csv/', ExportCSVView.as_view(), name='export-csv'),
     path('api/logs-csv-template/', LogCSVTemplateView.as_view(), name='logs-csv-template'),
     path('api/exercise-csv-uploads/<int:pk>/approve/', ExerciseCSVUploadApproveView.as_view(), name='exercise-csv-approve'),
+    path('api/users/', UserListView.as_view(), name='user-list'),
     path('api/', include(router.urls)),
 ]

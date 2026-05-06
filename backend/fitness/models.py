@@ -121,7 +121,6 @@ class ExerciseLog(models.Model):
     def save(self, *args, **kwargs):
         super().save(*args, **kwargs)
         # Check if all goal exercises for this day are logged
-        from .models import GoalExercise, DailyProgress
         
         # Get all exercises that were supposed to be done today
         today_goals = GoalPlan.objects.filter(user=self.user)
@@ -310,8 +309,30 @@ class GlobalNotice(models.Model):
             ]
             Notification.objects.bulk_create(notifications)
 
+class MaintenanceNotice(models.Model):
+    start_time = models.DateTimeField()
+    end_time = models.DateTimeField()
+    timezone = models.CharField(max_length=50, default='EST')
+    message = models.TextField(default="MAINTENANCE WORK WILL TAKE PLACE. DON'T WORRY, THE APP IS SAFE.")
+    is_active = models.BooleanField(default=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def save(self, *args, **kwargs):
+        is_new = self.pk is None
+        super().save(*args, **kwargs)
+        if is_new:
+            from django.contrib.auth import get_user_model
+            User = get_user_model()
+            msg = f"MAINTENANCE: {self.message} ({self.start_time.strftime('%Y-%m-%d %H:%M')} to {self.end_time.strftime('%H:%M')} {self.timezone})"
+            notifications = [
+                Notification(user=user, message=msg)
+                for user in User.objects.all()
+            ]
+            Notification.objects.bulk_create(notifications)
+
     def __str__(self):
-        return self.title
+        return f"Maintenance {self.start_time} - {self.end_time}"
+
 
 class AdminMessage(models.Model):
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='admin_messages')

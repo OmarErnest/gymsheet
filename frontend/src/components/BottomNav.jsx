@@ -1,4 +1,4 @@
-import { Globe2, Home, Settings, UserRound } from 'lucide-react';
+import { Globe2, Home, Settings, UserRound, Shield } from 'lucide-react';
 
 const items = [
   { id: 'home', label: 'Home', icon: Home },
@@ -7,10 +7,12 @@ const items = [
   { id: 'settings', label: 'Settings', icon: Settings },
 ];
 
-export default function BottomNav({ active, onChange, labels }) {
+export default function BottomNav({ active, onChange, labels, isStaff }) {
+  const filteredItems = isStaff ? [...items, { id: 'admin', label: 'Admin', icon: Shield }] : items;
+
   return (
     <nav className="bottom-nav" aria-label="Main tabs">
-      {items.map((item) => {
+      {filteredItems.map((item) => {
         const Icon = item.icon;
         return (
           <button
