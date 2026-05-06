@@ -37,6 +37,15 @@ from .models import (
 )
 
 
+def parse_date_param(raw, fallback):
+    if not raw:
+        return fallback
+    try:
+        return date.fromisoformat(raw)
+    except ValueError:
+        return fallback
+
+
 class IsNotTestUser(IsAuthenticated):
     def has_permission(self, request, view):
         if not super().has_permission(request, view):
@@ -76,14 +85,14 @@ class GoalPlanViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
-        today = timezone.localdate()
+        today = parse_date_param(self.request.query_params.get('today'), timezone.localdate())
         return GoalPlan.objects.filter(user=self.request.user).exclude(
             repeat_type=GoalPlan.RepeatType.ONCE, start_date__lt=today
         ).prefetch_related('goal_exercises__exercise')
 
     def check_constraints(self, serializer, instance=None):
         user = self.request.user
-        today = timezone.localdate()
+        today = parse_date_param(self.request.query_params.get('today'), timezone.localdate())
         
         qs = GoalPlan.objects.filter(user=user).exclude(repeat_type=GoalPlan.RepeatType.ONCE, start_date__lt=today)
         if instance:
@@ -161,20 +170,14 @@ class BodyMeasurementViewSet(viewsets.ModelViewSet):
         return qs
 
 
-def parse_date_param(raw, fallback):
-    if not raw:
-        return fallback
-    try:
-        return date.fromisoformat(raw)
-    except ValueError:
-        return fallback
+
 
 
 class HomeDaysView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
-        today = timezone.localdate()
+        today = parse_date_param(request.query_params.get('today'), timezone.localdate())
         week_end = today + timedelta(days=(6 - today.weekday()))
         start = parse_date_param(request.query_params.get('start'), today)
         end = parse_date_param(request.query_params.get('end'), today)
@@ -261,7 +264,7 @@ class LeaderboardView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
-        today = timezone.localdate()
+        today = parse_date_param(request.query_params.get('today'), timezone.localdate())
         week_start = today - timedelta(days=today.weekday())
         week_end = week_start + timedelta(days=6)
 

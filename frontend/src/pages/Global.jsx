@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Crown, Trophy, ExternalLink, Users } from 'lucide-react';
 import { useAuth } from '../state/AuthContext.jsx';
-import { api } from '../api/client.js';
+import { api, iso } from '../api/client.js';
 import Skeleton from '../components/Skeleton.jsx';
 import { t } from '../i18n.js';
 
@@ -12,7 +12,7 @@ export default function Global({ lang }) {
   const [showBeta, setShowBeta] = useState(false);
 
   useEffect(() => {
-    api('/leaderboard/')
+    api(`/leaderboard/?today=${iso(new Date())}`)
       .then(setData)
       .finally(() => setLoading(false));
   }, []);

@@ -1,10 +1,11 @@
 import { useEffect, useState, useRef, useMemo } from 'react';
 import { Save, Plus, Trash2, CheckCircle2, ChevronRight, ChevronLeft, Trophy, Play, Timer, Pause, RotateCcw, Droplets, Square, Settings } from 'lucide-react';
-import { api } from '../api/client.js';
+import { api, iso } from '../api/client.js';
 import Skeleton from '../components/Skeleton.jsx';
 import { t } from '../i18n.js';
 
-function iso(date) { return date.toISOString().slice(0, 10); }
+
+
 
 /** Build initial inlineLogs from already-saved ExerciseLogs for the day */
 function buildInitialLogs(daysData) {
@@ -79,7 +80,8 @@ export default function Home({ lang }) {
       const end = new Date(start);
       end.setDate(start.getDate() + 6);
 
-      const res = await api(`/home/days/?start=${iso(start)}&end=${iso(end)}`);
+      const todayStr = iso(new Date());
+      const res = await api(`/home/days/?start=${iso(start)}&end=${iso(end)}&today=${todayStr}`);
       setDays(res);
       setInlineLogs(buildInitialLogs(res));
       
