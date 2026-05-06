@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState, useRef, useMemo } from 'react';
 import { Save, Plus, Trash2, CheckCircle2, ChevronRight, ChevronLeft, Trophy, Play, Timer, Pause, RotateCcw, Droplets, Square, Settings } from 'lucide-react';
 import { api } from '../api/client.js';
 import Skeleton from '../components/Skeleton.jsx';
@@ -48,12 +48,20 @@ export default function Home({ lang }) {
   const [inlineLogs, setInlineLogs] = useState({});
   const [firstLoad, setFirstLoad] = useState(true);
 
-  // Week Navigation State
-  const [currentWeekStart, setCurrentWeekStart] = useState(() => {
+  const [relativeWeek, setRelativeWeek] = useState(0);
+
+  const currentWeekStart = useMemo(() => {
     const d = new Date();
-    d.setDate(d.getDate() - (d.getDay() === 0 ? 6 : d.getDay() - 1));
-    return d;
-  });
+    // Get to Monday of current week
+    const day = d.getDay();
+    const diff = d.getDate() - day + (day === 0 ? -6 : 1);
+    const monday = new Date(d.setDate(diff));
+    monday.setHours(0, 0, 0, 0);
+    
+    // Offset by relative week
+    monday.setDate(monday.getDate() + relativeWeek * 7);
+    return monday;
+  }, [relativeWeek]);
 
   const [showBackToPresent, setShowBackToPresent] = useState(false);
 
@@ -140,9 +148,12 @@ export default function Home({ lang }) {
   };
 
   const changeWeek = (dir) => {
-    const d = new Date(currentWeekStart);
-    d.setDate(d.getDate() + dir * 7);
-    setCurrentWeekStart(d);
+    setRelativeWeek(prev => {
+      const next = prev + dir;
+      if (next < -6) return -6;
+      if (next > 1) return 1;
+      return next;
+    });
   };
 
   function handleChange(itemId, field, raw) {
@@ -254,23 +265,20 @@ export default function Home({ lang }) {
       {error && <p className="notice danger">{error}</p>}
 
       <div className="nav-arrows">
-        <button className="arrow-btn" onClick={() => changeWeek(-1)}><ChevronLeft size={20} /></button>
+        <button className="arrow-btn" onClick={() => changeWeek(-1)} disabled={relativeWeek <= -6}><ChevronLeft size={20} /></button>
         <div style={{ textAlign: 'center' }}>
-          <span style={{ fontWeight: '900', fontSize: '0.9rem', color: 'var(--brand)', minWidth: '140px', display: 'block' }}>
-            {currentWeekStart.toLocaleDateString(lang, { month: 'short', day: 'numeric' }).toUpperCase()}
+          <span style={{ fontWeight: '900', fontSize: '0.9rem', color: 'var(--brand)', minWidth: '180px', display: 'block' }}>
+            {relativeWeek === 0 ? 'CURRENT WEEK' : 
+             relativeWeek === 1 ? '1 WEEK IN THE FUTURE' : 
+             `${Math.abs(relativeWeek)} ${Math.abs(relativeWeek) === 1 ? 'WEEK' : 'WEEKS'} IN THE PAST`}
           </span>
-          {showBackToPresent && (
-            <button onClick={() => {
-              const d = new Date();
-              d.setDate(d.getDate() - (d.getDay() === 0 ? 6 : d.getDay() - 1));
-              setCurrentWeekStart(d);
-              setShowBackToPresent(false);
-            }} style={{ background: 'none', border: 'none', color: 'var(--brand)', fontSize: '0.65rem', fontWeight: '900', cursor: 'pointer', padding: '2px 8px', borderRadius: '4px', background: 'rgba(var(--brand-rgb), 0.1)' }}>
+          {relativeWeek !== 0 && (
+            <button onClick={() => setRelativeWeek(0)} style={{ background: 'none', border: 'none', color: 'var(--brand)', fontSize: '0.65rem', fontWeight: '900', cursor: 'pointer', padding: '2px 8px', borderRadius: '4px', background: 'rgba(var(--brand-rgb), 0.1)' }}>
               BACK TO PRESENT
             </button>
           )}
         </div>
-        <button className="arrow-btn" onClick={() => changeWeek(1)}><ChevronRight size={20} /></button>
+        <button className="arrow-btn" onClick={() => changeWeek(1)} disabled={relativeWeek >= 1}><ChevronRight size={20} /></button>
       </div>
 
 
@@ -329,7 +337,17 @@ export default function Home({ lang }) {
               </div>
 
               {(!day.goals || day.goals.length === 0) ? (
-                <p className="muted" style={{ textAlign: 'center', padding: '1rem 0', fontSize: '0.85rem' }}>{t(lang, 'noGoals')}</p>
+                <div 
+                  onClick={() => {
+                    window.dispatchEvent(new CustomEvent('change-app-tab', { detail: 'profile' }));
+                    window.dispatchEvent(new CustomEvent('change-profile-tab', { detail: 'creategoal' }));
+                  }}
+                  className="dotted-btn"
+                  style={{ textAlign: 'center', padding: '1.5rem 0', fontSize: '0.85rem', cursor: 'pointer', borderRadius: '12px' }}
+                >
+                  <p style={{ margin: 0 }}>{t(lang, 'noGoals')}</p>
+                  <span style={{ fontSize: '0.75rem', opacity: 0.6 }}>Tap to create one</span>
+                </div>
               ) : (
                 <div className="goals-container" style={{ display: 'grid', gap: '1rem' }}>
                   {(day.goals || []).map((goal) => {

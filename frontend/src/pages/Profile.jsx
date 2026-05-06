@@ -139,6 +139,12 @@ export default function Profile({ preferences, lang }) {
 
   useEffect(() => { load(); }, []);
 
+  useEffect(() => {
+    const handleSubTab = (e) => setActiveTab(e.detail);
+    window.addEventListener('change-profile-tab', handleSubTab);
+    return () => window.removeEventListener('change-profile-tab', handleSubTab);
+  }, []);
+
   const filteredExercises = useMemo(() => {
     return selectedCategory ? exercises.filter((ex) => ex.category === selectedCategory) : exercises;
   }, [selectedCategory, exercises]);
@@ -576,14 +582,14 @@ export default function Profile({ preferences, lang }) {
                 const availableExercises = item.categoryFilter ? exercises.filter(ex => ex.category === item.categoryFilter) : exercises;
                 return (
                   <div className="goal-exercise-row glass-card" key={index} style={{ padding: '1rem', marginBottom: '1rem' }}>
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.8rem' }}>
+                    <div className="goal-exercise-selectors">
                       <select value={item.categoryFilter} onChange={(e) => updateGoalExercise(index, 'categoryFilter', e.target.value)}><option value="">All</option>{categories.map((c) => <option key={c} value={c}>{t(lang, c)}</option>)}</select>
-                      <select required value={item.exercise} onChange={(e) => updateGoalExercise(index, 'exercise', e.target.value)}><option value="" disabled>Pick</option>{availableExercises.map((ex) => <option key={ex.id} value={ex.id}>{ex.name}</option>)}</select>
+                      <select required value={item.exercise} onChange={(e) => updateGoalExercise(index, 'exercise', e.target.value)} style={{ textOverflow: 'ellipsis' }}><option value="" disabled>Pick Exercise</option>{availableExercises.map((ex) => <option key={ex.id} value={ex.id}>{ex.name}</option>)}</select>
                     </div>
-                    <div style={{ display: 'flex', gap: '0.5rem', marginTop: '0.8rem' }}>
+                    <div className="goal-exercise-inputs">
                       <input type="number" placeholder="Sets" value={item.sets} onChange={(e) => updateGoalExercise(index, 'sets', e.target.value)} className="input-bubble" style={{ width: '100%', textAlign: 'center' }} />
                       <input type="number" placeholder="Reps" value={item.reps} onChange={(e) => updateGoalExercise(index, 'reps', e.target.value)} className="input-bubble" style={{ width: '100%', textAlign: 'center' }} />
-                      <button className="small-btn danger-btn" type="button" onClick={() => removeGoalExercise(index)}><Trash2 size={16} /></button>
+                      <button className="small-btn danger-btn" type="button" onClick={() => removeGoalExercise(index)} style={{ minWidth: '46px' }}><Trash2 size={16} /></button>
                     </div>
                   </div>
                 );

@@ -124,6 +124,12 @@ export default function App() {
     }
   }, [syncPending]);
 
+  useEffect(() => {
+    const handleTab = (e) => setActiveTab(e.detail);
+    window.addEventListener('change-app-tab', handleTab);
+    return () => window.removeEventListener('change-app-tab', handleTab);
+  }, []);
+
   const clearAllNotifications = () => {
     setNotifications([]);
     setShowNotifications(false);

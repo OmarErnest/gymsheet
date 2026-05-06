@@ -27,7 +27,7 @@ def get_leaderboard_data():
         ]
         active_days_count = len(qualified_days)
 
-        score = 0
+        score = 10
         for d in qualified_days:
             for log in logs_by_date[d]:
                 score += float(log.weight_kg or 0) * (log.sets or 0) * (log.reps or 0)

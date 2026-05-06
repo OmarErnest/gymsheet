@@ -88,7 +88,7 @@ export default function Global({ lang }) {
                   <h3>{row.name} {row.rank === 1 && !row.is_test_user && <Crown size={18} />}</h3>
                   <div className="rank-meta">
                     <span className="pill">{row.active_days} {t(lang, 'activeDays')}</span>
-                    <span className="pill">{Number(row.average_lift_kg_this_week || 0).toFixed(1)}kg {t(lang, 'avgLiftThisWeek')}</span>
+                    <span className="pill">{Math.round(row.average_lift_kg_this_week || 0)}kg {t(lang, 'avgLift')}</span>
                   </div>
                 </div>
                 <strong className="rank-score">{row.score}<br /><small>{t(lang, 'score')}</small></strong>

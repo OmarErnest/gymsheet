@@ -799,17 +799,37 @@ input[type=number] { -moz-appearance: textfield; appearance: textfield; }
   background: color-mix(in srgb, var(--bg-soft) 64%, transparent);
 }
 .goal-exercise-row {
-  display: grid;
-  grid-template-columns: 1fr 0.45fr 0.45fr;
-  gap: 0.65rem;
-  align-items: end;
-  padding: 0.75rem;
+  padding: 1rem;
   border-radius: var(--radius-md);
   background: var(--card);
   border: 1px solid var(--line);
+  margin-bottom: 1rem;
 }
-.goal-exercise-row .goal-note,
-.goal-exercise-row .danger-btn { grid-column: 1 / -1; }
+
+.goal-exercise-selectors {
+  display: grid;
+  grid-template-columns: 1fr 1.5fr;
+  gap: 0.8rem;
+  margin-bottom: 0.8rem;
+}
+
+.goal-exercise-selectors select {
+  width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.goal-exercise-inputs {
+  display: flex;
+  gap: 0.5rem;
+}
+
+@media (max-width: 500px) {
+  .goal-exercise-selectors {
+    grid-template-columns: 1fr;
+    gap: 0.5rem;
+  }
+}
 
 .rank-list { display: grid; gap: 0.75rem; }
 .rank-card { padding: 0.85rem; }
