@@ -1058,3 +1058,24 @@ select option { color: var(--text); }
 .event-modal .pixel-text {
   text-shadow: 2px 2px 0px rgba(0,0,0,0.2);
 }
+
+.strength-filters {
+  display: flex;
+  gap: 0.8rem;
+  margin-top: 1.2rem;
+}
+
+.strength-filters > * {
+  flex: 1;
+  min-width: 0;
+}
+
+@media (max-width: 600px) {
+  .strength-filters {
+    flex-direction: column;
+    gap: 0.6rem;
+  }
+  .strength-filters > * {
+    width: 100%;
+  }
+}

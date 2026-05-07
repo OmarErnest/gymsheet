@@ -566,7 +566,7 @@ export default function Profile({ preferences, lang }) {
               <button className={`tab-pill ${graphMode === 'list' ? 'active' : ''}`} onClick={() => setGraphMode('list')}><List size={18} /></button>
             </div>
           </div>
-          <div style={{ display: 'flex', gap: '0.8rem', marginTop: '1.2rem' }}>
+          <div className="strength-filters">
             <MultiSelect 
               label="Groups" 
               allLabel={t(lang, 'allGroups')}
@@ -585,7 +585,7 @@ export default function Profile({ preferences, lang }) {
               onToggleAll={toggleAllExercises}
               lang={lang} 
             />
-            <select style={{ flex: 0.8, height: '42px' }} value={selectedPeriod} onChange={(e) => setSelectedPeriod(e.target.value)}>
+            <select style={{ height: '42px' }} value={selectedPeriod} onChange={(e) => setSelectedPeriod(e.target.value)}>
               <option value="all">{t(lang, 'allTime')}</option>
               <option value="year">{t(lang, 'lastYear')}</option>
               <option value="90">90 {t(lang, 'days')}</option>
