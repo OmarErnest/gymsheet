@@ -99,8 +99,11 @@ export default function Home({ lang }) {
 
   useEffect(() => {
     loadInitial();
-    api('/exercises/').then(res => setAllExercises(res.results || res)).catch(() => {});
   }, [currentWeekStart]);
+
+  useEffect(() => {
+    api('/exercises/').then(res => setAllExercises(res.results || res)).catch(() => {});
+  }, []);
 
 
   useEffect(() => {

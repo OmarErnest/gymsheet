@@ -271,11 +271,11 @@ export default function App() {
       </header>
 
       <main className="screen with-nav">
-        {activeTab === 'home' && <Home lang={lang} />}
-        {activeTab === 'profile' && <Profile preferences={preferences} lang={lang} />}
-        {activeTab === 'global' && <Global lang={lang} />}
-        {activeTab === 'settings' && <Settings preferences={preferences} setPreferences={setPreferences} lang={lang} />}
-        {activeTab === 'admin' && <Admin lang={lang} />}
+        <div style={{ display: activeTab === 'home' ? 'block' : 'none' }}><Home lang={lang} /></div>
+        <div style={{ display: activeTab === 'profile' ? 'block' : 'none' }}><Profile preferences={preferences} lang={lang} /></div>
+        <div style={{ display: activeTab === 'global' ? 'block' : 'none' }}><Global lang={lang} /></div>
+        <div style={{ display: activeTab === 'settings' ? 'block' : 'none' }}><Settings preferences={preferences} setPreferences={setPreferences} lang={lang} /></div>
+        {user?.is_staff && <div style={{ display: activeTab === 'admin' ? 'block' : 'none' }}><Admin lang={lang} /></div>}
       </main>
 
       <EventManager activeTab={activeTab} user={user} />

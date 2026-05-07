@@ -168,6 +168,12 @@ export default function Profile({ preferences, lang }) {
   const [logs, setLogs] = useState([]);
   const [measurements, setMeasurements] = useState([]);
   const [goals, setGoals] = useState([]);
+  const [loadedData, setLoadedData] = useState({
+    exercises: false,
+    logs: false,
+    measurements: false,
+    goals: false
+  });
   
   const [selectedCategories, setSelectedCategories] = useState(categories.filter(c => c !== 'other' && c !== 'calisthenics'));
   const [selectedExercises, setSelectedExercises] = useState([]);
@@ -200,22 +206,59 @@ export default function Profile({ preferences, lang }) {
     useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
   );
 
-  async function load() {
-    setLoading(true);
-    const [exerciseData, logData, measurementData, goalsData] = await Promise.all([
-      api('/exercises/'),
-      api('/exercise-logs/'),
-      api('/body-measurements/'),
-      api('/goal-plans/')
-    ]);
-    setExercises(exerciseData.results || exerciseData);
-    setLogs(logData.results || logData);
-    setMeasurements(measurementData.results || measurementData);
-    setGoals(goalsData.results || goalsData);
-    setLoading(false);
+  async function fetchExercises() {
+    if (loadedData.exercises) return;
+    const data = await api('/exercises/');
+    setExercises(data.results || data);
+    setLoadedData(prev => ({ ...prev, exercises: true }));
   }
 
-  useEffect(() => { load(); }, []);
+  async function fetchLogs() {
+    if (loadedData.logs) return;
+    const data = await api('/exercise-logs/');
+    setLogs(data.results || data);
+    setLoadedData(prev => ({ ...prev, logs: true }));
+  }
+
+  async function fetchMeasurements() {
+    if (loadedData.measurements) return;
+    const data = await api('/body-measurements/');
+    setMeasurements(data.results || data);
+    setLoadedData(prev => ({ ...prev, measurements: true }));
+  }
+
+  async function fetchGoals() {
+    if (loadedData.goals) return;
+    const data = await api('/goal-plans/');
+    setGoals(data.results || data);
+    setLoadedData(prev => ({ ...prev, goals: true }));
+  }
+
+  useEffect(() => {
+    async function loadTab() {
+      const needsExercises = (activeTab === 'strength' || activeTab === 'goals' || activeTab === 'creategoal' || activeTab === 'addexercise') && !loadedData.exercises;
+      const needsLogs = (activeTab === 'strength') && !loadedData.logs;
+      const needsGoals = (activeTab === 'goals' || activeTab === 'creategoal') && !loadedData.goals;
+      const needsMeasurements = (activeTab === 'bodymap') && !loadedData.measurements;
+
+      if (needsExercises || needsLogs || needsGoals || needsMeasurements) {
+        setLoading(true);
+        try {
+          if (activeTab === 'strength') {
+            await Promise.all([fetchExercises(), fetchLogs()]);
+          } else if (activeTab === 'goals' || activeTab === 'creategoal') {
+            await Promise.all([fetchExercises(), fetchGoals()]);
+          } else if (activeTab === 'bodymap') {
+            await fetchMeasurements();
+          } else if (activeTab === 'addexercise') {
+            await fetchExercises();
+          }
+        } catch (err) {}
+        setLoading(false);
+      }
+    }
+    loadTab();
+  }, [activeTab]);
 
   useEffect(() => {
     const handleSubTab = (e) => setActiveTab(e.detail);
