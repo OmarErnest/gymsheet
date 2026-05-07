@@ -83,7 +83,7 @@ function SortableGoalItem({ goal, lang, onEdit, onDelete }) {
   );
 }
 
-function MultiSelect({ label, options, selected, onToggle, onToggleAll, lang, allLabel }) {
+function MultiSelect({ label, options, selected, onToggle, onToggleAll, lang, allLabel, align = 'left' }) {
   const [isOpen, setIsOpen] = useState(false);
   
   const allSelected = options.length > 0 && selected.length === options.length;
@@ -102,54 +102,81 @@ function MultiSelect({ label, options, selected, onToggle, onToggleAll, lang, al
     <div style={{ position: 'relative', flex: 1 }}>
       <button 
         type="button"
-        className="input-bubble" 
         onClick={() => setIsOpen(!isOpen)}
-        style={{ width: '100%', textAlign: 'left', display: 'flex', justifyContent: 'space-between', alignItems: 'center', height: '42px', fontSize: '0.85rem', padding: '0 1rem' }}
+        style={{ 
+          width: '100%', 
+          textAlign: 'left', 
+          display: 'flex', 
+          justifyContent: 'space-between', 
+          alignItems: 'center', 
+          height: '52px', 
+          fontSize: '0.95rem', 
+          padding: '0 1.2rem',
+          borderRadius: '14px',
+          border: '1px solid var(--line)',
+          background: 'var(--bg-soft)',
+          color: 'var(--text)',
+          fontWeight: '700',
+          cursor: 'pointer',
+          transition: 'all 0.2s'
+        }}
       >
         <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{displayLabel}</span>
-        <ChevronDown size={14} style={{ opacity: 0.5 }} />
+        <ChevronDown size={18} style={{ opacity: 0.5 }} />
       </button>
       
       {isOpen && (
         <>
           <div style={{ position: 'fixed', inset: 0, zIndex: 90 }} onClick={() => setIsOpen(false)} />
           <div className="glass-card" style={{ 
-            position: 'absolute', top: '100%', left: 0, right: 0, zIndex: 100, 
-            marginTop: '0.5rem', maxHeight: '250px', overflowY: 'auto',
-            padding: '0.5rem', border: '1px solid var(--line)', boxShadow: '0 8px 32px rgba(0,0,0,0.3)',
-            background: 'var(--bg-soft)'
+            position: 'absolute', 
+            top: '100%', 
+            [align]: '0',
+            zIndex: 100, 
+            marginTop: '0.5rem', 
+            maxHeight: '300px', 
+            overflowY: 'auto',
+            padding: '0.5rem', 
+            border: '1px solid var(--line)', 
+            boxShadow: '0 12px 48px rgba(0,0,0,0.5)',
+            background: 'var(--bg-strong)',
+            minWidth: '220px',
+            width: 'calc(200% + 0.6rem)', 
+            maxWidth: '85vw'
           }}>
             <div style={{ display: 'grid', gap: '0.2rem' }}>
               <label style={{ 
-                display: 'flex', alignItems: 'center', gap: '0.6rem', padding: '0.6rem', 
-                borderRadius: '8px', cursor: 'pointer', background: 'transparent',
+                display: 'flex', alignItems: 'center', gap: '0.8rem', padding: '0.8rem 1rem', 
+                borderRadius: '10px', cursor: 'pointer', background: 'transparent',
                 transition: 'all 0.2s'
               }}>
                 <input 
                   type="checkbox" 
                   checked={allSelected} 
                   onChange={() => onToggleAll(!allSelected)}
-                  style={{ accentColor: 'var(--brand)' }}
+                  style={{ accentColor: 'var(--brand)', width: '18px', height: '18px' }}
                 />
-                <span style={{ fontSize: '0.85rem', fontWeight: '900' }}>Select All</span>
+                <span style={{ fontSize: '1rem', fontWeight: '900' }}>Select All</span>
               </label>
-              <div style={{ height: '1px', background: 'var(--line)', margin: '0.2rem 0' }} />
+              <div style={{ height: '1px', background: 'var(--line)', margin: '0.4rem 0' }} />
               {options.map((opt) => {
                 const id = String(opt.id || opt);
                 const isSel = selected.includes(id);
                 return (
                   <label key={id} style={{ 
-                    display: 'flex', alignItems: 'center', gap: '0.6rem', padding: '0.6rem', 
-                    borderRadius: '8px', cursor: 'pointer', background: isSel ? 'rgba(var(--brand-rgb), 0.1)' : 'transparent',
+                    display: 'flex', alignItems: 'center', gap: '0.8rem', padding: '0.8rem 1rem', 
+                    borderRadius: '10px', cursor: 'pointer', background: isSel ? 'rgba(var(--brand-rgb), 0.1)' : 'transparent',
                     transition: 'all 0.2s'
                   }}>
                     <input 
                       type="checkbox" 
                       checked={isSel} 
                       onChange={() => onToggle(id)}
-                      style={{ accentColor: 'var(--brand)' }}
+                      style={{ accentColor: 'var(--brand)', width: '18px', height: '18px' }}
                     />
-                    <span style={{ fontSize: '0.85rem', fontWeight: isSel ? '900' : '500' }}>{t(lang, opt.name || opt)}</span>
+                    <span style={{ fontSize: '1rem', fontWeight: '600', color: isSel ? 'var(--brand)' : 'var(--text)' }}>
+                      {t(lang, opt.name || opt)}
+                    </span>
                   </label>
                 );
               })}
@@ -566,32 +593,45 @@ export default function Profile({ preferences, lang }) {
               <button className={`tab-pill ${graphMode === 'list' ? 'active' : ''}`} onClick={() => setGraphMode('list')}><List size={18} /></button>
             </div>
           </div>
-          <div className="strength-filters">
-            <MultiSelect 
-              label="Groups" 
-              allLabel={t(lang, 'allGroups')}
-              options={categories} 
-              selected={selectedCategories} 
-              onToggle={toggleCategory} 
-              onToggleAll={toggleAllCategories}
-              lang={lang} 
-            />
-            <MultiSelect 
-              label="Exercises" 
-              allLabel={t(lang, 'allExercises')}
-              options={filteredExercises} 
-              selected={selectedExercises} 
-              onToggle={toggleExercise} 
-              onToggleAll={toggleAllExercises}
-              lang={lang} 
-            />
-            <select style={{ height: '42px' }} value={selectedPeriod} onChange={(e) => setSelectedPeriod(e.target.value)}>
-              <option value="all">{t(lang, 'allTime')}</option>
-              <option value="year">{t(lang, 'lastYear')}</option>
-              <option value="90">90 {t(lang, 'days')}</option>
-              <option value="30">30 {t(lang, 'days')}</option>
-              <option value="7">{t(lang, 'last7Days')}</option>
-            </select>
+          <div className="strength-filters" style={{ display: 'flex', flexDirection: 'column', gap: '0.8rem' }}>
+            <div style={{ display: 'flex', gap: '0.4rem', margin: '0 -0.4rem' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.3rem', flex: 1, minWidth: 0, padding: '0 0.4rem' }}>
+                <span style={{ fontSize: '0.6rem', fontWeight: '1000', color: 'var(--muted)', marginLeft: '0.5rem', letterSpacing: '1px' }}>GROUPS</span>
+                <MultiSelect 
+                  label="Groups" 
+                  align="left"
+                  allLabel={t(lang, 'allGroups')}
+                  options={categories} 
+                  selected={selectedCategories} 
+                  onToggle={toggleCategory} 
+                  onToggleAll={toggleAllCategories}
+                  lang={lang} 
+                />
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.3rem', flex: 1, minWidth: 0, padding: '0 0.4rem' }}>
+                <span style={{ fontSize: '0.6rem', fontWeight: '1000', color: 'var(--muted)', marginLeft: '0.5rem', letterSpacing: '1px' }}>EXERCISES</span>
+                <MultiSelect 
+                  label="Exercises" 
+                  align="right"
+                  allLabel={t(lang, 'allExercises')}
+                  options={filteredExercises} 
+                  selected={selectedExercises} 
+                  onToggle={toggleExercise} 
+                  onToggleAll={toggleAllExercises}
+                  lang={lang} 
+                />
+              </div>
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.3rem' }}>
+              <span style={{ fontSize: '0.6rem', fontWeight: '1000', color: 'var(--muted)', marginLeft: '0.5rem', letterSpacing: '1px' }}>PERIOD</span>
+              <select style={{ height: '52px', fontSize: '0.95rem', borderRadius: '16px', padding: '0 1rem', background: 'var(--bg-soft)', border: '1px solid var(--line)', color: 'var(--text)', fontWeight: '700', width: '100%' }} value={selectedPeriod} onChange={(e) => setSelectedPeriod(e.target.value)}>
+                <option value="all">{t(lang, 'allTime')}</option>
+                <option value="year">{t(lang, 'lastYear')}</option>
+                <option value="90">90 {t(lang, 'days')}</option>
+                <option value="30">30 {t(lang, 'days')}</option>
+                <option value="7">{t(lang, 'last7Days')}</option>
+              </select>
+            </div>
           </div>
           <div className="chart-box" style={{ height: '360px', marginTop: '1rem', background: 'transparent', border: 'none' }}>
             {graphMode === 'bar' && (chartData.length ? (
