@@ -10,7 +10,7 @@ def get_leaderboard_data():
     week_end = week_start + timedelta(days=6)
 
     User = get_user_model()
-    users = User.objects.filter(is_approved=True).select_related('preferences')
+    users = User.objects.filter(is_approved=True).select_related('preferences').exclude(preferences__hide_from_leaderboard=True)
     data = []
 
     last_week_start = week_start - timedelta(days=7)

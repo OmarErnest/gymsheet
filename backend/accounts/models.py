@@ -65,6 +65,7 @@ class UserPreference(models.Model):
     height_cm = models.PositiveIntegerField(null=True, blank=True)
     weight_kg = models.DecimalField(max_digits=5, decimal_places=2, null=True, blank=True)
     recommended_link = models.URLField(blank=True)
+    hide_from_leaderboard = models.BooleanField(default=False)
 
     def __str__(self):
         return f'{self.user.email} preferences'

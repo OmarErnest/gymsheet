@@ -19,6 +19,7 @@ export default function Settings({ preferences, setPreferences, lang }) {
     height_cm: preferences.height_cm || '',
     weight_kg: preferences.weight_kg || '',
     recommended_link: preferences.recommended_link || '',
+    hide_from_leaderboard: !!preferences.hide_from_leaderboard,
     profile_pic_url: user?.profile_pic_url || ''
   });
   const [message, setMessage] = useState('');
@@ -43,7 +44,7 @@ export default function Settings({ preferences, setPreferences, lang }) {
 
   async function update(field, value) {
     setForm((prev) => ({ ...prev, [field]: value }));
-    if (field === 'language' || field === 'theme' || field === 'font_size') {
+    if (field === 'language' || field === 'theme' || field === 'font_size' || field === 'hide_from_leaderboard') {
       setPreferences((prev) => ({ ...prev, [field]: value }));
       try {
         await api('/settings/', { method: 'PATCH', body: JSON.stringify({ [field]: value }) });
@@ -256,6 +257,11 @@ export default function Settings({ preferences, setPreferences, lang }) {
           <input type="checkbox" checked={!!form.goals_paused} onChange={(e) => update('goals_paused', e.target.checked)} />
         </label>
 
+        <label className="switch-row">
+          <span>{t(lang, 'hideFromLeaderboard')}<small>{t(lang, 'hideHelp')}</small></span>
+          <input type="checkbox" checked={!!form.hide_from_leaderboard} onChange={(e) => update('hide_from_leaderboard', e.target.checked)} />
+        </label>
+
         <label className="field"><span>{t(lang, 'recommendLink')}</span>
           <input type="url" placeholder="https://..." value={form.recommended_link} onChange={(e) => update('recommended_link', e.target.value)} disabled={user?.is_test_user} />
         </label>
@@ -377,8 +383,8 @@ export default function Settings({ preferences, setPreferences, lang }) {
           <div style={{ display: 'flex', justifyContent: 'space-between', opacity: 0.8 }}>
             <span>{t(lang, 'version')}</span>
             <span style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
-              <strong className="brand" style={{ fontWeight: '900' }}>v-03a.027</strong>
-              <small className="muted" style={{ fontWeight: '800', opacity: 0.8 }}>05.06.26</small>
+              <strong className="brand" style={{ fontWeight: '900' }}>v-03a.029</strong>
+              <small className="muted" style={{ fontWeight: '800', opacity: 0.8 }}>05.07.26</small>
             </span>
           </div>
 
