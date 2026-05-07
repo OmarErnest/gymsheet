@@ -135,6 +135,7 @@ export const dict = {
     chest: 'Chest',
     back: 'Back',
     arms: 'Arms',
+    calisthenics: 'Calisthenics',
     other: 'Other',
     legalDisclaimer: 'Legal Disclaimer',
     legalDisclaimerText: 'This is a private community application. Please do not use sensitive passwords or share private personal information. This platform is provided for tracking purposes only and does not intend to transfer or use your data beyond the community leaderboard or as specifically requested by you. It is not responsible for data security or privacy beyond basic community standards. For questions, contact support@gymsheet.com',
@@ -209,6 +210,11 @@ export const dict = {
     'Jogging': 'Jogging',
     'Plank': 'Plank',
     'Situps': 'Situps',
+    'Lat Pulldown': 'Lat Pulldown',
+    'Bench Press': 'Bench Press',
+    'Back Squat': 'Back Squat',
+    'Dumbbell Shoulder Press': 'Dumbbell Shoulder Press',
+    'Biceps Curl': 'Biceps Curl',
   },
   es: {
     appName: 'GymSheet',
@@ -346,6 +352,7 @@ export const dict = {
     chest: 'Pecho',
     back: 'Espalda',
     arms: 'Brazos',
+    calisthenics: 'Calistenia',
     other: 'Otro',
     legalDisclaimer: 'Aviso Legal',
     legalDisclaimerText: 'Esta es una aplicación de comunidad privada. Por favor, no use contraseñas sensibles ni comparta información personal privada. Esta plataforma se proporciona solo para fines de seguimiento y no tiene la intención de transferir o usar sus datos más allá de la tabla de clasificación de la comunidad o según lo solicite específicamente. No se hace responsable de la seguridad de los datos o la privacidad más allá de los estándares básicos de la comunidad. Para dudas, contacta a support@gymsheet.com',
@@ -420,6 +427,11 @@ export const dict = {
     'Jogging': 'Trote',
     'Plank': 'Plancha',
     'Situps': 'Abdominales',
+    'Lat Pulldown': 'Jalón al pecho',
+    'Bench Press': 'Press de banca',
+    'Back Squat': 'Sentadilla trasera',
+    'Dumbbell Shoulder Press': 'Press de hombro con mancuernas',
+    'Biceps Curl': 'Curl de bíceps',
   }
 };
 

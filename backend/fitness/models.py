@@ -12,6 +12,7 @@ class Exercise(models.Model):
         CHEST = 'chest', 'Chest'
         BACK = 'back', 'Back'
         ARMS = 'arms', 'Arms'
+        CALISTHENICS = 'calisthenics', 'Calisthenics'
         OTHER = 'other', 'Other'
 
     name = models.CharField(max_length=120)

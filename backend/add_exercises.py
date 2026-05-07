@@ -52,10 +52,10 @@ exercises_to_add = [
     ('Skull crusher', 'arms', False),
     ('Incline curl', 'arms', False),
     ('Cable pushdown', 'arms', False),
-    # Others
-    ('Jogging', 'other', True),
-    ('Plank', 'other', True),
-    ('Situps', 'other', False),
+    # Calisthenics
+    ('Jogging', 'calisthenics', True),
+    ('Plank', 'calisthenics', True),
+    ('Situps', 'calisthenics', False),
 ]
 
 for name, category, is_time_based in exercises_to_add:

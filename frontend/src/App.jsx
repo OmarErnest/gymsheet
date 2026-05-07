@@ -272,7 +272,7 @@ export default function App() {
 
       <main className="screen with-nav">
         {activeTab === 'home' && <Home lang={lang} />}
-        {activeTab === 'profile' && <Profile lang={lang} />}
+        {activeTab === 'profile' && <Profile preferences={preferences} lang={lang} />}
         {activeTab === 'global' && <Global lang={lang} />}
         {activeTab === 'settings' && <Settings preferences={preferences} setPreferences={setPreferences} lang={lang} />}
         {activeTab === 'admin' && <Admin lang={lang} />}

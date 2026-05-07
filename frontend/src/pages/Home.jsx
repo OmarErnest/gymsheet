@@ -214,7 +214,7 @@ export default function Home({ lang }) {
               exercise: item.exercise_detail.id,
               date: day.date,
               sets: logVal?.sets !== undefined && logVal?.sets !== '' ? Number(logVal.sets) : item.sets,
-              reps: logVal?.reps !== undefined && logVal?.reps !== '' ? Number(logVal.reps) : item.reps,
+              reps: isTimeBased ? 1 : (logVal?.reps !== undefined && logVal?.reps !== '' ? Number(logVal.reps) : item.reps),
               weight_kg: isTimeBased ? 0 : cleanWeight,
               duration: isTimeBased ? (logVal?.duration || '') : '',
               source_goal_plan: goal.id || null, 
@@ -322,16 +322,6 @@ export default function Home({ lang }) {
                       }}
                     >
                       <Settings size={18} className={editMode ? 'spin' : ''} />
-                    </button>
-                  )}
-                  {showStart && !editMode && (
-                    <button
-                      onClick={workoutActive ? stopWorkout : startWorkout}
-                      className={workoutActive ? 'small-btn danger' : 'small-btn primary'}
-                      style={{ gap: '0.4rem', padding: '0.4rem 0.8rem', height: '34px', fontSize: '0.75rem', borderRadius: '999px' }}
-                    >
-                      {workoutActive ? <Square size={12} fill="currentColor" /> : <Play size={12} fill="currentColor" />}
-                      {workoutActive ? 'End' : 'Start'}
                     </button>
                   )}
                   {isCompleted && !editMode && <CheckCircle2 size={18} className="success" />}
@@ -442,9 +432,9 @@ export default function Home({ lang }) {
                                     placeholder="R"
                                     className="input-bubble"
                                     type="number"
-                                    disabled={isLocked}
+                                    disabled={isLocked || isTimeBased}
                                     onFocus={(e) => e.target.select()}
-                                    value={logVal.reps ?? item.reps}
+                                    value={isTimeBased ? "1" : (logVal.reps ?? item.reps)}
                                     onChange={(e) => handleChange(item.id || `extra-${idx}`, 'reps', e.target.value)}
                                     style={{ flex: 1, minHeight: '40px' }}
                                   />

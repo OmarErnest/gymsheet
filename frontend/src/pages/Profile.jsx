@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Area, AreaChart, ResponsiveContainer, Tooltip, XAxis, YAxis, PieChart, Pie, Cell, CartesianGrid, Radar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis } from 'recharts';
-import { Plus, Trash2, Edit2, RefreshCw, Activity, Map as MapIcon, PlusCircle, Target, List, BarChart3, Radar as RadarIcon, GripVertical, Timer, Weight, Zap } from 'lucide-react';
+import { Plus, Trash2, Edit2, RefreshCw, Activity, Map as MapIcon, PlusCircle, Target, List, BarChart3, Radar as RadarIcon, GripVertical, Timer, Weight, Zap, ChevronDown } from 'lucide-react';
 import { api } from '../api/client.js';
 import LinkInput from '../components/LinkInput.jsx';
 import Skeleton from '../components/Skeleton.jsx';
@@ -12,7 +12,7 @@ import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, us
 import { arrayMove, SortableContext, sortableKeyboardCoordinates, verticalListSortingStrategy, useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 
-const categories = ['shoulder', 'legs', 'chest', 'back', 'arms', 'other'];
+const categories = ['shoulder', 'legs', 'chest', 'back', 'arms', 'calisthenics', 'other'];
 const bodyParts = ['biceps', 'forearms', 'chest', 'waist', 'hips', 'thigh', 'calf', 'shoulders', 'other'];
 const weekdays = [
   ['Mon', 0], ['Tue', 1], ['Wed', 2], ['Thu', 3], ['Fri', 4], ['Sat', 5], ['Sun', 6],
@@ -83,6 +83,84 @@ function SortableGoalItem({ goal, lang, onEdit, onDelete }) {
   );
 }
 
+function MultiSelect({ label, options, selected, onToggle, onToggleAll, lang, allLabel }) {
+  const [isOpen, setIsOpen] = useState(false);
+  
+  const allSelected = options.length > 0 && selected.length === options.length;
+  
+  const displayLabel = useMemo(() => {
+    if (selected.length === 0) return t(lang, 'none');
+    if (allSelected) return allLabel || t(lang, 'all');
+    if (selected.length === 1) {
+      const item = options.find(o => String(o.id || o) === String(selected[0]));
+      return item ? t(lang, item.name || item) : selected[0];
+    }
+    return `${selected.length} Selected`;
+  }, [selected, options, lang, allLabel, allSelected]);
+
+  return (
+    <div style={{ position: 'relative', flex: 1 }}>
+      <button 
+        type="button"
+        className="input-bubble" 
+        onClick={() => setIsOpen(!isOpen)}
+        style={{ width: '100%', textAlign: 'left', display: 'flex', justifyContent: 'space-between', alignItems: 'center', height: '42px', fontSize: '0.85rem', padding: '0 1rem' }}
+      >
+        <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{displayLabel}</span>
+        <ChevronDown size={14} style={{ opacity: 0.5 }} />
+      </button>
+      
+      {isOpen && (
+        <>
+          <div style={{ position: 'fixed', inset: 0, zIndex: 90 }} onClick={() => setIsOpen(false)} />
+          <div className="glass-card" style={{ 
+            position: 'absolute', top: '100%', left: 0, right: 0, zIndex: 100, 
+            marginTop: '0.5rem', maxHeight: '250px', overflowY: 'auto',
+            padding: '0.5rem', border: '1px solid var(--line)', boxShadow: '0 8px 32px rgba(0,0,0,0.3)',
+            background: 'var(--bg-soft)'
+          }}>
+            <div style={{ display: 'grid', gap: '0.2rem' }}>
+              <label style={{ 
+                display: 'flex', alignItems: 'center', gap: '0.6rem', padding: '0.6rem', 
+                borderRadius: '8px', cursor: 'pointer', background: 'transparent',
+                transition: 'all 0.2s'
+              }}>
+                <input 
+                  type="checkbox" 
+                  checked={allSelected} 
+                  onChange={() => onToggleAll(!allSelected)}
+                  style={{ accentColor: 'var(--brand)' }}
+                />
+                <span style={{ fontSize: '0.85rem', fontWeight: '900' }}>Select All</span>
+              </label>
+              <div style={{ height: '1px', background: 'var(--line)', margin: '0.2rem 0' }} />
+              {options.map((opt) => {
+                const id = String(opt.id || opt);
+                const isSel = selected.includes(id);
+                return (
+                  <label key={id} style={{ 
+                    display: 'flex', alignItems: 'center', gap: '0.6rem', padding: '0.6rem', 
+                    borderRadius: '8px', cursor: 'pointer', background: isSel ? 'rgba(var(--brand-rgb), 0.1)' : 'transparent',
+                    transition: 'all 0.2s'
+                  }}>
+                    <input 
+                      type="checkbox" 
+                      checked={isSel} 
+                      onChange={() => onToggle(id)}
+                      style={{ accentColor: 'var(--brand)' }}
+                    />
+                    <span style={{ fontSize: '0.85rem', fontWeight: isSel ? '900' : '500' }}>{t(lang, opt.name || opt)}</span>
+                  </label>
+                );
+              })}
+            </div>
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
+
 export default function Profile({ preferences, lang }) {
   const { user } = useAuth();
   const [loading, setLoading] = useState(true);
@@ -91,12 +169,12 @@ export default function Profile({ preferences, lang }) {
   const [measurements, setMeasurements] = useState([]);
   const [goals, setGoals] = useState([]);
   
-  const [selectedCategory, setSelectedCategory] = useState('');
-  const [selectedExercise, setSelectedExercise] = useState('');
+  const [selectedCategories, setSelectedCategories] = useState(categories.filter(c => c !== 'other'));
+  const [selectedExercises, setSelectedExercises] = useState([]);
   const [selectedPeriod, setSelectedPeriod] = useState('all'); // all, year, 90, 30, 7
 
   const [activeTab, setActiveTab] = useState('strength');
-  const [graphMode, setGraphMode] = useState('bar'); 
+  const [graphMode, setGraphMode] = useState('pie'); 
   const [showFrontBody, setShowFrontBody] = useState(true);
   const [selectedDot, setSelectedDot] = useState(null);
 
@@ -146,14 +224,39 @@ export default function Profile({ preferences, lang }) {
   }, []);
 
   const filteredExercises = useMemo(() => {
-    return selectedCategory ? exercises.filter((ex) => ex.category === selectedCategory) : exercises;
-  }, [selectedCategory, exercises]);
+    return selectedCategories.length > 0 
+      ? exercises.filter((ex) => selectedCategories.includes(ex.category)) 
+      : exercises;
+  }, [selectedCategories, exercises]);
+
+  const toggleCategory = (cat) => {
+    setSelectedCategories(prev => 
+      prev.includes(cat) ? prev.filter(c => c !== cat) : [...prev, cat]
+    );
+    setSelectedExercises([]); 
+  };
+
+  const toggleAllCategories = (selectAll) => {
+    setSelectedCategories(selectAll ? categories : []);
+    setSelectedExercises([]);
+  };
+
+  const toggleExercise = (exId) => {
+    const idStr = String(exId);
+    setSelectedExercises(prev => 
+      prev.includes(idStr) ? prev.filter(e => e !== idStr) : [...prev, idStr]
+    );
+  };
+
+  const toggleAllExercises = (selectAll) => {
+    setSelectedExercises(selectAll ? filteredExercises.map(ex => String(ex.id)) : []);
+  };
 
   const chartData = useMemo(() => {
     const now = new Date();
     const filtered = logs.filter((log) => {
-      const matchesCat = !selectedCategory || log.exercise_detail?.category === selectedCategory;
-      const matchesEx = !selectedExercise || String(log.exercise) === String(selectedExercise);
+      const matchesCat = selectedCategories.length === 0 || selectedCategories.includes(log.exercise_detail?.category);
+      const matchesEx = selectedExercises.length === 0 || selectedExercises.includes(String(log.exercise));
       if (!matchesCat || !matchesEx) return false;
 
       if (selectedPeriod === 'all') return true;
@@ -169,12 +272,19 @@ export default function Profile({ preferences, lang }) {
     });
 
     const grouped = {};
+    const userWeight = parseFloat(preferences?.weight_kg) || 70;
     filtered.forEach((log) => {
       const d = log.date;
       if (!grouped[d]) {
         grouped[d] = { date: d.slice(5), weight: 0, count: 0 };
       }
-      grouped[d].weight += Number(log.weight_kg || 0);
+      let weight = Number(log.weight_kg || 0);
+      if (log.exercise_detail?.is_time_based) {
+        const parts = (log.duration || '0:0').split(':');
+        const mins = parts.length === 2 ? (parseInt(parts[0]) + parseInt(parts[1])/60) : (parseFloat(parts[0]) || 0);
+        weight = mins * (userWeight / 2);
+      }
+      grouped[d].weight += weight;
       grouped[d].count += 1;
     });
 
@@ -184,13 +294,13 @@ export default function Profile({ preferences, lang }) {
         ...item,
         weight: Number((item.weight / item.count).toFixed(1)),
       }));
-  }, [logs, selectedExercise, selectedCategory]);
+  }, [logs, selectedExercises, selectedCategories, selectedPeriod]);
 
   const filteredLogsList = useMemo(() => {
     const now = new Date();
     return logs.filter((log) => {
-      const matchesCat = !selectedCategory || log.exercise_detail?.category === selectedCategory;
-      const matchesEx = !selectedExercise || String(log.exercise) === String(selectedExercise);
+      const matchesCat = selectedCategories.length === 0 || selectedCategories.includes(log.exercise_detail?.category);
+      const matchesEx = selectedExercises.length === 0 || selectedExercises.includes(String(log.exercise));
       if (!matchesCat || !matchesEx) return false;
 
       if (selectedPeriod === 'all') return true;
@@ -204,24 +314,27 @@ export default function Profile({ preferences, lang }) {
       if (selectedPeriod === '7') return diffDays <= 7;
       return true;
     }).sort((a, b) => b.date.localeCompare(a.date));
-  }, [logs, selectedExercise, selectedCategory, selectedPeriod]);
+  }, [logs, selectedExercises, selectedCategories, selectedPeriod]);
 
   const pieData = useMemo(() => {
     const dataGroup = {}; // name -> { totalWeight, count }
     
+    const userWeight = parseFloat(preferences?.weight_kg) || 70;
     filteredLogsList.forEach(log => {
-      // If an exercise is selected, we might want to compare it with others in same category? 
-      // User says "tell the ration of different exercises when I filter it... it cannot only show category"
-      // If category is selected, show exercises in that category.
-      // If no category selected, show categories.
-      const name = selectedCategory 
+      const name = (selectedCategories.length === 1) 
         ? t(lang, log.exercise_detail?.name) 
         : t(lang, log.exercise_detail?.category || 'other');
       
       if (!dataGroup[name]) {
         dataGroup[name] = { totalWeight: 0, count: 0 };
       }
-      dataGroup[name].totalWeight += Number(log.weight_kg || 0);
+      let weight = Number(log.weight_kg || 0);
+      if (log.exercise_detail?.is_time_based) {
+        const parts = (log.duration || '0:0').split(':');
+        const mins = parts.length === 2 ? (parseInt(parts[0]) + parseInt(parts[1])/60) : (parseFloat(parts[0]) || 0);
+        weight = mins * (userWeight / 2);
+      }
+      dataGroup[name].totalWeight += weight;
       dataGroup[name].count += 1;
     });
 
@@ -229,7 +342,7 @@ export default function Profile({ preferences, lang }) {
       name,
       value: Number((stats.totalWeight / stats.count).toFixed(1)) || 0
     })).sort((a, b) => b.value - a.value).slice(0, 8); // Limit to top 8 for readability
-  }, [filteredLogsList, lang, selectedCategory]);
+  }, [filteredLogsList, lang, selectedCategories]);
 
   async function createExercise(event) {
     event.preventDefault();
@@ -388,21 +501,31 @@ export default function Profile({ preferences, lang }) {
             <p className="eyebrow">{t(lang, 'reviewProgress')}</p>
             <h2>{t(lang, 'strengthGraph')}</h2>
             <div className="tab-pill-box" style={{ margin: '0.8rem auto 0', width: 'fit-content' }}>
-              <button className={`tab-pill ${graphMode === 'bar' ? 'active' : ''}`} onClick={() => setGraphMode('bar')}><BarChart3 size={18} /></button>
               <button className={`tab-pill ${graphMode === 'pie' ? 'active' : ''}`} onClick={() => setGraphMode('pie')}><RadarIcon size={18} /></button>
+              <button className={`tab-pill ${graphMode === 'bar' ? 'active' : ''}`} onClick={() => setGraphMode('bar')}><BarChart3 size={18} /></button>
               <button className={`tab-pill ${graphMode === 'list' ? 'active' : ''}`} onClick={() => setGraphMode('list')}><List size={18} /></button>
             </div>
           </div>
-          <div style={{ display: 'flex', gap: '0.8rem', marginTop: '1rem' }}>
-            <select style={{ flex: 1 }} value={selectedCategory} onChange={(e) => { setSelectedCategory(e.target.value); setSelectedExercise(''); }}>
-              <option value="">{t(lang, 'allGroups')}</option>
-              {categories.map((category) => <option key={category} value={category}>{t(lang, category)}</option>)}
-            </select>
-            <select style={{ flex: 1 }} value={selectedExercise} onChange={(e) => setSelectedExercise(e.target.value)}>
-              <option value="">{t(lang, 'allExercises')}</option>
-              {filteredExercises.map((exercise) => <option key={exercise.id} value={exercise.id}>{t(lang, exercise.name)}</option>)}
-            </select>
-            <select style={{ flex: 0.8 }} value={selectedPeriod} onChange={(e) => setSelectedPeriod(e.target.value)}>
+          <div style={{ display: 'flex', gap: '0.8rem', marginTop: '1.2rem' }}>
+            <MultiSelect 
+              label="Groups" 
+              allLabel={t(lang, 'allGroups')}
+              options={categories} 
+              selected={selectedCategories} 
+              onToggle={toggleCategory} 
+              onToggleAll={toggleAllCategories}
+              lang={lang} 
+            />
+            <MultiSelect 
+              label="Exercises" 
+              allLabel={t(lang, 'allExercises')}
+              options={filteredExercises} 
+              selected={selectedExercises} 
+              onToggle={toggleExercise} 
+              onToggleAll={toggleAllExercises}
+              lang={lang} 
+            />
+            <select style={{ flex: 0.8, height: '42px' }} value={selectedPeriod} onChange={(e) => setSelectedPeriod(e.target.value)}>
               <option value="all">{t(lang, 'allTime')}</option>
               <option value="year">{t(lang, 'lastYear')}</option>
               <option value="90">90 {t(lang, 'days')}</option>
@@ -587,8 +710,8 @@ export default function Profile({ preferences, lang }) {
                       <select required value={item.exercise} onChange={(e) => updateGoalExercise(index, 'exercise', e.target.value)} style={{ textOverflow: 'ellipsis' }}><option value="" disabled>Pick Exercise</option>{availableExercises.map((ex) => <option key={ex.id} value={ex.id}>{ex.name}</option>)}</select>
                     </div>
                     <div className="goal-exercise-inputs">
-                      <input type="number" placeholder="Sets" value={item.sets} onFocus={(e) => e.target.select()} onChange={(e) => updateGoalExercise(index, 'sets', e.target.value)} className="input-bubble" style={{ width: '100%', textAlign: 'center' }} />
-                      <input type="number" placeholder="Reps" value={item.reps} onFocus={(e) => e.target.select()} onChange={(e) => updateGoalExercise(index, 'reps', e.target.value)} className="input-bubble" style={{ width: '100%', textAlign: 'center' }} />
+                      <input type="number" placeholder={t(lang, 'sets')} value={item.sets} onFocus={(e) => e.target.select()} onChange={(e) => updateGoalExercise(index, 'sets', e.target.value)} className="input-bubble" style={{ width: '100%', textAlign: 'center' }} />
+                      <input type="number" placeholder={t(lang, 'reps')} value={item.reps} onFocus={(e) => e.target.select()} onChange={(e) => updateGoalExercise(index, 'reps', e.target.value)} className="input-bubble" style={{ width: '100%', textAlign: 'center' }} />
                       <button className="small-btn danger-btn" type="button" onClick={() => removeGoalExercise(index)} style={{ minWidth: '46px' }}><Trash2 size={16} /></button>
                     </div>
                   </div>

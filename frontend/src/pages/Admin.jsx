@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Shield, Send, Bell, MessageSquare, Check, Users } from 'lucide-react';
+import { Shield, Send, Bell, MessageSquare, Check, Users, Zap, RefreshCw } from 'lucide-react';
 import { api } from '../api/client.js';
 import { t } from '../i18n.js';
 
@@ -222,6 +222,39 @@ export default function Admin({ lang }) {
               </div>
             </div>
           ))}
+        </div>
+      </article>
+
+      <article className="glass-card">
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--brand)', marginBottom: '1rem' }}>
+          <Zap size={18} />
+          <h3 className="eyebrow" style={{ color: 'inherit', margin: 0 }}>DIAGNOSTICS & TESTING</h3>
+        </div>
+        <div className="stack" style={{ gap: '1rem' }}>
+          <p className="muted" style={{ fontSize: '0.8rem' }}>Trigger system-wide events to verify UI components and notification delivery.</p>
+          <button 
+            className="secondary-btn" 
+            onClick={async () => {
+              setStatus('Running test sequence...');
+              try {
+                // 1. Global Notice
+                await api('/global-notices/', { method: 'POST', body: JSON.stringify({ title: "DIAGNOSTIC TEST", message: "System-wide popup event triggered successfully." }) });
+                // 2. Hydration Trigger (local)
+                window.dispatchEvent(new CustomEvent('trigger-hydration'));
+                // 3. Maintenance Notice
+                const now = new Date();
+                const end = new Date(now.getTime() + 2*60*60*1000);
+                await api('/maintenance-notices/', { method: 'POST', body: JSON.stringify({ start_time: now.toISOString(), end_time: end.toISOString(), timezone: 'UTC', message: 'DIAGNOSTIC MAINTENANCE TEST' }) });
+                
+                setStatus('Test sequence complete!');
+                loadData();
+              } catch (err) {
+                setStatus('Diagnostic Error: ' + err.message);
+              }
+            }}
+          >
+            <RefreshCw size={16} /> Trigger All Events (Dummy Test)
+          </button>
         </div>
       </article>
 
