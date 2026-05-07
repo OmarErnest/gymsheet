@@ -677,30 +677,8 @@ export default function Profile({ preferences, lang }) {
                 <strong style={{ fontSize: '0.9rem', opacity: 0.7 }}>Exercises ({goalForm.goal_exercises.length}/10)</strong>
               </div>
               
-              <button 
-                className="dotted-btn" 
-                type="button" 
-                onClick={addGoalExercise} 
-                disabled={goalForm.goal_exercises.length >= 10}
-                style={{ 
-                  width: '100%', 
-                  marginBottom: '1.5rem', 
-                  padding: '1.2rem', 
-                  border: '2px dashed var(--line)', 
-                  borderRadius: '16px', 
-                  background: 'rgba(255,255,255,0.02)',
-                  color: 'var(--brand)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  gap: '0.8rem',
-                  cursor: 'pointer',
-                  transition: 'all 0.2s'
-                }}
-              >
-                <Plus size={20} />
-                <span style={{ fontWeight: '900', fontSize: '1rem', letterSpacing: '0.5px' }}>{t(lang, 'addExercise')}</span>
-              </button>
+              {/* Add Button moved to bottom */}
+
               {goalForm.goal_exercises.map((item, index) => {
                 const availableExercises = item.categoryFilter ? exercises.filter(ex => ex.category === item.categoryFilter) : exercises;
                 return (
@@ -717,6 +695,33 @@ export default function Profile({ preferences, lang }) {
                   </div>
                 );
               })}
+              
+              {goalForm.goal_exercises.length < 10 && (
+                <button 
+                  className="dotted-btn" 
+                  type="button" 
+                  onClick={addGoalExercise} 
+                  style={{ 
+                    width: '100%', 
+                    marginTop: '0.5rem',
+                    marginBottom: '1.5rem', 
+                    padding: '1.2rem', 
+                    border: '2px dashed var(--line)', 
+                    borderRadius: '16px', 
+                    background: 'rgba(255,255,255,0.02)',
+                    color: 'var(--brand)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '0.8rem',
+                    cursor: 'pointer',
+                    transition: 'all 0.2s'
+                  }}
+                >
+                  <Plus size={20} />
+                  <span style={{ fontWeight: '900', fontSize: '1rem', letterSpacing: '0.5px' }}>{t(lang, 'addExercise')}</span>
+                </button>
+              )}
             </div>
             <button className="primary-btn">{goalForm.id ? "Update" : "Create"}</button>
           </form>
