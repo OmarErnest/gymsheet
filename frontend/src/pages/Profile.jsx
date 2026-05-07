@@ -169,7 +169,7 @@ export default function Profile({ preferences, lang }) {
   const [measurements, setMeasurements] = useState([]);
   const [goals, setGoals] = useState([]);
   
-  const [selectedCategories, setSelectedCategories] = useState(categories.filter(c => c !== 'other'));
+  const [selectedCategories, setSelectedCategories] = useState(categories.filter(c => c !== 'other' && c !== 'calisthenics'));
   const [selectedExercises, setSelectedExercises] = useState([]);
   const [selectedPeriod, setSelectedPeriod] = useState('all'); // all, year, 90, 30, 7
 
