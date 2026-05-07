@@ -1,11 +1,11 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { api } from '../api/client';
 import EventModal from './EventModal';
 
 export default function EventManager({ activeTab, user }) {
   const [modal, setModal] = useState({ open: false, image: '', title: '', message: '', subMessage: '', type: '' });
 
-  const triggerEvent = (config) => {
+  const triggerEvent = useCallback((config) => {
     console.log("triggerEvent called with:", config.image);
     // Tab-specific filtering
     const tabMapping = {
@@ -33,90 +33,7 @@ export default function EventManager({ activeTab, user }) {
       type: config.type || 'notice'
     });
     return true;
-  };
-
-  useEffect(() => {
-    if (!user) return;
-
-    const checkNotices = async () => {
-      console.log("Polling for notices...");
-      try {
-        // 1. Global Notices
-        api('/global-notices/').then(res => {
-          const notices = res.results || res;
-          if (notices && Array.isArray(notices) && notices.length > 0) {
-            const latest = notices[0];
-            const seenKey = `seen_notice_${latest.id}`;
-            if (!localStorage.getItem(seenKey)) {
-              console.log("New Global Notice Detected:", latest.id);
-              const shown = triggerEvent({
-                image: '/icons/events/Notice.png',
-                title: 'SYSTEM NOTICE',
-                message: latest.message.toUpperCase(),
-                type: 'notice'
-              });
-              if (shown) {
-                localStorage.setItem(seenKey, 'true');
-                window.dispatchEvent(new CustomEvent('add-local-notification', { 
-                  detail: { message: `Notice: ${latest.title}`, type: 'notice' } 
-                }));
-              }
-            }
-          }
-        }).catch(err => console.error("Global notice check failed:", err));
-
-        // 2. Maintenance Notices
-        api('/maintenance-notices/').then(maintRes => {
-          const maints = maintRes.results || maintRes;
-          if (maints && Array.isArray(maints) && maints.length > 0) {
-            const latest = maints[0];
-            const seenKey = `seen_maint_${latest.id}`;
-            if (!localStorage.getItem(seenKey)) {
-              console.log("New Maintenance Alert Detected!", latest.id);
-              const start = new Date(latest.start_time).toLocaleString();
-              const end = new Date(latest.end_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-              const shown = triggerEvent({
-                image: '/icons/events/Maintenence.png',
-                title: 'MAINTENANCE',
-                message: `${latest.message}\n\nSCHEDULE:\n${start} - ${end} ${latest.timezone}`,
-                type: 'notice'
-              });
-              if (shown) {
-                localStorage.setItem(seenKey, 'true');
-                window.dispatchEvent(new CustomEvent('add-local-notification', { 
-                  detail: { message: `Maint: ${latest.message.substring(0, 20)}...`, type: 'notice' } 
-                }));
-              }
-            }
-          }
-        }).catch(err => console.error("Maintenance check failed:", err));
-
-      } catch (err) {
-        console.error("Critical poll failure:", err);
-      }
-    };
-
-    checkNotices();
-    checkLeaderboardEvents();
-    checkWeeklyEvents();
-
-    const noticeInterval = setInterval(checkNotices, 10000);
-
-    const handleHydrate = () => {
-      triggerEvent({
-        image: '/icons/events/Hydrate.png',
-        title: 'STAY HYDRATED',
-        message: 'YOU ARE CRUSHING THIS WORKOUT! DRINK WATER TO MAINTAIN PEAK PERFORMANCE.',
-        type: 'hydrate'
-      });
-    };
-
-    window.addEventListener('trigger-hydration', handleHydrate);
-    return () => {
-      window.removeEventListener('trigger-hydration', handleHydrate);
-      clearInterval(noticeInterval);
-    };
-  }, [user, activeTab]);
+  }, [activeTab]);
 
   function getWeekNumber(d) {
     const date = new Date(d.getTime());
@@ -126,7 +43,7 @@ export default function EventManager({ activeTab, user }) {
     return 1 + Math.round(((date.getTime() - week1.getTime()) / 86400000 - 3 + (week1.getDay() + 6) % 7) / 7);
   }
 
-  const checkLeaderboardEvents = async () => {
+  const checkLeaderboardEvents = useCallback(async () => {
     try {
       const data = await api('/leaderboard/');
       const self = (data.leaderboard || []).find(u => u.id === user.id);
@@ -174,9 +91,9 @@ export default function EventManager({ activeTab, user }) {
         }
       }
     } catch (err) {}
-  };
+  }, [user, triggerEvent]);
 
-  const checkWeeklyEvents = async () => {
+  const checkWeeklyEvents = useCallback(async () => {
     try {
       const now = new Date();
       const start = new Date(now);
@@ -225,7 +142,75 @@ export default function EventManager({ activeTab, user }) {
         }
       }
     } catch (err) {}
-  };
+  }, [triggerEvent]);
+
+  useEffect(() => {
+    if (!user) return;
+
+    const checkNotices = async () => {
+      console.log("Polling for notices...");
+      try {
+        api('/global-notices/').then(res => {
+          const notices = res.results || res;
+          if (notices && Array.isArray(notices) && notices.length > 0) {
+            const latest = notices[0];
+            const seenKey = `seen_notice_${latest.id}`;
+            if (!localStorage.getItem(seenKey)) {
+              triggerEvent({
+                image: '/icons/events/Notice.png',
+                title: 'SYSTEM NOTICE',
+                message: latest.message.toUpperCase(),
+                type: 'notice'
+              });
+              localStorage.setItem(seenKey, 'true');
+            }
+          }
+        }).catch(err => console.error("Global notice check failed:", err));
+
+        api('/maintenance-notices/').then(maintRes => {
+          const maints = maintRes.results || maintRes;
+          if (maints && Array.isArray(maints) && maints.length > 0) {
+            const latest = maints[0];
+            const seenKey = `seen_maint_${latest.id}`;
+            if (!localStorage.getItem(seenKey)) {
+              const start = new Date(latest.start_time).toLocaleString();
+              const end = new Date(latest.end_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+              triggerEvent({
+                image: '/icons/events/Maintenence.png',
+                title: 'MAINTENANCE',
+                message: `${latest.message}\n\nSCHEDULE:\n${start} - ${end} ${latest.timezone}`,
+                type: 'notice'
+              });
+              localStorage.setItem(seenKey, 'true');
+            }
+          }
+        }).catch(err => console.error("Maintenance check failed:", err));
+      } catch (err) {}
+    };
+
+    checkNotices();
+    checkLeaderboardEvents();
+    checkWeeklyEvents();
+
+    const noticeInterval = setInterval(checkNotices, 300000); // 5 minutes
+    return () => clearInterval(noticeInterval);
+  }, [user, triggerEvent, checkLeaderboardEvents, checkWeeklyEvents]);
+
+  useEffect(() => {
+    if (!user) return;
+    
+    const handleHydrate = () => {
+      triggerEvent({
+        image: '/icons/events/Hydrate.png',
+        title: 'STAY HYDRATED',
+        message: 'YOU ARE CRUSHING THIS WORKOUT! DRINK WATER TO MAINTAIN PEAK PERFORMANCE.',
+        type: 'hydrate'
+      });
+    };
+
+    window.addEventListener('trigger-hydration', handleHydrate);
+    return () => window.removeEventListener('trigger-hydration', handleHydrate);
+  }, [user, activeTab, triggerEvent]);
 
   return (
     <EventModal 

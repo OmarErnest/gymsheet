@@ -175,12 +175,22 @@ export default function Profile({ preferences, lang }) {
     goals: false
   });
   
-  const [selectedCategories, setSelectedCategories] = useState(categories.filter(c => c !== 'other' && c !== 'calisthenics'));
-  const [selectedExercises, setSelectedExercises] = useState([]);
-  const [selectedPeriod, setSelectedPeriod] = useState('all'); // all, year, 90, 30, 7
+  const [selectedCategories, setSelectedCategories] = useState(() => {
+    const saved = localStorage.getItem('selectedCategories');
+    return saved ? JSON.parse(saved) : categories.filter(c => c !== 'other' && c !== 'calisthenics');
+  });
+  const [selectedExercises, setSelectedExercises] = useState(() => {
+    const saved = localStorage.getItem('selectedExercises');
+    return saved ? JSON.parse(saved) : [];
+  });
+  const [selectedPeriod, setSelectedPeriod] = useState(() => {
+    return localStorage.getItem('selectedPeriod') || 'all';
+  });
 
   const [activeTab, setActiveTab] = useState('strength');
-  const [graphMode, setGraphMode] = useState('pie'); 
+  const [graphMode, setGraphMode] = useState(() => {
+    return localStorage.getItem('graphMode') || 'pie';
+  }); 
   const [showFrontBody, setShowFrontBody] = useState(true);
   const [selectedDot, setSelectedDot] = useState(null);
 
@@ -265,6 +275,13 @@ export default function Profile({ preferences, lang }) {
     window.addEventListener('change-profile-tab', handleSubTab);
     return () => window.removeEventListener('change-profile-tab', handleSubTab);
   }, []);
+
+  useEffect(() => {
+    localStorage.setItem('selectedCategories', JSON.stringify(selectedCategories));
+    localStorage.setItem('selectedExercises', JSON.stringify(selectedExercises));
+    localStorage.setItem('selectedPeriod', selectedPeriod);
+    localStorage.setItem('graphMode', graphMode);
+  }, [selectedCategories, selectedExercises, selectedPeriod, graphMode]);
 
   const filteredExercises = useMemo(() => {
     return selectedCategories.length > 0 
