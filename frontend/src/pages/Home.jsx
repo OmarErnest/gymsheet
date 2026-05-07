@@ -1,5 +1,5 @@
-import { useEffect, useState, useRef, useMemo } from 'react';
-import { Save, Plus, Trash2, CheckCircle2, ChevronRight, ChevronLeft, Trophy, Play, Timer, Pause, RotateCcw, Droplets, Square, Settings, Table, LayoutGrid } from 'lucide-react';
+import { useEffect, useState, useRef, useMemo, Fragment } from 'react';
+import { Save, Plus, Trash2, CheckCircle2, ChevronRight, ChevronLeft, Trophy, Play, Timer, Pause, RotateCcw, Droplets, Square, Settings, Table, LayoutGrid, CalendarDays } from 'lucide-react';
 import { api, iso } from '../api/client.js';
 import Skeleton from '../components/Skeleton.jsx';
 import { t } from '../i18n.js';
@@ -72,8 +72,8 @@ export default function Home({ lang }) {
   const [workoutStart, setWorkoutStart] = useState(localStorage.getItem('workout_start'));
 
   const todayRef = useRef(null);
-
   const [shouldScrollToToday, setShouldScrollToToday] = useState(true);
+  const [showScrollTop, setShowScrollTop] = useState(false);
 
   async function loadInitial() {
     setLoading(true);
@@ -107,11 +107,20 @@ export default function Home({ lang }) {
   useEffect(() => {
     const handleTab = (e) => {
       if (e.detail === 'home') {
+        setRelativeWeek(0);
         setShouldScrollToToday(true);
       }
     };
     window.addEventListener('change-app-tab', handleTab);
     return () => window.removeEventListener('change-app-tab', handleTab);
+  }, []);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      setShowScrollTop(window.scrollY > 400);
+    };
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
   useEffect(() => {
@@ -125,11 +134,11 @@ export default function Home({ lang }) {
         setShouldScrollToToday(false);
       }
     }
-    if (!loading && !shouldScrollToToday) {
-       // if we just loaded a week that is NOT today, or we shouldn't scroll, just stay at top
-       // window.scrollTo({ top: 0 }); // maybe?
-    }
   }, [loading, days, shouldScrollToToday]);
+
+  const scrollToTop = () => {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
 
   // Hydration logic
   useEffect(() => {
@@ -354,20 +363,24 @@ export default function Home({ lang }) {
             <thead>
               <tr>
                 <th style={{ padding: '1.2rem 1rem', textAlign: 'left', background: 'rgba(255,255,255,0.03)', borderBottom: '2px solid var(--line)', color: 'var(--muted)', textTransform: 'uppercase', fontSize: '0.7rem', letterSpacing: '1px', fontWeight: '900' }}>Day</th>
-                <th style={{ padding: '1.2rem 1rem', textAlign: 'left', background: 'rgba(255,255,255,0.03)', borderBottom: '2px solid var(--line)', color: 'var(--muted)', textTransform: 'uppercase', fontSize: '0.7rem', letterSpacing: '1px', fontWeight: '900' }}>Training Plan</th>
+                <th style={{ padding: '1.2rem 1rem', textAlign: 'left', background: 'rgba(255,255,255,0.03)', borderBottom: '2px solid var(--line)', color: 'var(--muted)', textTransform: 'uppercase', fontSize: '0.7rem', letterSpacing: '1px', fontWeight: '900' }}>Exercise</th>
+                <th style={{ padding: '1.2rem 1rem', textAlign: 'left', background: 'rgba(255,255,255,0.03)', borderBottom: '2px solid var(--line)', color: 'var(--muted)', textTransform: 'uppercase', fontSize: '0.7rem', letterSpacing: '1px', fontWeight: '900' }}>Sets x Reps</th>
+                <th style={{ padding: '1.2rem 1rem', textAlign: 'left', background: 'rgba(255,255,255,0.03)', borderBottom: '2px solid var(--line)', color: 'var(--muted)', textTransform: 'uppercase', fontSize: '0.7rem', letterSpacing: '1px', fontWeight: '900' }}>Weight / Time</th>
               </tr>
             </thead>
             <tbody>
-              {days.map(day => (
-                <tr key={day.date} style={{ 
-                  background: day.is_today ? 'rgba(var(--brand-rgb), 0.08)' : 'transparent',
-                  transition: 'background 0.3s'
-                }}>
-                  <td style={{ 
+              {days.map(day => {
+                const allExercises = day.goals?.flatMap(g => g.goal_exercises || []) || [];
+                const rowCount = Math.max(allExercises.length, 1);
+                
+                const dayCell = (
+                  <td rowSpan={rowCount} style={{ 
                     padding: '1.2rem 1rem', 
                     verticalAlign: 'top', 
                     borderBottom: '1px solid var(--line)',
-                    width: '100px'
+                    width: '120px',
+                    borderRight: '1px solid var(--line)',
+                    background: day.is_today ? 'rgba(var(--brand-rgb), 0.05)' : 'transparent'
                   }}>
                     <div style={{ display: 'flex', flexDirection: 'column' }}>
                       <span style={{ fontWeight: '1000', fontSize: '1rem', color: day.is_today ? 'var(--brand)' : 'var(--text)' }}>
@@ -378,55 +391,57 @@ export default function Home({ lang }) {
                       </span>
                     </div>
                   </td>
-                  <td style={{ padding: '1.2rem 1rem', borderBottom: '1px solid var(--line)' }}>
-                    <div style={{ display: 'grid', gap: '0.8rem' }}>
-                      {(!day.goals || day.goals.length === 0) ? (
-                        <span style={{ fontStyle: 'italic', opacity: 0.3, fontSize: '0.8rem' }}>Rest Day</span>
-                      ) : day.goals.map(goal => (
-                        <div key={goal.id} style={{ display: 'grid', gap: '0.5rem' }}>
-                          {goal.goal_exercises?.map(item => {
-                            const isTimeBased = item.exercise_detail?.is_time_based;
-                            const logVal = inlineLogs[item.id] || {};
-                            const isDone = !!logVal.log_id;
-                            
-                            return (
-                              <div key={item.id} style={{ 
-                                display: 'flex', 
-                                justifyContent: 'space-between', 
-                                alignItems: 'center',
-                                padding: '0.4rem 0.8rem',
-                                background: isDone ? 'rgba(var(--brand-rgb), 0.1)' : 'rgba(255,255,255,0.02)',
-                                borderRadius: '10px',
-                                border: isDone ? '1px solid rgba(var(--brand-rgb), 0.2)' : '1px solid transparent',
-                                opacity: isDone ? 1 : 0.7
-                              }}>
-                                <span style={{ fontWeight: '700', color: isDone ? 'var(--brand)' : 'var(--text)' }}>
-                                  {t(lang, item.exercise_detail?.name)}
-                                </span>
-                                <div style={{ display: 'flex', gap: '0.4rem', alignItems: 'center' }}>
-                                  <span style={{ 
-                                    fontSize: '0.75rem', 
-                                    fontWeight: '900', 
-                                    padding: '2px 8px', 
-                                    background: isDone ? 'var(--brand)' : 'var(--card-strong)',
-                                    color: isDone ? '#052e16' : 'var(--muted)',
-                                    borderRadius: '6px'
-                                  }}>
-                                    {logVal.sets ?? item.sets}x{logVal.reps ?? item.reps}
-                                  </span>
-                                  <span style={{ fontSize: '0.75rem', opacity: 0.8, fontWeight: '800' }}>
-                                    {isTimeBased ? (logVal.duration || '00:00') : `${logVal.weight_kg || '0'}kg`}
-                                  </span>
-                                </div>
-                              </div>
-                            );
-                          })}
-                        </div>
-                      ))}
-                    </div>
-                  </td>
-                </tr>
-              ))}
+                );
+
+                if (allExercises.length === 0) {
+                  return (
+                    <tr key={day.date} style={{ background: day.is_today ? 'rgba(var(--brand-rgb), 0.08)' : 'transparent' }}>
+                      {dayCell}
+                      <td colSpan={3} style={{ padding: '1.2rem 1rem', borderBottom: '1px solid var(--line)', fontStyle: 'italic', opacity: 0.3 }}>
+                        Rest Day
+                      </td>
+                    </tr>
+                  );
+                }
+
+                return (
+                  <Fragment key={day.date}>
+                    {allExercises.map((item, idx) => {
+                      const isTimeBased = item.exercise_detail?.is_time_based;
+                      const logVal = inlineLogs[item.id] || {};
+                      const isDone = !!logVal.log_id;
+                      
+                      return (
+                        <tr key={item.id} style={{ 
+                          background: isDone ? 'rgba(var(--brand-rgb), 0.08)' : (day.is_today ? 'rgba(var(--brand-rgb), 0.03)' : 'transparent'),
+                          transition: 'background 0.3s'
+                        }}>
+                          {idx === 0 && dayCell}
+                          <td style={{ padding: '1.2rem 1rem', borderBottom: '1px solid var(--line)', fontWeight: '700', color: isDone ? 'var(--brand)' : 'var(--text)' }}>
+                            {t(lang, item.exercise_detail?.name)}
+                          </td>
+                          <td style={{ padding: '1.2rem 1rem', borderBottom: '1px solid var(--line)' }}>
+                            <span style={{ 
+                              fontSize: '0.75rem', 
+                              fontWeight: '900', 
+                              padding: '4px 10px', 
+                              background: isDone ? 'var(--brand)' : 'var(--card-strong)',
+                              color: isDone ? '#052e16' : 'var(--muted)',
+                              borderRadius: '8px',
+                              whiteSpace: 'nowrap'
+                            }}>
+                              {logVal.sets ?? item.sets}x{String(logVal.reps ?? item.reps).padStart(2, '0')}
+                            </span>
+                          </td>
+                          <td style={{ padding: '1.2rem 1rem', borderBottom: '1px solid var(--line)', fontSize: '0.8rem', fontWeight: '800', opacity: 0.8, whiteSpace: 'nowrap' }}>
+                            {isTimeBased ? `${logVal.duration || item.duration || '00:00'} min` : `${logVal.weight_kg || '0'}kg`}
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </Fragment>
+                );
+              })}
             </tbody>
           </table>
         </div>
@@ -671,13 +686,30 @@ export default function Home({ lang }) {
       )}
 
       <div className="bubble-stack">
+        {showScrollTop && (
+          <button
+            className="bubble-btn"
+            onClick={scrollToTop}
+            style={{ 
+              background: 'rgba(255, 255, 255, 0.05)', 
+              color: 'var(--muted)', 
+              backdropFilter: 'blur(10px)',
+              border: '1px solid var(--line)',
+              width: '44px',
+              height: '44px'
+            }}
+            title="Back to Top"
+          >
+            <ChevronRight size={20} style={{ transform: 'rotate(-90deg)' }} />
+          </button>
+        )}
         <button
-          className="fab-save"
+          className="bubble-btn"
           onClick={saveAll}
           disabled={saving}
-          style={{ position: 'static', width: '64px', height: '64px' }}
+          style={{ background: 'var(--brand)', color: '#052e16' }}
         >
-          <Save size={32} />
+          <Save size={24} />
         </button>
       </div>
 

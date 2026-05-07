@@ -19,7 +19,10 @@ export default function BottomNav({ active, onChange, labels, isStaff }) {
             key={item.id}
             type="button"
             className={active === item.id ? 'nav-item active' : 'nav-item'}
-            onClick={() => onChange(item.id)}
+            onClick={() => {
+              onChange(item.id);
+              window.dispatchEvent(new CustomEvent('change-app-tab', { detail: item.id }));
+            }}
           >
             <Icon size={20} />
             <span>{labels?.[item.id] || item.label}</span>

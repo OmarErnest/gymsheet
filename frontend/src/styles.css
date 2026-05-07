@@ -312,6 +312,29 @@ input[type=number] { -moz-appearance: textfield; appearance: textfield; }
   z-index: 1000;
 }
 
+.bubble-btn {
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  border: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: var(--shadow);
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  -webkit-tap-highlight-color: transparent;
+}
+
+.bubble-btn:active {
+  transform: scale(0.9) rotate(-5deg);
+}
+
+.bubble-btn svg {
+  width: 28px;
+  height: 28px;
+}
+
 .save-toast {
   position: fixed;
   right: 2rem;

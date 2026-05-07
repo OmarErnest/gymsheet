@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { LogOut, Save, Eye, EyeOff, FileText, User as UserIcon, ChevronDown, FileDown, HelpCircle } from 'lucide-react';
+import { LogOut, Save, Eye, EyeOff, FileText, User as UserIcon, ChevronDown, FileDown, HelpCircle, Mail } from 'lucide-react';
 import { api } from '../api/client.js';
 import { useAuth } from '../state/AuthContext.jsx';
 import { t } from '../i18n.js';
@@ -465,7 +465,7 @@ export default function Settings({ preferences, setPreferences, lang }) {
               }
             }}
           >
-            <Save size={16} /> {t(lang, 'send')}
+            <Mail size={16} /> {t(lang, 'send')}
           </button>
         </div>
       </article>
@@ -473,6 +473,16 @@ export default function Settings({ preferences, setPreferences, lang }) {
       <div style={{ padding: '1rem 0 3rem' }}>
         <button onClick={logout} className="logout-btn primary-btn" style={{ width: '100%', background: 'transparent', color: 'var(--danger)', border: '1px solid var(--danger)' }}>
           <LogOut size={18} /> {t(lang, 'logout')}
+        </button>
+      </div>
+
+      <div className="bubble-stack">
+        <button
+          className="bubble-btn"
+          onClick={save}
+          style={{ background: 'var(--brand)', color: '#052e16' }}
+        >
+          <Save size={24} />
         </button>
       </div>
     </section>

@@ -2,6 +2,7 @@ from datetime import timedelta
 
 from django.conf import settings
 from django.db import models
+from django.core.validators import MaxValueValidator
 from django.utils import timezone
 
 
@@ -75,8 +76,8 @@ class GoalPlan(models.Model):
 class GoalExercise(models.Model):
     goal_plan = models.ForeignKey(GoalPlan, on_delete=models.CASCADE, related_name='goal_exercises')
     exercise = models.ForeignKey(Exercise, on_delete=models.CASCADE, related_name='goal_items')
-    sets = models.PositiveIntegerField(default=3)
-    reps = models.PositiveIntegerField(default=10)
+    sets = models.PositiveIntegerField(default=3, validators=[MaxValueValidator(8)])
+    reps = models.PositiveIntegerField(default=10, validators=[MaxValueValidator(99)])
     duration = models.CharField(max_length=10, blank=True)
     order = models.PositiveIntegerField(default=0)
     notes = models.CharField(max_length=240, blank=True)

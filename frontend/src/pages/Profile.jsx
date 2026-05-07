@@ -470,7 +470,10 @@ export default function Profile({ preferences, lang }) {
       goal_exercises: prev.goal_exercises.map((item, idx) => {
         if (idx === index) {
           if (field === 'categoryFilter') return { ...item, categoryFilter: value, exercise: '' };
-          return { ...item, [field]: value };
+          let finalValue = value;
+          if (field === 'sets' && Number(value) > 8) finalValue = 8;
+          if (field === 'reps' && Number(value) > 99) finalValue = 99;
+          return { ...item, [field]: finalValue };
         }
         return item;
       }),
@@ -703,7 +706,7 @@ export default function Profile({ preferences, lang }) {
             )}
             {graphMode === 'list' && (
               <div className="exercise-list" style={{ overflowY: 'auto', maxHeight: '100%' }}>
-                {filteredLogsList.map((log) => (<div key={log.id} className="exercise-row"><div><strong>{log.exercise_detail?.name}</strong><p>{log.date} — {log.sets}x{log.reps} @ {log.weight_kg}kg</p></div></div>))}
+                {filteredLogsList.map((log) => (<div key={log.id} className="exercise-row"><div><strong>{log.exercise_detail?.name}</strong><p>{log.date} — {log.sets}x{String(log.reps).padStart(2, '0')} @ {log.weight_kg}kg</p></div></div>))}
               </div>
             )}
           </div>
@@ -788,8 +791,8 @@ export default function Profile({ preferences, lang }) {
                       <select required value={item.exercise} onChange={(e) => updateGoalExercise(index, 'exercise', e.target.value)} style={{ textOverflow: 'ellipsis' }}><option value="" disabled>Pick Exercise</option>{availableExercises.map((ex) => <option key={ex.id} value={ex.id}>{ex.name}</option>)}</select>
                     </div>
                     <div className="goal-exercise-inputs">
-                      <input type="number" placeholder={t(lang, 'sets')} value={item.sets} onFocus={(e) => e.target.select()} onChange={(e) => updateGoalExercise(index, 'sets', e.target.value)} className="input-bubble" style={{ width: '100%', textAlign: 'center' }} />
-                      <input type="number" placeholder={t(lang, 'reps')} value={item.reps} onFocus={(e) => e.target.select()} onChange={(e) => updateGoalExercise(index, 'reps', e.target.value)} className="input-bubble" style={{ width: '100%', textAlign: 'center' }} />
+                      <input type="number" placeholder={t(lang, 'sets')} value={item.sets} onFocus={(e) => e.target.select()} onChange={(e) => updateGoalExercise(index, 'sets', e.target.value)} className="input-bubble" style={{ width: '100%', textAlign: 'center' }} max="8" />
+                      <input type="number" placeholder={t(lang, 'reps')} value={item.reps} onFocus={(e) => e.target.select()} onChange={(e) => updateGoalExercise(index, 'reps', e.target.value)} className="input-bubble" style={{ width: '100%', textAlign: 'center' }} max="99" />
                       <button className="small-btn danger-btn" type="button" onClick={() => removeGoalExercise(index)} style={{ minWidth: '46px' }}><Trash2 size={16} /></button>
                     </div>
                   </div>
