@@ -131,6 +131,10 @@ export default function App() {
     return () => window.removeEventListener('change-app-tab', handleTab);
   }, []);
 
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: 'instant' });
+  }, [activeTab]);
+
   const clearAllNotifications = () => {
     setNotifications([]);
     setShowNotifications(false);
