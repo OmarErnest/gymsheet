@@ -132,7 +132,9 @@ export default function App() {
   }, []);
 
   useEffect(() => {
-    window.scrollTo({ top: 0, behavior: 'instant' });
+    if (activeTab !== 'home') {
+      window.scrollTo({ top: 0, behavior: 'instant' });
+    }
   }, [activeTab]);
 
   const clearAllNotifications = () => {
