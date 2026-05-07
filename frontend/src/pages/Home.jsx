@@ -73,6 +73,8 @@ export default function Home({ lang }) {
 
   const todayRef = useRef(null);
 
+  const [shouldScrollToToday, setShouldScrollToToday] = useState(true);
+
   async function loadInitial() {
     setLoading(true);
     setError('');
@@ -103,17 +105,31 @@ export default function Home({ lang }) {
   }, [currentWeekStart]);
 
   useEffect(() => {
+    const handleTab = (e) => {
+      if (e.detail === 'home') {
+        setShouldScrollToToday(true);
+      }
+    };
+    window.addEventListener('change-app-tab', handleTab);
+    return () => window.removeEventListener('change-app-tab', handleTab);
+  }, []);
+
+  useEffect(() => {
     api('/exercises/').then(res => setAllExercises(res.results || res)).catch(() => {});
   }, []);
 
-
   useEffect(() => {
-    if (!loading && days.some(d => d.is_today)) {
+    if (!loading && days.some(d => d.is_today) && shouldScrollToToday) {
       if (todayRef.current) {
         todayRef.current.scrollIntoView({ behavior: 'auto', block: 'start' });
+        setShouldScrollToToday(false);
       }
     }
-  }, [loading, days]);
+    if (!loading && !shouldScrollToToday) {
+       // if we just loaded a week that is NOT today, or we shouldn't scroll, just stay at top
+       // window.scrollTo({ top: 0 }); // maybe?
+    }
+  }, [loading, days, shouldScrollToToday]);
 
   // Hydration logic
   useEffect(() => {
@@ -152,12 +168,14 @@ export default function Home({ lang }) {
   };
 
   const changeWeek = (dir) => {
+    setShouldScrollToToday(false);
     setRelativeWeek(prev => {
       const next = prev + dir;
       if (next < -6) return -6;
       if (next > 1) return 1;
       return next;
     });
+    window.scrollTo({ top: 0, behavior: 'instant' });
   };
 
   function handleChange(itemId, field, raw) {
@@ -280,15 +298,48 @@ export default function Home({ lang }) {
           </span>
           <div style={{ display: 'flex', justifyContent: 'center', gap: '0.6rem', marginTop: '0.4rem' }}>
             {relativeWeek !== 0 && (
-              <button onClick={() => setRelativeWeek(0)} style={{ background: 'none', border: 'none', color: 'var(--brand)', fontSize: '0.65rem', fontWeight: '900', cursor: 'pointer', padding: '2px 8px', borderRadius: '4px', background: 'rgba(var(--brand-rgb), 0.1)' }}>
+              <button 
+                onClick={() => {
+                  setRelativeWeek(0);
+                  setShouldScrollToToday(true);
+                }} 
+                style={{ 
+                  background: 'rgba(var(--brand-rgb), 0.1)', 
+                  border: '1px solid rgba(var(--brand-rgb), 0.3)', 
+                  color: 'var(--brand)', 
+                  fontSize: '0.65rem', 
+                  fontWeight: '1000', 
+                  cursor: 'pointer', 
+                  padding: '6px 14px', 
+                  borderRadius: '999px', 
+                  transition: 'all 0.3s ease',
+                  letterSpacing: '1px',
+                  boxShadow: '0 2px 10px rgba(0,0,0,0.1)'
+                }}
+              >
                 BACK TO PRESENT
               </button>
             )}
             <button 
               onClick={() => setViewMode(prev => prev === 'feed' ? 'spreadsheet' : 'feed')} 
-              style={{ background: 'none', border: 'none', color: 'var(--muted)', fontSize: '0.65rem', fontWeight: '900', cursor: 'pointer', padding: '2px 8px', borderRadius: '4px', background: 'rgba(255,255,255,0.05)', display: 'flex', alignItems: 'center', gap: '4px' }}
+              style={{ 
+                background: 'rgba(var(--brand-rgb), 0.1)', 
+                border: '1px solid rgba(var(--brand-rgb), 0.3)', 
+                color: 'var(--brand)', 
+                fontSize: '0.65rem', 
+                fontWeight: '1000', 
+                cursor: 'pointer', 
+                padding: '6px 14px', 
+                borderRadius: '999px', 
+                display: 'flex', 
+                alignItems: 'center', 
+                gap: '6px',
+                transition: 'all 0.3s ease',
+                letterSpacing: '1px',
+                boxShadow: '0 2px 10px rgba(0,0,0,0.1)'
+              }}
             >
-              {viewMode === 'feed' ? <Table size={12} /> : <LayoutGrid size={12} />}
+              {viewMode === 'feed' ? <Table size={13} strokeWidth={2.5} /> : <LayoutGrid size={13} strokeWidth={2.5} />}
               {viewMode === 'feed' ? 'SPREADSHEET' : 'FEED'}
             </button>
           </div>
@@ -298,34 +349,75 @@ export default function Home({ lang }) {
 
 
       {viewMode === 'spreadsheet' ? (
-        <div className="glass-card" style={{ padding: '0', overflowX: 'auto', borderRadius: '16px' }}>
-          <table className="spreadsheet-table" style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.8rem' }}>
+        <div className="glass-card" style={{ padding: '0', overflowX: 'auto', borderRadius: '24px', border: '1px solid var(--line)', animation: 'slideUp 0.4s ease-out' }}>
+          <table className="spreadsheet-table" style={{ width: '100%', borderCollapse: 'separate', borderSpacing: '0', fontSize: '0.85rem' }}>
             <thead>
-              <tr style={{ background: 'rgba(var(--brand-rgb), 0.1)' }}>
-                <th style={{ padding: '0.8rem', textAlign: 'left', borderBottom: '1px solid var(--line)' }}>Day</th>
-                <th style={{ padding: '0.8rem', textAlign: 'left', borderBottom: '1px solid var(--line)' }}>Exercises</th>
+              <tr>
+                <th style={{ padding: '1.2rem 1rem', textAlign: 'left', background: 'rgba(255,255,255,0.03)', borderBottom: '2px solid var(--line)', color: 'var(--muted)', textTransform: 'uppercase', fontSize: '0.7rem', letterSpacing: '1px', fontWeight: '900' }}>Day</th>
+                <th style={{ padding: '1.2rem 1rem', textAlign: 'left', background: 'rgba(255,255,255,0.03)', borderBottom: '2px solid var(--line)', color: 'var(--muted)', textTransform: 'uppercase', fontSize: '0.7rem', letterSpacing: '1px', fontWeight: '900' }}>Training Plan</th>
               </tr>
             </thead>
             <tbody>
               {days.map(day => (
-                <tr key={day.date} style={{ borderBottom: '1px solid var(--line)', background: day.is_today ? 'rgba(var(--brand-rgb), 0.05)' : 'transparent' }}>
-                  <td style={{ padding: '0.8rem', verticalAlign: 'top', fontWeight: '900', color: day.is_today ? 'var(--brand)' : 'inherit' }}>
-                    {day.label.split(',')[0]}
+                <tr key={day.date} style={{ 
+                  background: day.is_today ? 'rgba(var(--brand-rgb), 0.08)' : 'transparent',
+                  transition: 'background 0.3s'
+                }}>
+                  <td style={{ 
+                    padding: '1.2rem 1rem', 
+                    verticalAlign: 'top', 
+                    borderBottom: '1px solid var(--line)',
+                    width: '100px'
+                  }}>
+                    <div style={{ display: 'flex', flexDirection: 'column' }}>
+                      <span style={{ fontWeight: '1000', fontSize: '1rem', color: day.is_today ? 'var(--brand)' : 'var(--text)' }}>
+                        {day.label.split(',')[0]}
+                      </span>
+                      <span style={{ fontSize: '0.65rem', opacity: 0.5, fontWeight: '800' }}>
+                        {day.label.split(',')[1]}
+                      </span>
+                    </div>
                   </td>
-                  <td style={{ padding: '0.8rem' }}>
-                    <div style={{ display: 'grid', gap: '0.6rem' }}>
-                      {day.goals?.map(goal => (
-                        <div key={goal.id}>
+                  <td style={{ padding: '1.2rem 1rem', borderBottom: '1px solid var(--line)' }}>
+                    <div style={{ display: 'grid', gap: '0.8rem' }}>
+                      {(!day.goals || day.goals.length === 0) ? (
+                        <span style={{ fontStyle: 'italic', opacity: 0.3, fontSize: '0.8rem' }}>Rest Day</span>
+                      ) : day.goals.map(goal => (
+                        <div key={goal.id} style={{ display: 'grid', gap: '0.5rem' }}>
                           {goal.goal_exercises?.map(item => {
                             const isTimeBased = item.exercise_detail?.is_time_based;
                             const logVal = inlineLogs[item.id] || {};
+                            const isDone = !!logVal.log_id;
+                            
                             return (
-                              <div key={item.id} style={{ display: 'flex', justifyContent: 'space-between', gap: '1rem', opacity: logVal.log_id ? 1 : 0.6 }}>
-                                <span style={{ fontWeight: '700' }}>{t(lang, item.exercise_detail?.name)}</span>
-                                <span>
-                                  {logVal.sets ?? item.sets}x{logVal.reps ?? item.reps}
-                                  {isTimeBased ? ` (${logVal.duration || '00:00'})` : ` (${logVal.weight_kg || '0'}kg)`}
+                              <div key={item.id} style={{ 
+                                display: 'flex', 
+                                justifyContent: 'space-between', 
+                                alignItems: 'center',
+                                padding: '0.4rem 0.8rem',
+                                background: isDone ? 'rgba(var(--brand-rgb), 0.1)' : 'rgba(255,255,255,0.02)',
+                                borderRadius: '10px',
+                                border: isDone ? '1px solid rgba(var(--brand-rgb), 0.2)' : '1px solid transparent',
+                                opacity: isDone ? 1 : 0.7
+                              }}>
+                                <span style={{ fontWeight: '700', color: isDone ? 'var(--brand)' : 'var(--text)' }}>
+                                  {t(lang, item.exercise_detail?.name)}
                                 </span>
+                                <div style={{ display: 'flex', gap: '0.4rem', alignItems: 'center' }}>
+                                  <span style={{ 
+                                    fontSize: '0.75rem', 
+                                    fontWeight: '900', 
+                                    padding: '2px 8px', 
+                                    background: isDone ? 'var(--brand)' : 'var(--card-strong)',
+                                    color: isDone ? '#052e16' : 'var(--muted)',
+                                    borderRadius: '6px'
+                                  }}>
+                                    {logVal.sets ?? item.sets}x{logVal.reps ?? item.reps}
+                                  </span>
+                                  <span style={{ fontSize: '0.75rem', opacity: 0.8, fontWeight: '800' }}>
+                                    {isTimeBased ? (logVal.duration || '00:00') : `${logVal.weight_kg || '0'}kg`}
+                                  </span>
+                                </div>
                               </div>
                             );
                           })}
