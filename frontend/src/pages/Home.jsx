@@ -298,7 +298,7 @@ export default function Home({ lang }) {
     try {
       const creates = [];
       const updates = [];
-      const deletes = [...toDelete];
+      const deletes = [];
       
       for (const day of days) {
         for (const goal of day.goals || []) {
@@ -805,7 +805,7 @@ export default function Home({ lang }) {
                                   const firstEx = allExercises[0];
                                   setTodayOverrides(prev => ({
                                     ...prev,
-                                    [goal.id]: [...(prev[goal.id] || []), { exercise_detail: firstEx, sets: 4, reps: 10, _isExtra: true }]
+                                    [goal.id]: [...(prev[goal.id] || []), { id: `temp-new-extra-${Date.now()}`, exercise_detail: firstEx, sets: 4, reps: 10, _isExtra: true }]
                                   }));
                                 }}
                                 style={{ 
