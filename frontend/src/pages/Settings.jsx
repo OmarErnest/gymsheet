@@ -319,7 +319,7 @@ export default function Settings({ preferences, setPreferences, lang }) {
             </div>
           </label>
         )}
-        <button className="primary-btn"><Save size={16} /> {t(lang, 'saveSettings')}</button>
+
         {message && <p className="notice" style={{ textAlign: 'center' }}>{message}</p>}
       </form>
 
