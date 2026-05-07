@@ -21,7 +21,6 @@ export default function Settings({ preferences, setPreferences, lang }) {
     weight_kg: preferences.weight_kg || '',
     recommended_link: preferences.recommended_link || '',
     hide_from_leaderboard: !!preferences.hide_from_leaderboard,
-    cheer_message: preferences.cheer_message || '',
     profile_pic_url: user?.profile_pic_url || ''
   });
   const [message, setMessage] = useState('');
@@ -45,7 +44,6 @@ export default function Settings({ preferences, setPreferences, lang }) {
       auth_mode: prev.auth_mode || user?.auth_mode || 'pin',
       profile_pic_url: user?.profile_pic_url || '',
       goals_paused: preferences.goals_paused || false,
-      cheer_message: preferences.cheer_message || ''
     }));
   }, [preferences, user]);
 
@@ -202,7 +200,7 @@ export default function Settings({ preferences, setPreferences, lang }) {
 
   return (
     <section className="stack">
-      <form className="glass-card form-stack" onSubmit={save}>
+      <form className="glass-card form-stack" onSubmit={save} autoComplete="off">
         <h3 className="eyebrow">{t(lang, 'profile')}</h3>
 
         {/* Icon Selection */}
@@ -339,26 +337,18 @@ export default function Settings({ preferences, setPreferences, lang }) {
         </label>
 
         <label className="field"><span>{t(lang, 'recommendLink')}</span>
-          <input type="url" placeholder="https://..." value={form.recommended_link} onChange={(e) => update('recommended_link', e.target.value)} disabled={user?.is_test_user} />
+          <input type="url" autoComplete="off" placeholder="https://..." value={form.recommended_link} onChange={(e) => update('recommended_link', e.target.value)} disabled={user?.is_test_user} />
         </label>
 
-        <label className="field">
-          <span>{lang === 'es' ? 'Mensaje de Ánimo' : 'Cheer Message'}</span>
-          <input
-            placeholder={lang === 'es' ? "¡SUPERA TUS LÍMITES!" : "PUSH YOUR LIMITS!"}
-            value={form.cheer_message || ''}
-            onChange={(e) => update('cheer_message', e.target.value)}
-            maxLength={240}
-          />
-        </label>
+
 
         <label className="field"><span>{t(lang, 'theme')}</span><select value={form.theme} onChange={(e) => update('theme', e.target.value)}><option value="dark">🌑 {t(lang, 'dark')}</option><option value="light">☀️ {t(lang, 'light')}</option></select></label>
         <label className="field"><span>Font Size</span><select value={form.font_size || 'medium'} onChange={(e) => update('font_size', e.target.value)}><option value="small">Small</option><option value="medium">Medium</option><option value="big">Big</option></select></label>
         <label className="field"><span>{t(lang, 'language')}</span><select value={form.language} onChange={(e) => update('language', e.target.value)}><option value="en">🇬🇧 English</option><option value="es">🇪🇸 Español</option></select></label>
 
         <div className="paste-input">
-          <label className="field"><span>Height (cm)</span><input inputMode="numeric" value={form.height_cm} onChange={(e) => update('height_cm', e.target.value.replace(/\D/g, ''))} placeholder="e.g. 175" /></label>
-          <label className="field"><span>Weight (kg)</span><input inputMode="decimal" value={form.weight_kg} onChange={(e) => update('weight_kg', e.target.value)} placeholder="e.g. 70.5" /></label>
+          <label className="field"><span>Height (cm)</span><input autoComplete="off" inputMode="numeric" value={form.height_cm} onChange={(e) => update('height_cm', e.target.value.replace(/\D/g, ''))} placeholder="e.g. 175" /></label>
+          <label className="field"><span>Weight (kg)</span><input autoComplete="off" inputMode="decimal" value={form.weight_kg} onChange={(e) => update('weight_kg', e.target.value)} placeholder="e.g. 70.5" /></label>
         </div>
 
         <label className="field"><span>{t(lang, 'loginMethod')}</span><select value={form.auth_mode} onChange={(e) => update('auth_mode', e.target.value)}><option value="pin">{t(lang, 'sixDigitPin')}</option><option value="password">{t(lang, 'securePassword')}</option></select></label>
@@ -366,7 +356,7 @@ export default function Settings({ preferences, setPreferences, lang }) {
           <label className="field">
             <span>{t(lang, 'newPin')}</span>
             <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
-              <input type={showSecret ? "text" : "password"} inputMode="numeric" maxLength="6" value={form.new_pin} onChange={(e) => update('new_pin', e.target.value.replace(/\D/g, ''))} placeholder={t(lang, 'optional')} style={{ width: '100%', paddingRight: '2.5rem' }} />
+              <input type={showSecret ? "text" : "password"} autoComplete="new-password" inputMode="numeric" maxLength="6" value={form.new_pin} onChange={(e) => update('new_pin', e.target.value.replace(/\D/g, ''))} placeholder={t(lang, 'optional')} style={{ width: '100%', paddingRight: '2.5rem' }} />
               <button type="button" onClick={() => setShowSecret(!showSecret)} style={{ position: 'absolute', right: '0.5rem', background: 'none', border: 'none', color: 'var(--muted)', cursor: 'pointer', display: 'flex' }}>
                 {showSecret ? <EyeOff size={18} /> : <Eye size={18} />}
               </button>
@@ -376,7 +366,7 @@ export default function Settings({ preferences, setPreferences, lang }) {
           <label className="field">
             <span>{t(lang, 'newPassword')}</span>
             <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
-              <input type={showSecret ? "text" : "password"} value={form.new_password} onChange={(e) => update('new_password', e.target.value)} placeholder={t(lang, 'optional')} style={{ width: '100%', paddingRight: '2.5rem' }} />
+              <input type={showSecret ? "text" : "password"} autoComplete="new-password" value={form.new_password} onChange={(e) => update('new_password', e.target.value)} placeholder={t(lang, 'optional')} style={{ width: '100%', paddingRight: '2.5rem' }} />
               <button type="button" onClick={() => setShowSecret(!showSecret)} style={{ position: 'absolute', right: '0.5rem', background: 'none', border: 'none', color: 'var(--muted)', cursor: 'pointer', display: 'flex' }}>
                 {showSecret ? <EyeOff size={18} /> : <Eye size={18} />}
               </button>
@@ -512,6 +502,7 @@ export default function Settings({ preferences, setPreferences, lang }) {
         </div>
         <form onSubmit={sendToAdmin} className="form-stack">
           <textarea
+            autoComplete="off"
             placeholder={lang === 'es' ? "Escribe tu mensaje aquí..." : "Type your message here..."}
             value={adminMsg}
             onChange={(e) => setAdminMsg(e.target.value)}

@@ -232,7 +232,7 @@ export default function App() {
               
               <div style={{ background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(10px)', padding: '1.2rem', borderRadius: '16px', border: '1px solid var(--line)', marginBottom: '1.5rem' }}>
                 <p className="pixel-text muted" style={{ fontSize: '0.85rem', lineHeight: '1.6', fontStyle: 'italic', margin: 0, color: '#fff' }}>
-                  "{preferences.cheer_message || (lang === 'es' ? '¡SUPERA TUS LÍMITES!' : 'PUSH YOUR LIMITS!')}"
+                  "{preferences.cheer_message || (lang === 'es' ? '¡CREE EN TI MISMO!' : 'Believe in yourself!')}"
                 </p>
               </div>
 

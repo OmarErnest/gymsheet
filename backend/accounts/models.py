@@ -66,7 +66,7 @@ class UserPreference(models.Model):
     weight_kg = models.DecimalField(max_digits=5, decimal_places=2, null=True, blank=True)
     recommended_link = models.URLField(blank=True)
     hide_from_leaderboard = models.BooleanField(default=False)
-    cheer_message = models.CharField(max_length=240, blank=True)
+    cheer_message = models.CharField(max_length=240, default="Believe in yourself!", blank=True)
 
     def __str__(self):
         return f'{self.user.email} preferences'
