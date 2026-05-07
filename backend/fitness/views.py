@@ -156,6 +156,41 @@ class ExerciseLogViewSet(viewsets.ModelViewSet):
         kwargs['partial'] = True
         return self.update(request, *args, **kwargs)
 
+    @action(detail=False, methods=['POST'])
+    def bulk_save(self, request):
+        from django.db import transaction
+        
+        creates = request.data.get('creates', [])
+        updates = request.data.get('updates', [])
+        deletes = request.data.get('deletes', [])
+        
+        try:
+            with transaction.atomic():
+                if deletes:
+                    ExerciseLog.objects.filter(id__in=deletes, user=request.user).delete()
+                
+                for item in updates:
+                    log_id = item.get('id') or item.get('log_id')
+                    if not log_id: continue
+                    try:
+                        instance = ExerciseLog.objects.get(id=log_id, user=request.user)
+                        serializer = self.get_serializer(instance, data=item, partial=True)
+                        serializer.is_valid(raise_exception=True)
+                        serializer.save()
+                    except ExerciseLog.DoesNotExist:
+                        pass
+                
+                created_logs = []
+                for item in creates:
+                    serializer = self.get_serializer(data=item)
+                    serializer.is_valid(raise_exception=True)
+                    serializer.save(user=request.user)
+                    created_logs.append(serializer.data)
+                    
+            return Response({'status': 'ok', 'created': len(created_logs)})
+        except Exception as e:
+            return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
 
 class BodyMeasurementViewSet(viewsets.ModelViewSet):
     serializer_class = BodyMeasurementSerializer

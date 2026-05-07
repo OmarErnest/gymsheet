@@ -111,6 +111,7 @@ export default function Home({ lang }) {
   const [allExercises, setAllExercises] = useState([]);
   const [todayOverrides, setTodayOverrides] = useState({}); // { goalId: [ { exercise_detail, sets, reps, is_time_based } ] }
   const [inlineLogs, setInlineLogs] = useState({});
+  const [toDelete, setToDelete] = useState([]); // Array of log_ids or item.ids to delete from the session
   const [firstLoad, setFirstLoad] = useState(true);
   const [viewMode, setViewMode] = useState('feed'); // 'feed' or 'spreadsheet'
 
@@ -293,23 +294,35 @@ export default function Home({ lang }) {
     setSaving(true);
     setSaveMessage('');
     let sessionLogsCount = 0;
-    let changesMade = false;
+    
     try {
-      const promises = [];
+      const creates = [];
+      const updates = [];
+      const deletes = [...toDelete];
+      
       for (const day of days) {
         for (const goal of day.goals || []) {
           const overrides = todayOverrides[goal.id] || [];
           const allCurrent = [...(goal.goal_exercises || []), ...overrides];
           
           for (const item of allCurrent) {
-            if (!item._isExtra && overrides.some(o => o._replacedId === item.id)) {
-              // The original item is replaced. Delete its old log if it existed.
-              const oldLogVal = inlineLogs[item.id];
-              if (oldLogVal?.log_id) {
-                await api(`/exercise-logs/${oldLogVal.log_id}/`, { method: 'DELETE' });
-                changesMade = true;
+            const isReplaced = !item._isExtra && overrides.some(o => o._replacedId === item.id);
+            const oldLogVal = inlineLogs[item.id];
+            
+            // If item was replaced, we delete its old log if it existed.
+            if (isReplaced) {
+              if (oldLogVal?.log_id && !deletes.includes(oldLogVal.log_id)) {
+                deletes.push(oldLogVal.log_id);
               }
               continue;
+            }
+
+            // If item was marked for deletion by user
+            if (toDelete.includes(item.id) || (oldLogVal?.log_id && toDelete.includes(oldLogVal.log_id))) {
+               if (oldLogVal?.log_id && !deletes.includes(oldLogVal.log_id)) {
+                 deletes.push(oldLogVal.log_id);
+               }
+               continue;
             }
 
             const logVal = inlineLogs[item.id || `extra-${allCurrent.indexOf(item)}` ];
@@ -321,9 +334,8 @@ export default function Home({ lang }) {
               : (logVal?.weight_kg !== undefined && logVal?.weight_kg !== '');
 
             if (!hasValue && !item._isExtra) {
-              if (logVal?.log_id) {
-                await api(`/exercise-logs/${logVal.log_id}/`, { method: 'DELETE' });
-                changesMade = true;
+              if (logVal?.log_id && !deletes.includes(logVal.log_id)) {
+                deletes.push(logVal.log_id);
               }
               continue;
             }
@@ -340,25 +352,29 @@ export default function Home({ lang }) {
             };
 
             if (logVal?.log_id) {
-              await api(`/exercise-logs/${logVal.log_id}/`, { method: 'PATCH', body: JSON.stringify(payload) });
-              changesMade = true;
+              updates.push({ ...payload, id: logVal.log_id });
             } else if (hasValue || item._isExtra) {
-              await api('/exercise-logs/', { method: 'POST', body: JSON.stringify(payload) });
+              creates.push(payload);
               if (day.is_today) sessionLogsCount++;
-              changesMade = true;
             }
           }
         }
       }
 
-      if (!changesMade) {
+      if (creates.length === 0 && updates.length === 0 && deletes.length === 0) {
         setSaveMessage('Nothing to save');
         setSaving(false);
         setTimeout(() => setSaveMessage(''), 3000);
         return;
       }
       
+      await api('/exercise-logs/bulk_save/', {
+        method: 'POST',
+        body: JSON.stringify({ creates, updates, deletes })
+      });
+      
       setSaveMessage(`Saved ✓`);
+      setToDelete([]);
       setTimeout(() => setSaveMessage(''), 3000);
 
       await loadInitial();
@@ -616,11 +632,15 @@ export default function Home({ lang }) {
                               // If this is an original item that has been replaced, don't show it
                               if (!item._isExtra && overrides.some(o => o._replacedId === item.id)) return null;
 
+                              const logKey = item.id || `extra-${idx}`;
+                              const logVal = inlineLogs[logKey] || {};
+                              
+                              // If marked for deletion, hide it
+                              if (toDelete.includes(item.id) || (logVal?.log_id && toDelete.includes(logVal.log_id))) return null;
+
                               const isExtra = !!item._isExtra;
                               const isTimeBased = item.exercise_detail?.is_time_based;
                               const isCalisthenics = item.exercise_detail?.exercise_type === 'calisthenics';
-                              const logKey = item.id || `extra-${idx}`;
-                              const logVal = inlineLogs[logKey] || {};
 
                               return (
                                 <div key={item.id || `extra-${idx}`} className="exercise-item-old">
@@ -628,43 +648,55 @@ export default function Home({ lang }) {
                                     <div style={{ flex: 1 }}>
                                       <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
                                         {editMode && isCurrentWeek ? (
-                                          <select 
-                                            style={{ background: 'none', border: '1px solid var(--line)', color: 'var(--brand)', fontWeight: '900', fontSize: '0.9rem', padding: '2px 4px', borderRadius: '4px' }}
-                                            value={item.exercise_detail?.id}
-                                            onChange={(e) => {
-                                              const newEx = allExercises.find(ex => String(ex.id) === e.target.value);
-                                              if (isExtra) {
-                                                setTodayOverrides(prev => ({
-                                                  ...prev,
-                                                  [goal.id]: prev[goal.id].map((it, i) => i === (idx - (goal.goal_exercises?.length || 0)) ? { ...it, exercise_detail: newEx } : it)
-                                                }));
-                                              } else {
-                                                // Replace existing
-                                                const tempId = `temp-override-${Date.now()}`;
-                                                setTodayOverrides(prev => ({
-                                                  ...prev,
-                                                  [goal.id]: [...(prev[goal.id] || []), { 
-                                                    ...item, 
-                                                    id: tempId,
-                                                    exercise_detail: newEx, 
-                                                    _isExtra: false, 
-                                                    _replacedId: item.id 
-                                                  }]
-                                                }));
-                                                setInlineLogs(prev => ({
-                                                  ...prev,
-                                                  [tempId]: {
-                                                    sets: String(item.sets),
-                                                    reps: String(item.reps),
-                                                    weight_kg: '',
-                                                    duration: ''
-                                                  }
-                                                }));
-                                              }
-                                            }}
-                                          >
-                                            {allExercises.map(ex => <option key={ex.id} value={ex.id}>{t(lang, ex.name)}</option>)}
-                                          </select>
+                                          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', width: '100%' }}>
+                                            <select 
+                                              style={{ flex: 1, background: 'none', border: '1px solid var(--line)', color: 'var(--brand)', fontWeight: '900', fontSize: '0.9rem', padding: '2px 4px', borderRadius: '4px' }}
+                                              value={item.exercise_detail?.id}
+                                              onChange={(e) => {
+                                                const newEx = allExercises.find(ex => String(ex.id) === e.target.value);
+                                                if (isExtra) {
+                                                  setTodayOverrides(prev => ({
+                                                    ...prev,
+                                                    [goal.id]: prev[goal.id].map((it, i) => i === (idx - (goal.goal_exercises?.length || 0)) ? { ...it, exercise_detail: newEx } : it)
+                                                  }));
+                                                } else {
+                                                  // Replace existing
+                                                  const tempId = `temp-override-${Date.now()}`;
+                                                  setTodayOverrides(prev => ({
+                                                    ...prev,
+                                                    [goal.id]: [...(prev[goal.id] || []), { 
+                                                      ...item, 
+                                                      id: tempId,
+                                                      exercise_detail: newEx, 
+                                                      _isExtra: false, 
+                                                      _replacedId: item.id 
+                                                    }]
+                                                  }));
+                                                  setInlineLogs(prev => ({
+                                                    ...prev,
+                                                    [tempId]: {
+                                                      sets: String(item.sets),
+                                                      reps: String(item.reps),
+                                                      weight_kg: '',
+                                                      duration: ''
+                                                    }
+                                                  }));
+                                                }
+                                              }}
+                                            >
+                                              {allExercises.map(ex => <option key={ex.id} value={ex.id}>{t(lang, ex.name)}</option>)}
+                                            </select>
+                                            <button 
+                                              onClick={() => {
+                                                if (window.confirm("Delete this exercise for today? (This won't affect your permanent routine)")) {
+                                                  setToDelete(prev => [...prev, item.id]);
+                                                }
+                                              }}
+                                              style={{ background: 'rgba(239, 68, 68, 0.1)', color: '#ef4444', border: '1px solid rgba(239, 68, 68, 0.3)', padding: '4px', borderRadius: '4px', cursor: 'pointer', display: 'flex', alignItems: 'center' }}
+                                            >
+                                              <Trash2 size={16} />
+                                            </button>
+                                          </div>
                                         ) : (
                                           <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
                                             {item.exercise_detail?.exercise_type === 'calisthenics' ? <Activity size={16} className="text-brand" /> : 
