@@ -1,12 +1,13 @@
 import { useEffect, useState } from 'react';
-import { LogOut, Save, Eye, EyeOff, FileText, User as UserIcon, ChevronDown, FileDown, HelpCircle, Mail } from 'lucide-react';
+import { LogOut, Save, Eye, EyeOff, FileText, User as UserIcon, ChevronDown, FileDown, HelpCircle, Mail, X, RefreshCw, MessageSquare, Send } from 'lucide-react';
 import { api } from '../api/client.js';
 import { useAuth } from '../state/AuthContext.jsx';
 import { t } from '../i18n.js';
 
 const CHARACTER_ICONS = [
   'Android16.png', 'Babidi.png', 'Captain.png', 'Doctor.png', 'Hercule.png',
-  'Jeice.png', 'Korin.png', 'Nappa.png', 'Piccolo.png', 'Racoome.png', 'Radiz.png', 'Tao.png', 'Tien.png'
+  'Jeice.png', 'Korin.png', 'Nappa.png', 'Piccolo.png', 'Racoome.png', 'Radiz.png', 'Tao.png', 'Tien.png',
+  'Tama.png', 'Giru.png'
 ];
 
 export default function Settings({ preferences, setPreferences, lang }) {
@@ -20,6 +21,7 @@ export default function Settings({ preferences, setPreferences, lang }) {
     weight_kg: preferences.weight_kg || '',
     recommended_link: preferences.recommended_link || '',
     hide_from_leaderboard: !!preferences.hide_from_leaderboard,
+    cheer_message: preferences.cheer_message || '',
     profile_pic_url: user?.profile_pic_url || ''
   });
   const [message, setMessage] = useState('');
@@ -28,6 +30,7 @@ export default function Settings({ preferences, setPreferences, lang }) {
   const [logFile, setLogFile] = useState(null);
   const [uploadStatus, setUploadStatus] = useState(null);
   const [logUploadStatus, setLogUploadStatus] = useState(null);
+  const [takenIcons, setTakenIcons] = useState([]);
 
   const [showSecret, setShowSecret] = useState(false);
   const [showLegal, setShowLegal] = useState(false);
@@ -40,9 +43,14 @@ export default function Settings({ preferences, setPreferences, lang }) {
       ...prev,
       ...preferences,
       auth_mode: prev.auth_mode || user?.auth_mode || 'pin',
-      profile_pic_url: user?.profile_pic_url || ''
+      profile_pic_url: user?.profile_pic_url || '',
+      goals_paused: preferences.goals_paused || false,
+      cheer_message: preferences.cheer_message || ''
     }));
   }, [preferences, user]);
+
+  const [savingSettings, setSavingSettings] = useState(false);
+  const [showDownloadPopup, setShowDownloadPopup] = useState(false);
 
   async function update(field, value) {
     setForm((prev) => ({ ...prev, [field]: value }));
@@ -59,6 +67,7 @@ export default function Settings({ preferences, setPreferences, lang }) {
   async function save(event) {
     if (event) event.preventDefault();
     setMessage('');
+    setSavingSettings(true);
     try {
       const body = { ...form };
       if (!body.new_pin) delete body.new_pin;
@@ -73,6 +82,8 @@ export default function Settings({ preferences, setPreferences, lang }) {
       setMessage(t(data.language || lang, 'settingsSaved'));
     } catch (err) {
       setMessage(err.message);
+    } finally {
+      setSavingSettings(false);
     }
   }
 
@@ -94,7 +105,38 @@ export default function Settings({ preferences, setPreferences, lang }) {
       const list = data.results || data;
       if (list.length > 0) setLogUploadStatus(list[0]);
     }).catch(() => { });
+
+    api('/auth/taken-icons/').then(setTakenIcons).catch(() => { });
   }, [user]);
+
+  useEffect(() => {
+    if (csvRequest?.is_approved) {
+      const lastShownId = localStorage.getItem('last_csv_popup_id');
+      if (lastShownId !== String(csvRequest.id)) {
+        setShowDownloadPopup(true);
+      }
+    }
+  }, [csvRequest]);
+
+  async function downloadCSV() {
+    try {
+      const token = localStorage.getItem('gym_access');
+      const apiUrl = import.meta.env.VITE_API_URL || 'http://127.0.0.1:8000/api';
+      const response = await fetch(`${apiUrl}/export-csv/`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      if (!response.ok) throw new Error("Failed to export.");
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'gym_data.csv';
+      a.click();
+    } catch (err) { alert(err.message); }
+  }
+
+  const [adminMsg, setAdminMsg] = useState('');
+  const [sendingMsg, setSendingMsg] = useState(false);
 
   async function handleFileUpload(e, type) {
     e.preventDefault();
@@ -136,20 +178,25 @@ export default function Settings({ preferences, setPreferences, lang }) {
         setCsvRequest(res);
       } catch (err) { alert(err.message); }
     } else if (csvRequest.is_approved) {
-      try {
-        const token = localStorage.getItem('gym_access');
-        const apiUrl = import.meta.env.VITE_API_URL || 'http://127.0.0.1:8000/api';
-        const response = await fetch(`${apiUrl}/export-csv/`, {
-          headers: { Authorization: `Bearer ${token}` }
-        });
-        if (!response.ok) throw new Error("Failed to export.");
-        const blob = await response.blob();
-        const url = window.URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = 'gym_data.csv';
-        a.click();
-      } catch (err) { alert(err.message); }
+      downloadCSV();
+    }
+  }
+
+  async function sendToAdmin(e) {
+    if (e) e.preventDefault();
+    if (!adminMsg.trim()) return;
+    setSendingMsg(true);
+    try {
+      await api('/messages-to-admin/', {
+        method: 'POST',
+        body: JSON.stringify({ message: adminMsg })
+      });
+      setAdminMsg('');
+      setMessage(lang === 'es' ? 'Mensaje enviado al Gran Patriarca.' : 'Message sent to the Grand Elder.');
+    } catch (err) {
+      alert(err.message);
+    } finally {
+      setSendingMsg(false);
     }
   }
 
@@ -215,29 +262,36 @@ export default function Settings({ preferences, setPreferences, lang }) {
                 >
                   <UserIcon size={28} color={form.profile_pic_url === '' ? '#052e16' : 'var(--muted)'} />
                 </button>
-                {CHARACTER_ICONS.map(icon => (
-                  <button
-                    key={icon}
-                    type="button"
-                    onClick={() => update('profile_pic_url', icon)}
-                    style={{
-                      padding: '0',
-                      background: 'var(--card-strong)',
-                      border: form.profile_pic_url === icon ? '3px solid var(--brand)' : '2px solid transparent',
-                      borderRadius: '16px',
-                      overflow: 'hidden',
-                      minWidth: '64px',
-                      height: '64px',
-                      flexShrink: 0,
-                      cursor: 'pointer',
-                      transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-                      boxShadow: form.profile_pic_url === icon ? '0 8px 20px rgba(var(--brand-rgb), 0.4)' : 'none',
-                      transform: form.profile_pic_url === icon ? 'scale(1.1)' : 'scale(1)'
-                    }}
-                  >
-                    <img src={`/icons/${icon}`} alt={icon} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                  </button>
-                ))}
+                {CHARACTER_ICONS.map(icon => {
+                  const isTaken = takenIcons.includes(icon) && user?.profile_pic_url !== icon;
+                  return (
+                    <button
+                      key={icon}
+                      type="button"
+                      onClick={() => !isTaken && update('profile_pic_url', icon)}
+                      disabled={isTaken}
+                      title={isTaken ? 'Already taken by another warrior' : icon}
+                      style={{
+                        padding: '0',
+                        background: 'var(--card-strong)',
+                        border: form.profile_pic_url === icon ? '3px solid var(--brand)' : '2px solid transparent',
+                        borderRadius: '16px',
+                        overflow: 'hidden',
+                        minWidth: '64px',
+                        height: '64px',
+                        flexShrink: 0,
+                        cursor: isTaken ? 'not-allowed' : 'pointer',
+                        transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                        boxShadow: form.profile_pic_url === icon ? '0 8px 20px rgba(var(--brand-rgb), 0.4)' : 'none',
+                        transform: form.profile_pic_url === icon ? 'scale(1.1)' : 'scale(1)',
+                        opacity: isTaken ? 0.3 : 1,
+                        filter: isTaken ? 'grayscale(1)' : 'none'
+                      }}
+                    >
+                      <img src={`/icons/${icon}`} alt={icon} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                    </button>
+                  );
+                })}
               </div>
               {/* Scroll Shadow Indicator */}
               <div style={{
@@ -258,9 +312,9 @@ export default function Settings({ preferences, setPreferences, lang }) {
           <span>
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
               {t(lang, 'pauseFutureGoals')}
-              <HelpCircle 
-                size={14} 
-                style={{ opacity: 0.5, cursor: 'help' }} 
+              <HelpCircle
+                size={14}
+                style={{ opacity: 0.5, cursor: 'help' }}
                 onClick={(e) => { e.preventDefault(); setShowPauseHelp(!showPauseHelp); }}
               />
             </div>
@@ -273,9 +327,9 @@ export default function Settings({ preferences, setPreferences, lang }) {
           <span>
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
               {t(lang, 'hideFromLeaderboard')}
-              <HelpCircle 
-                size={14} 
-                style={{ opacity: 0.5, cursor: 'help' }} 
+              <HelpCircle
+                size={14}
+                style={{ opacity: 0.5, cursor: 'help' }}
                 onClick={(e) => { e.preventDefault(); setShowHideHelp(!showHideHelp); }}
               />
             </div>
@@ -286,6 +340,16 @@ export default function Settings({ preferences, setPreferences, lang }) {
 
         <label className="field"><span>{t(lang, 'recommendLink')}</span>
           <input type="url" placeholder="https://..." value={form.recommended_link} onChange={(e) => update('recommended_link', e.target.value)} disabled={user?.is_test_user} />
+        </label>
+
+        <label className="field">
+          <span>{lang === 'es' ? 'Mensaje de Ánimo' : 'Cheer Message'}</span>
+          <input
+            placeholder={lang === 'es' ? "¡SUPERA TUS LÍMITES!" : "PUSH YOUR LIMITS!"}
+            value={form.cheer_message || ''}
+            onChange={(e) => update('cheer_message', e.target.value)}
+            maxLength={240}
+          />
         </label>
 
         <label className="field"><span>{t(lang, 'theme')}</span><select value={form.theme} onChange={(e) => update('theme', e.target.value)}><option value="dark">🌑 {t(lang, 'dark')}</option><option value="light">☀️ {t(lang, 'light')}</option></select></label>
@@ -397,15 +461,15 @@ export default function Settings({ preferences, setPreferences, lang }) {
         </div>
       </article>
 
-      {/* About Section */}
-      <article className="glass-card form-stack" style={{ borderLeft: '4px solid var(--brand-2)' }}>
+      {/* Support & About Section */}
+      <article className="glass-card form-stack" style={{ borderLeft: '4px solid var(--brand)' }}>
         <h3 className="eyebrow">{t(lang, 'about')}</h3>
 
         <div style={{ display: 'grid', gap: '1rem' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', opacity: 0.8 }}>
             <span>{t(lang, 'version')}</span>
             <span style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
-              <strong className="brand" style={{ fontWeight: '900' }}>v-03a.029</strong>
+              <strong className="brand" style={{ fontWeight: '900' }}>v-03a.31</strong>
               <small className="muted" style={{ fontWeight: '800', opacity: 0.8 }}>05.07.26</small>
             </span>
           </div>
@@ -438,36 +502,39 @@ export default function Settings({ preferences, setPreferences, lang }) {
               {t(lang, 'legalDisclaimerText').replace('support@gymsheet.com', 'admin@gymsheet.app')}
             </p>
           </details>
-
-          <hr style={{ border: 'none', borderTop: '1px solid var(--line)', margin: '0.5rem 0' }} />
-
-          {/* Contact Admin */}
-          <label className="field">
-            <span>{t(lang, 'messageAdmin')}</span>
-            <textarea
-              placeholder={t(lang, 'writeToAdmin')}
-              className="glass-input"
-              style={{ minHeight: '120px', fontSize: '0.9rem', resize: 'vertical' }}
-              id="adminMessageInput"
-            />
-          </label>
-          <button
-            className="primary-btn"
-            onClick={async (e) => {
-              const input = document.getElementById('adminMessageInput');
-              if (!input.value.trim()) return;
-              try {
-                await api('/admin-messages/', { method: 'POST', body: JSON.stringify({ message: input.value }) });
-                input.value = '';
-                setMessage(t(lang, 'messageSent'));
-              } catch (err) {
-                alert(err.message);
-              }
-            }}
-          >
-            <Mail size={16} /> {t(lang, 'send')}
-          </button>
         </div>
+
+        <hr style={{ border: 'none', borderTop: '1px solid var(--line)', margin: '1rem 0' }} />
+
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--brand)', marginBottom: '0.5rem' }}>
+          <MessageSquare size={18} />
+          <h3 className="eyebrow" style={{ color: 'inherit', margin: 0 }}>{t(lang, 'contactAdmin')}</h3>
+        </div>
+        <form onSubmit={sendToAdmin} className="form-stack">
+          <textarea
+            placeholder={lang === 'es' ? "Escribe tu mensaje aquí..." : "Type your message here..."}
+            value={adminMsg}
+            onChange={(e) => setAdminMsg(e.target.value)}
+            required
+            style={{
+              minHeight: '120px',
+              background: 'rgba(0,0,0,0.2)',
+              border: '1px solid var(--line)',
+              borderRadius: '12px',
+              padding: '1rem',
+              fontSize: '0.9rem',
+              color: 'var(--text)',
+              outline: 'none',
+              transition: 'all 0.3s'
+            }}
+            onFocus={(e) => e.target.style.borderColor = 'var(--brand)'}
+            onBlur={(e) => e.target.style.borderColor = 'var(--line)'}
+          />
+          <button className="primary-btn pixel-text" style={{ fontSize: '0.7rem' }} disabled={sendingMsg || !adminMsg.trim()}>
+            {sendingMsg ? <RefreshCw size={18} className="spin" /> : <Send size={18} />}
+            <span style={{ marginLeft: '0.5rem' }}>{lang === 'es' ? 'ENVIAR MENSAJE' : 'SEND MESSAGE'}</span>
+          </button>
+        </form>
       </article>
 
       <div style={{ padding: '1rem 0 3rem' }}>
@@ -480,11 +547,71 @@ export default function Settings({ preferences, setPreferences, lang }) {
         <button
           className="bubble-btn"
           onClick={save}
-          style={{ background: 'var(--brand)', color: '#052e16' }}
+          disabled={savingSettings}
+          style={{
+            background: 'var(--brand)',
+            color: '#052e16',
+            boxShadow: savingSettings ? '0 0 20px var(--brand)' : 'none'
+          }}
         >
-          <Save size={24} />
+          {savingSettings ? <RefreshCw size={24} className="spin" /> : <Save size={24} />}
         </button>
       </div>
+
+      {showDownloadPopup && (
+        <div className="modal-overlay" style={{ zIndex: 2000 }}>
+          <div className="modal-content event-modal glass-card animate-pop" style={{ padding: 0, overflow: 'hidden', maxWidth: '340px', position: 'relative' }}>
+            <button
+              className="close-modal"
+              onClick={() => {
+                setShowDownloadPopup(false);
+                localStorage.setItem('last_csv_popup_id', String(csvRequest.id));
+              }}
+              style={{
+                position: 'absolute',
+                top: '15px',
+                right: '15px',
+                left: 'auto',
+                background: 'none',
+                border: 'none',
+                padding: 0,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                boxShadow: 'none',
+                zIndex: 10,
+                cursor: 'pointer'
+              }}
+            >
+              <X size={24} color="var(--brand)" />
+            </button>
+
+            <div className="event-img-container" style={{ position: 'relative', background: 'transparent', border: 'none', borderBottom: '1px solid var(--line)', borderRadius: 'var(--radius-lg) var(--radius-lg) 0 0', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <img src="/icons/events/Downloading.png" alt="Download Approved" style={{ width: '100%', height: 'auto', display: 'block' }} />
+            </div>
+
+            <div style={{ padding: '1.5rem', textAlign: 'center' }}>
+              <h2 className="pixel-text" style={{ marginBottom: '0.8rem', color: 'var(--brand)', fontSize: '0.9rem', lineHeight: '1.4' }}>
+                DATA EXPORT READY!
+              </h2>
+              <p className="pixel-text muted" style={{ fontSize: '0.65rem', lineHeight: '1.8', textAlign: 'left', wordBreak: 'break-word', minHeight: '2.5rem' }}>
+                THE HIGH COUNCIL HAS APPROVED YOUR DATA REQUEST. YOU CAN NOW DOWNLOAD YOUR FULL TRAINING HISTORY.
+              </p>
+              <button
+                className="primary-btn pixel-text"
+                style={{ marginTop: '1.5rem', width: '100%', fontSize: '0.65rem' }}
+                onClick={() => {
+                  downloadCSV();
+                  setShowDownloadPopup(false);
+                  localStorage.setItem('last_csv_popup_id', String(csvRequest.id));
+                }}
+              >
+                DOWNLOAD NOW
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </section>
   );
 }

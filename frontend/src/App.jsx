@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import BottomNav from './components/BottomNav.jsx';
 import Skeleton from './components/Skeleton.jsx';
-import { Mail, Bell, RefreshCw } from 'lucide-react';
+import { RefreshCw } from 'lucide-react';
 import { useAuth } from './state/AuthContext.jsx';
 import { api, syncOfflineData } from './api/client.js';
 import { t } from './i18n.js';
@@ -16,12 +16,11 @@ import EventManager from './components/EventManager.jsx';
 export default function App() {
   const { user, booting, logout } = useAuth();
   const [activeTab, setActiveTab] = useState('home');
-  const [preferences, setPreferences] = useState({ theme: 'dark', language: 'en', goals_paused: false });
+  const [preferences, setPreferences] = useState({ theme: 'light', language: 'en', goals_paused: false });
   const [disclaimerAccepted, setDisclaimerAccepted] = useState(localStorage.getItem(`disclaimer_${user?.id}`) === 'true');
-  const [notifications, setNotifications] = useState([]);
-  const [showNotifications, setShowNotifications] = useState(false);
 
   const lang = preferences.language || 'en';
+  const [showProfilePopup, setShowProfilePopup] = useState(false);
 
   useEffect(() => {
     // Initial sync
@@ -54,18 +53,10 @@ export default function App() {
     api('/settings/')
       .then(setPreferences)
       .catch(() => {});
-    
-    // Load notifications
-    api('/notifications/')
-      .then(res => {
-        const list = res.results || res;
-        setNotifications(list.filter(n => !n.is_read));
-      })
-      .catch(() => {});
   }, [user]);
 
   useEffect(() => {
-    document.documentElement.dataset.theme = preferences.theme || 'dark';
+    document.documentElement.dataset.theme = preferences.theme || 'light';
     document.documentElement.dataset.font = preferences.font_size || 'medium';
   }, [preferences.theme, preferences.font_size]);
 
@@ -74,43 +65,17 @@ export default function App() {
     setDisclaimerAccepted(true);
   };
 
-  const markNotificationRead = async (id) => {
-    try {
-      await api(`/notifications/${id}/`, { method: 'PATCH', body: JSON.stringify({ is_read: true }) });
-      setNotifications((prev) => prev.filter((n) => n.id !== id));
-    } catch (err) {}
-  };
-
-  const unreadCount = notifications.filter((n) => !n.is_read).length;
   const [syncPending, setSyncPending] = useState(0);
 
   useEffect(() => {
-    const handleAddNotif = (e) => {
-      setNotifications(prev => {
-        if (e.detail.type === 'hydrate' && prev.some(n => n.type === 'hydrate')) {
-          return prev;
-        }
-        const newNotif = {
-          id: `local-${Date.now()}`,
-          message: e.detail.message,
-          type: e.detail.type,
-          is_read: false,
-          created_at: new Date().toISOString(),
-          _isLocal: true
-        };
-        return [newNotif, ...prev].slice(0, 10);
-      });
-    };
     const handleQueue = (e) => setSyncPending(e.detail);
     
     // Check initial queue length
     const q = JSON.parse(localStorage.getItem('gym_offline_queue') || '[]');
     setSyncPending(q.length);
 
-    window.addEventListener('add-local-notification', handleAddNotif);
     window.addEventListener('queue-updated', handleQueue);
     return () => {
-      window.removeEventListener('add-local-notification', handleAddNotif);
       window.removeEventListener('queue-updated', handleQueue);
     };
   }, []);
@@ -136,11 +101,6 @@ export default function App() {
       window.scrollTo({ top: 0, behavior: 'instant' });
     }
   }, [activeTab]);
-
-  const clearAllNotifications = () => {
-    setNotifications([]);
-    setShowNotifications(false);
-  };
 
   const labels = useMemo(
     () => ({
@@ -239,42 +199,50 @@ export default function App() {
               {lang === 'es' ? 'SINCRONIZANDO' : 'SYNCING'}...
             </button>
           )}
-          <button className="avatar-btn" onClick={() => setShowNotifications(!showNotifications)}>
+          <div className="avatar-btn" onClick={() => setShowProfilePopup(true)} style={{ cursor: 'pointer' }}>
             <div className={`avatar-container ${user.current_rank === 1 ? 'border-gold' : user.current_rank === 2 ? 'border-silver' : user.current_rank === 3 ? 'border-bronze' : user.has_link ? 'border-green' : ''}`} aria-label="Current user">
               <div className="avatar">
                 {getProfilePic() ? <img src={getProfilePic()} alt="" /> : user.name?.charAt(0)}
               </div>
-              {unreadCount > 0 && <div className="notif-dot" />}
             </div>
-
-            {showNotifications && (
-              <div className="glass-card shadow-xl" onClick={(e) => e.stopPropagation()} style={{ position: 'absolute', top: '100%', right: 0, width: '300px', zIndex: 1100, marginTop: '1rem', padding: '1rem', display: 'flex', flexDirection: 'column', gap: '0.8rem', maxHeight: '450px', overflowY: 'auto', cursor: 'default' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid var(--line)', paddingBottom: '0.5rem' }}>
-                  <h4 style={{ margin: 0 }}>Notifications</h4>
-                  <div style={{ display: 'flex', gap: '0.5rem' }}>
-                    <button onClick={clearAllNotifications} style={{ background: 'none', border: 'none', color: 'var(--danger)', cursor: 'pointer', fontSize: '0.7rem', fontWeight: 'bold' }}>Clear All</button>
-                    <button onClick={() => setShowNotifications(false)} style={{ background: 'none', border: 'none', color: 'var(--muted)', cursor: 'pointer', fontSize: '0.7rem' }}>Close</button>
-                  </div>
-                </div>
-                {notifications.length === 0 ? <p className="muted" style={{ fontSize: '0.8rem', textAlign: 'center', padding: '1rem' }}>No notifications</p> : null}
-                {notifications.map((n) => (
-                  <div key={n.id} style={{ padding: '0.7rem', background: n.is_read ? 'rgba(255,255,255,0.02)' : 'rgba(var(--brand-rgb), 0.05)', border: n.is_read ? '1px solid transparent' : '1px solid rgba(var(--brand-rgb), 0.2)', borderRadius: '12px', display: 'flex', flexDirection: 'column', gap: '0.4rem', transition: 'all 0.2s' }}>
-                    <p style={{ margin: 0, fontSize: '0.85rem', lineHeight: '1.4', textAlign: 'left', color: 'var(--text)' }}>{n.message}</p>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                      <span style={{ fontSize: '0.65rem', opacity: 0.5 }}>{new Date(n.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
-                      {!n.is_read && (
-                        <button onClick={() => markNotificationRead(n.id)} style={{ background: 'none', border: 'none', color: 'var(--brand)', cursor: 'pointer', fontSize: '0.75rem', fontWeight: '900' }}>
-                          Mark Read
-                        </button>
-                      )}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </button>
+          </div>
         </div>
       </header>
+
+      {showProfilePopup && (
+        <div className="modal-overlay" style={{ zIndex: 3000 }} onClick={() => setShowProfilePopup(false)}>
+          <div className="modal-content event-modal glass-card animate-pop" style={{ padding: 0, overflow: 'hidden', maxWidth: '380px', position: 'relative', minHeight: '450px', border: '1px solid var(--brand)' }} onClick={e => e.stopPropagation()}>
+            
+            {/* Background Image Container */}
+            <div style={{ position: 'absolute', inset: 0, zIndex: 0 }}>
+              {getProfilePic() ? (
+                <img src={getProfilePic()} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+              ) : (
+                <div style={{ width: '100%', height: '100%', background: 'var(--bg-soft)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '10rem', opacity: 0.1, fontWeight: '900' }}>
+                  {user.name?.charAt(0)}
+                </div>
+              )}
+              {/* Gradient Overlay for Readability */}
+              <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to top, rgba(0,0,0,0.9) 0%, rgba(0,0,0,0.4) 40%, transparent 100%)' }} />
+            </div>
+
+            {/* Content Overlaid */}
+            <div style={{ position: 'relative', zIndex: 1, height: '100%', display: 'flex', flexDirection: 'column', justifyContent: 'flex-end', padding: '2.2rem', minHeight: '450px' }}>
+              <h2 className="pixel-text" style={{ color: 'var(--brand)', marginBottom: '1rem', fontSize: '1.4rem', letterSpacing: '2px', textShadow: '2px 2px 0 #000' }}>{user.name?.toUpperCase()}</h2>
+              
+              <div style={{ background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(10px)', padding: '1.2rem', borderRadius: '16px', border: '1px solid var(--line)', marginBottom: '1.5rem' }}>
+                <p className="pixel-text muted" style={{ fontSize: '0.85rem', lineHeight: '1.6', fontStyle: 'italic', margin: 0, color: '#fff' }}>
+                  "{preferences.cheer_message || (lang === 'es' ? '¡SUPERA TUS LÍMITES!' : 'PUSH YOUR LIMITS!')}"
+                </p>
+              </div>
+
+              <button className="primary-btn pixel-text" style={{ width: '100%', padding: '1.2rem', fontSize: '0.9rem', boxShadow: '0 4px 15px rgba(0,0,0,0.5)' }} onClick={() => setShowProfilePopup(false)}>
+                {lang === 'es' ? 'ACEPTAR' : 'ACCEPT'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       <main className="screen with-nav">
         <div style={{ display: activeTab === 'home' ? 'block' : 'none' }}><Home lang={lang} /></div>

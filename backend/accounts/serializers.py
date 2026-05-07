@@ -13,6 +13,15 @@ class UserPublicSerializer(serializers.ModelSerializer):
         fields = ('id', 'email', 'name', 'profile_pic_url', 'profile_pic_url_pending', 'gender', 'auth_mode', 'is_approved', 'current_rank', 'has_link', 'is_staff')
         read_only_fields = ('id', 'is_approved', 'is_staff')
 
+    def validate_profile_pic_url(self, value):
+        if value:
+            query = User.objects.filter(profile_pic_url=value)
+            if self.instance:
+                query = query.exclude(id=self.instance.id)
+            if query.exists():
+                raise serializers.ValidationError("This character is already taken by another warrior.")
+        return value
+
     def get_current_rank(self, obj):
         from fitness.leaderboard import get_leaderboard_data
         data = get_leaderboard_data()
@@ -30,6 +39,11 @@ class RegisterSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
         fields = ('email', 'name', 'profile_pic_url', 'gender', 'auth_mode', 'pin', 'password')
+
+    def validate_profile_pic_url(self, value):
+        if value and User.objects.filter(profile_pic_url=value).exists():
+            raise serializers.ValidationError("This character is already taken by another warrior.")
+        return value
 
     def validate(self, attrs):
         auth_mode = attrs.get('auth_mode', User.AuthMode.PIN)

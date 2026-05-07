@@ -1,5 +1,5 @@
 import { useEffect, useState, useRef, useMemo, Fragment } from 'react';
-import { Save, Plus, Trash2, CheckCircle2, ChevronRight, ChevronLeft, Trophy, Play, Timer, Pause, RotateCcw, Droplets, Square, Settings, Table, LayoutGrid, CalendarDays } from 'lucide-react';
+import { Save, Plus, Trash2, CheckCircle2, ChevronRight, ChevronLeft, Trophy, Play, Timer, Pause, RotateCcw, Droplets, Square, Settings, Table, LayoutGrid, CalendarDays, RefreshCw, Activity, Dumbbell } from 'lucide-react';
 import { api, iso } from '../api/client.js';
 import Skeleton from '../components/Skeleton.jsx';
 import { t } from '../i18n.js';
@@ -7,32 +7,96 @@ import { t } from '../i18n.js';
 
 
 
-/** Build initial inlineLogs from already-saved ExerciseLogs for the day */
+/** Build initial inlineLogs and infer replacements from already-saved ExerciseLogs for the day */
 function buildInitialLogs(daysData) {
   const logs = {};
+  const newOverrides = {};
+
   daysData.forEach((day) => {
-    const savedByExercise = {};
+    const logsByPlan = {};
     (day.logs || []).forEach((log) => {
-      savedByExercise[String(log.exercise)] = log;
+      if (log.source_goal_plan) {
+        if (!logsByPlan[log.source_goal_plan]) logsByPlan[log.source_goal_plan] = [];
+        logsByPlan[log.source_goal_plan].push(log);
+      }
     });
 
     (day.goals || []).forEach((goal) => {
+      const planLogs = logsByPlan[goal.id] || [];
+      const usedLogIds = new Set();
+
+      // Pass 1: Exact matches
       (goal.goal_exercises || []).forEach((item) => {
         const exId = String(item.exercise_detail?.id);
-        if (savedByExercise[exId]) {
-          const saved = savedByExercise[exId];
+        const exactLog = planLogs.find(l => String(l.exercise) === exId);
+        
+        if (exactLog) {
+          usedLogIds.add(exactLog.id);
           logs[item.id] = {
-            sets: String(saved.sets),
-            reps: String(saved.reps),
-            weight_kg: saved.weight_kg !== null && saved.weight_kg !== undefined ? String(saved.weight_kg) : '',
-            duration: saved.duration || '',
-            log_id: saved.id,
+            sets: String(exactLog.sets),
+            reps: String(exactLog.reps),
+            weight_kg: exactLog.weight_kg !== null && exactLog.weight_kg !== undefined ? String(exactLog.weight_kg) : '',
+            duration: exactLog.duration || '',
+            log_id: exactLog.id,
+          };
+        }
+      });
+
+      // Pass 2: Unmatched logs map to unlogged exercises (infer replacements)
+      (goal.goal_exercises || []).forEach((item) => {
+        if (!logs[item.id]) {
+          const replacementLog = planLogs.find(l => !usedLogIds.has(l.id));
+          if (replacementLog) {
+            usedLogIds.add(replacementLog.id);
+            const tempId = `temp-override-${replacementLog.id}`;
+            if (!newOverrides[goal.id]) newOverrides[goal.id] = [];
+            
+            newOverrides[goal.id].push({
+              ...item,
+              id: tempId,
+              exercise_detail: replacementLog.exercise_detail,
+              _replacedId: item.id,
+              _isExtra: false
+            });
+            
+            logs[tempId] = {
+              sets: String(replacementLog.sets),
+              reps: String(replacementLog.reps),
+              weight_kg: replacementLog.weight_kg !== null && replacementLog.weight_kg !== undefined ? String(replacementLog.weight_kg) : '',
+              duration: replacementLog.duration || '',
+              log_id: replacementLog.id,
+            };
+          }
+        }
+      });
+      // Pass 3: Any remaining unused logs are Extra Exercises!
+      planLogs.forEach((log) => {
+        if (!usedLogIds.has(log.id)) {
+          usedLogIds.add(log.id);
+          const tempId = `temp-extra-${log.id}`;
+          if (!newOverrides[goal.id]) newOverrides[goal.id] = [];
+          
+          newOverrides[goal.id].push({
+            id: tempId,
+            exercise_detail: log.exercise_detail,
+            sets: log.sets,
+            reps: log.reps,
+            _isExtra: true
+          });
+          
+          logs[tempId] = {
+            sets: String(log.sets),
+            reps: String(log.reps),
+            weight_kg: log.weight_kg !== null && log.weight_kg !== undefined ? String(log.weight_kg) : '',
+            duration: log.duration || '',
+            log_id: log.id,
           };
         }
       });
     });
   });
-  return logs;
+  
+  return { logs, newOverrides };
 }
 
 export default function Home({ lang }) {
@@ -86,7 +150,9 @@ export default function Home({ lang }) {
       const todayStr = iso(new Date());
       const res = await api(`/home/days/?start=${iso(start)}&end=${iso(end)}&today=${todayStr}`);
       setDays(res);
-      setInlineLogs(buildInitialLogs(res));
+      const { logs, newOverrides } = buildInitialLogs(res);
+      setInlineLogs(logs);
+      setTodayOverrides(newOverrides);
       
       const isPresentWeek = res.some(d => d.is_today);
       setShowBackToPresent(!isPresentWeek);
@@ -124,8 +190,11 @@ export default function Home({ lang }) {
   }, []);
 
   useEffect(() => {
-    api('/exercises/').then(res => setAllExercises(res.results || res)).catch(() => {});
-  }, []);
+    api('/exercises/').then(res => {
+      const data = res.results || res;
+      setAllExercises([...data].sort((a, b) => t(lang, a.name).localeCompare(t(lang, b.name))));
+    }).catch(() => {});
+  }, [lang]);
 
   useEffect(() => {
     if (!loading && days.some(d => d.is_today) && shouldScrollToToday) {
@@ -194,7 +263,17 @@ export default function Home({ lang }) {
     } else if (field === 'weight_kg') {
       value = raw.replace(/[^0-9.]/g, '').replace(/(\..*)\./g, '$1');
     } else if (field === 'duration') {
-      value = raw.replace(/[^0-9:]/g, '');
+      let digits = raw.replace(/[^0-9]/g, '');
+      if (digits.length > 0) {
+        digits = parseInt(digits, 10).toString();
+        if (digits === 'NaN' || digits === '0') digits = '';
+      }
+      if (digits.length > 0) {
+        const padded = digits.padStart(4, '0').slice(-4);
+        value = `${padded.slice(0, 2)}:${padded.slice(2, 4)}`;
+      } else {
+        value = '';
+      }
     }
     setInlineLogs((prev) => ({
       ...prev,
@@ -209,20 +288,29 @@ export default function Home({ lang }) {
     setActiveTimer(null);
   };
 
+
   async function saveAll() {
     setSaving(true);
     setSaveMessage('');
     let sessionLogsCount = 0;
+    let changesMade = false;
     try {
-      let opsCount = 0;
+      const promises = [];
       for (const day of days) {
         for (const goal of day.goals || []) {
           const overrides = todayOverrides[goal.id] || [];
           const allCurrent = [...(goal.goal_exercises || []), ...overrides];
           
           for (const item of allCurrent) {
-            // If it's a replaced item, skip the original
-            if (!item._isExtra && overrides.some(o => o._replacedId === item.id)) continue;
+            if (!item._isExtra && overrides.some(o => o._replacedId === item.id)) {
+              // The original item is replaced. Delete its old log if it existed.
+              const oldLogVal = inlineLogs[item.id];
+              if (oldLogVal?.log_id) {
+                await api(`/exercise-logs/${oldLogVal.log_id}/`, { method: 'DELETE' });
+                changesMade = true;
+              }
+              continue;
+            }
 
             const logVal = inlineLogs[item.id || `extra-${allCurrent.indexOf(item)}` ];
             if (!logVal && !item._isExtra) continue;
@@ -235,7 +323,7 @@ export default function Home({ lang }) {
             if (!hasValue && !item._isExtra) {
               if (logVal?.log_id) {
                 await api(`/exercise-logs/${logVal.log_id}/`, { method: 'DELETE' });
-                opsCount++;
+                changesMade = true;
               }
               continue;
             }
@@ -253,26 +341,28 @@ export default function Home({ lang }) {
 
             if (logVal?.log_id) {
               await api(`/exercise-logs/${logVal.log_id}/`, { method: 'PATCH', body: JSON.stringify(payload) });
-              opsCount++;
+              changesMade = true;
             } else if (hasValue || item._isExtra) {
               await api('/exercise-logs/', { method: 'POST', body: JSON.stringify(payload) });
-              opsCount++;
               if (day.is_today) sessionLogsCount++;
+              changesMade = true;
             }
           }
         }
       }
 
-      if (opsCount === 0) {
+      if (!changesMade) {
         setSaveMessage('Nothing to save');
         setSaving(false);
+        setTimeout(() => setSaveMessage(''), 3000);
         return;
       }
+      
       setSaveMessage(`Saved ✓`);
+      setTimeout(() => setSaveMessage(''), 3000);
 
       await loadInitial();
       
-      // Hydration Trigger: GLOBAL total logs count is divisible by 3
       const allLogsRes = await api('/exercise-logs/');
       const totalGlobalLogs = allLogsRes.count || allLogsRes.length || 0;
       
@@ -281,6 +371,7 @@ export default function Home({ lang }) {
       }
     } catch (err) {
       setSaveMessage(err.message);
+      setTimeout(() => setSaveMessage(''), 5000);
     } finally {
       setSaving(false);
     }
@@ -358,7 +449,7 @@ export default function Home({ lang }) {
 
 
       {viewMode === 'spreadsheet' ? (
-        <div className="glass-card" style={{ padding: '0', overflowX: 'auto', borderRadius: '24px', border: '1px solid var(--line)', animation: 'slideUp 0.4s ease-out' }}>
+        <div className="glass-card" style={{ padding: '0', borderRadius: '24px', border: '1px solid var(--line)', animation: 'slideUp 0.4s ease-out' }}>
           <table className="spreadsheet-table" style={{ width: '100%', borderCollapse: 'separate', borderSpacing: '0', fontSize: '0.85rem' }}>
             <thead>
               <tr>
@@ -418,7 +509,11 @@ export default function Home({ lang }) {
                         }}>
                           {idx === 0 && dayCell}
                           <td style={{ padding: '1.2rem 1rem', borderBottom: '1px solid var(--line)', fontWeight: '700', color: isDone ? 'var(--brand)' : 'var(--text)' }}>
-                            {t(lang, item.exercise_detail?.name)}
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
+                              {item.exercise_detail?.exercise_type === 'calisthenics' ? <Activity size={16} /> : 
+                               <Dumbbell size={16} />}
+                              {t(lang, item.exercise_detail?.name)}
+                            </div>
                           </td>
                           <td style={{ padding: '1.2rem 1rem', borderBottom: '1px solid var(--line)' }}>
                             <span style={{ 
@@ -545,9 +640,25 @@ export default function Home({ lang }) {
                                                 }));
                                               } else {
                                                 // Replace existing
+                                                const tempId = `temp-override-${Date.now()}`;
                                                 setTodayOverrides(prev => ({
                                                   ...prev,
-                                                  [goal.id]: [...(prev[goal.id] || []), { ...item, exercise_detail: newEx, _isExtra: true, _replacedId: item.id }]
+                                                  [goal.id]: [...(prev[goal.id] || []), { 
+                                                    ...item, 
+                                                    id: tempId,
+                                                    exercise_detail: newEx, 
+                                                    _isExtra: false, 
+                                                    _replacedId: item.id 
+                                                  }]
+                                                }));
+                                                setInlineLogs(prev => ({
+                                                  ...prev,
+                                                  [tempId]: {
+                                                    sets: String(item.sets),
+                                                    reps: String(item.reps),
+                                                    weight_kg: '',
+                                                    duration: ''
+                                                  }
                                                 }));
                                               }
                                             }}
@@ -555,7 +666,11 @@ export default function Home({ lang }) {
                                             {allExercises.map(ex => <option key={ex.id} value={ex.id}>{t(lang, ex.name)}</option>)}
                                           </select>
                                         ) : (
-                                          <strong style={{ fontSize: '0.95rem' }}>{t(lang, item.exercise_detail?.name)}</strong>
+                                          <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
+                                            {item.exercise_detail?.exercise_type === 'calisthenics' ? <Activity size={16} className="text-brand" /> : 
+                                             <Dumbbell size={16} className="text-brand" />}
+                                            <strong style={{ fontSize: '0.95rem' }}>{t(lang, item.exercise_detail?.name)}</strong>
+                                          </div>
                                         )}
                                         {item.exercise_detail?.youtube_url && (
                                           <a
@@ -711,9 +826,13 @@ export default function Home({ lang }) {
           className="bubble-btn"
           onClick={saveAll}
           disabled={saving}
-          style={{ background: 'var(--brand)', color: '#052e16' }}
+          style={{ 
+            background: 'var(--brand)', 
+            color: '#052e16',
+            boxShadow: saving ? '0 0 20px var(--brand)' : 'none'
+          }}
         >
-          <Save size={24} />
+          {saving ? <RefreshCw size={24} className="spin" /> : <Save size={24} />}
         </button>
       </div>
 

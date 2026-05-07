@@ -4,36 +4,29 @@ import EventModal from './EventModal';
 
 export default function EventManager({ activeTab, user }) {
   const [modal, setModal] = useState({ open: false, image: '', title: '', message: '', subMessage: '', type: '' });
+  const [eventQueue, setEventQueue] = useState([]);
+
+  // Process the queue when the modal closes or a new event arrives
+  useEffect(() => {
+    if (!modal.open && eventQueue.length > 0) {
+      const nextEvent = eventQueue[0];
+      setModal({
+        open: true,
+        image: nextEvent.image,
+        title: nextEvent.title || 'NEW EVENT',
+        message: nextEvent.message,
+        subMessage: nextEvent.subMessage || '',
+        type: nextEvent.type || 'notice'
+      });
+      setEventQueue(prev => prev.slice(1));
+    }
+  }, [modal.open, eventQueue]);
 
   const triggerEvent = useCallback((config) => {
-    console.log("triggerEvent called with:", config.image);
-    // Tab-specific filtering
-    const tabMapping = {
-      '/icons/events/Perfect.png': 'profile',
-      '/icons/events/Hydrate.png': 'home',
-      '/icons/events/Sleep.png': 'home',
-      '/icons/events/Congratulations.png': 'home',
-      '/icons/events/Scouter.png': 'global',
-      '/icons/events/Trash.png': 'global'
-    };
-
-    const targetTab = tabMapping[config.image];
-    if (targetTab && targetTab !== activeTab) {
-      console.log(`Event ${config.image} skipped: target ${targetTab}, current ${activeTab}`);
-      return false;
-    }
-
-    console.log("Opening modal for:", config.image);
-    setModal({
-      open: true,
-      image: config.image,
-      title: config.title || 'NEW EVENT',
-      message: config.message,
-      subMessage: config.subMessage || '',
-      type: config.type || 'notice'
-    });
+    console.log("Queueing event:", config.image);
+    setEventQueue(prev => [...prev, config]);
     return true;
-  }, [activeTab]);
+  }, []);
 
   function getWeekNumber(d) {
     const date = new Date(d.getTime());
@@ -54,7 +47,7 @@ export default function EventManager({ activeTab, user }) {
       const growth = ((currentScore - prevScore) / prevScore) * 100;
 
       if (growth >= 8) {
-        const weekKey = `scouter_seen_${new Date().getFullYear()}_W${getWeekNumber(new Date())}`;
+        const weekKey = `scouter_seen_v2_${new Date().getFullYear()}_W${getWeekNumber(new Date())}`;
         if (!localStorage.getItem(weekKey)) {
           triggerEvent({
             image: '/icons/events/Scouter.png',
@@ -79,7 +72,7 @@ export default function EventManager({ activeTab, user }) {
       }
 
       if (data.champion_id === user.id) {
-        const weekKey = `champion_seen_${new Date().getFullYear()}_W${getWeekNumber(new Date())}`;
+        const weekKey = `champion_seen_v2_${new Date().getFullYear()}_W${getWeekNumber(new Date())}`;
         if (!localStorage.getItem(weekKey)) {
           triggerEvent({
             image: '/icons/events/Congratulations.png',
@@ -154,7 +147,7 @@ export default function EventManager({ activeTab, user }) {
           const notices = res.results || res;
           if (notices && Array.isArray(notices) && notices.length > 0) {
             const latest = notices[0];
-            const seenKey = `seen_notice_${latest.id}`;
+            const seenKey = `seen_notice_v2_${latest.id}`;
             if (!localStorage.getItem(seenKey)) {
               triggerEvent({
                 image: '/icons/events/Notice.png',
@@ -171,12 +164,12 @@ export default function EventManager({ activeTab, user }) {
           const maints = maintRes.results || maintRes;
           if (maints && Array.isArray(maints) && maints.length > 0) {
             const latest = maints[0];
-            const seenKey = `seen_maint_${latest.id}`;
+            const seenKey = `seen_maint_v2_${latest.id}`;
             if (!localStorage.getItem(seenKey)) {
               const start = new Date(latest.start_time).toLocaleString();
               const end = new Date(latest.end_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
               triggerEvent({
-                image: '/icons/events/Maintenence.png',
+                image: '/icons/events/Hotfix.png',
                 title: 'MAINTENANCE',
                 message: `${latest.message}\n\nSCHEDULE:\n${start} - ${end} ${latest.timezone}`,
                 type: 'notice'
@@ -210,12 +203,12 @@ export default function EventManager({ activeTab, user }) {
 
     window.addEventListener('trigger-hydration', handleHydrate);
     return () => window.removeEventListener('trigger-hydration', handleHydrate);
-  }, [user, activeTab, triggerEvent]);
+  }, [user, triggerEvent]);
 
   return (
     <EventModal 
       isOpen={modal.open} 
-      onClose={() => setModal({ ...modal, open: false })}
+      onClose={() => setModal(prev => ({ ...prev, open: false }))}
       image={modal.image}
       title={modal.title}
       message={modal.message}

@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Crown, Trophy, ExternalLink, Users } from 'lucide-react';
+import { Crown, Trophy, ExternalLink, Users, X } from 'lucide-react';
 import { useAuth } from '../state/AuthContext.jsx';
 import { api, iso } from '../api/client.js';
 import Skeleton from '../components/Skeleton.jsx';
@@ -10,18 +10,13 @@ export default function Global({ lang }) {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [showBeta, setShowBeta] = useState(false);
+  const [popupUser, setPopupUser] = useState(null);
 
   useEffect(() => {
     api(`/leaderboard/?today=${iso(new Date())}`)
       .then(setData)
       .finally(() => setLoading(false));
   }, []);
-
-  const handleLinkClick = (link, name) => {
-    if (window.confirm(`Do you want to leave the app to visit ${name}'s recommendation?\n\nLink: ${link}`)) {
-      window.open(link, '_blank', 'noopener,noreferrer');
-    }
-  };
 
   const getBorderClass = (rank, hasLink) => {
     if (rank === 1) return "border-gold";
@@ -78,11 +73,11 @@ export default function Global({ lang }) {
               )}
               <article className={`rank-card ${row.id === user?.id ? 'self-highlight' : ''}`} style={row.is_test_user ? { opacity: 0.7 } : {}}>
                 <div className="rank-number">#{row.rank}</div>
-                <div className={`avatar-container ${getBorderClass(row.rank, hasLink)}`} onClick={() => hasLink && row.rank <= 10 && handleLinkClick(row.recommended_link, row.name)}>
+                <div className={`avatar-container ${getBorderClass(row.rank, hasLink)}`} onClick={() => setPopupUser(row)}>
                   <div className="avatar big">
                     {row.profile_pic_url ? <img src={getIconUrl(row.profile_pic_url)} alt="" /> : row.name?.charAt(0)}
                   </div>
-                  {hasLink && row.rank <= 10 && <div className="link-badge"><ExternalLink size={12} /></div>}
+                  {hasLink && <div className="link-badge"><ExternalLink size={12} /></div>}
                 </div>
                 <div className="rank-main">
                   <h3>{row.name} {row.rank === 1 && !row.is_test_user && <Crown size={18} />}</h3>
@@ -104,6 +99,97 @@ export default function Global({ lang }) {
           {showBeta ? 'Hide Beta Users' : t(lang, 'showBeta')}
         </button>
       </div>
+
+      {popupUser && (
+        <div className="modal-overlay" style={{ zIndex: 2000 }}>
+          <div className="modal-content event-modal glass-card animate-pop" style={{ padding: 0, overflow: 'hidden', maxWidth: '340px', position: 'relative' }}>
+            <button 
+              className="close-modal" 
+              onClick={() => setPopupUser(null)} 
+              style={{ 
+                position: 'absolute',
+                top: '15px', 
+                right: '15px', 
+                left: 'auto', 
+                background: 'none', 
+                border: 'none', 
+                padding: 0,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                boxShadow: 'none',
+                zIndex: 10,
+                cursor: 'pointer'
+              }}
+            >
+              <X size={24} color="var(--brand)" />
+            </button>
+            
+            <div className="event-img-container" style={{ position: 'relative', background: 'transparent', border: 'none', borderBottom: '1px solid var(--line)', borderRadius: 'var(--radius-lg) var(--radius-lg) 0 0', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', width: '100%', height: '100%', background: 'var(--brand)', filter: 'blur(60px)', opacity: 0.1, zIndex: -1 }}></div>
+              {popupUser.profile_pic_url ? (
+                <img 
+                  src={getIconUrl(popupUser.profile_pic_url)} 
+                  alt={popupUser.name} 
+                  style={{ width: '100%', height: 'auto', display: 'block', position: 'relative', zIndex: 1 }} 
+                />
+              ) : (
+                <div className="pixel-text" style={{ padding: '3rem', fontSize: '3rem', color: 'var(--brand)', position: 'relative', zIndex: 1 }}>
+                  {popupUser.name?.charAt(0)}
+                </div>
+              )}
+            </div>
+            
+            <div style={{ padding: '1.5rem', textAlign: 'center' }}>
+              <h2 className="pixel-text" style={{ marginBottom: '0.8rem', color: 'var(--brand)', fontSize: '0.9rem', lineHeight: '1.4' }}>
+                {popupUser.name}
+              </h2>
+              
+              <div className="pixel-text muted" style={{ fontSize: '0.65rem', lineHeight: '1.8', textAlign: 'left', wordBreak: 'break-word', minHeight: '2.5rem', whiteSpace: 'pre-wrap' }}>
+                {popupUser.recommended_link ? (
+                  lang === 'es' 
+                    ? `¡SIENTO UN GRAN PODER DE PELEA!\n\n${popupUser.name} COMPARTIÓ UNA RECOMENDACIÓN PARA SUPERAR TUS LÍMITES.`
+                    : `I SENSE A HIGH POWER LEVEL!\n\n${popupUser.name} SHARED A RECOMMENDATION TO PUSH YOUR LIMITS.`
+                ) : (
+                  lang === 'es'
+                    ? `${popupUser.name} ESTÁ ENTRENANDO EN SOLITARIO. SIN RECOMENDACIONES POR AHORA... ¡SIGUE TU CAMINO!`
+                    : `${popupUser.name} IS TRAINING IN ISOLATION. NO RECOMMENDATIONS YET... CONTINUE YOUR PATH!`
+                )}
+              </div>
+              
+              {popupUser.recommended_link ? (
+                <a 
+                  href={popupUser.recommended_link} 
+                  target="_blank" 
+                  rel="noopener noreferrer" 
+                  className="primary-btn pixel-text" 
+                  style={{ marginTop: '1.5rem', width: '100%', fontSize: '0.65rem', textDecoration: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center' }} 
+                  onClick={(e) => {
+                    const msg = lang === 'es' 
+                      ? `¿Deseas continuar a este enlace externo?\n\n${popupUser.recommended_link}`
+                      : `Would you like to continue to this external link?\n\n${popupUser.recommended_link}`;
+                    if (!window.confirm(msg)) {
+                      e.preventDefault();
+                    } else {
+                      setPopupUser(null);
+                    }
+                  }}
+                >
+                  {lang === 'es' ? '¡VAMOS!' : 'GO FOR IT!'}
+                </a>
+              ) : (
+                <button 
+                  className="primary-btn pixel-text" 
+                  onClick={() => setPopupUser(null)} 
+                  style={{ marginTop: '1.5rem', width: '100%', fontSize: '0.65rem' }}
+                >
+                  {lang === 'es' ? 'CONTINUAR' : 'CONTINUE'}
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </section>
   );
 }

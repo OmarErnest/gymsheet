@@ -165,3 +165,10 @@ class UserListView(APIView):
             return Response({'detail': 'Admin only.'}, status=status.HTTP_403_FORBIDDEN)
         users = User.objects.all().order_by('name')
         return Response(UserPublicSerializer(users, many=True).data)
+class TakenIconsView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        # Get all non-empty icons currently in use
+        icons = User.objects.exclude(profile_pic_url='').values_list('profile_pic_url', flat=True).distinct()
+        return Response(list(icons))

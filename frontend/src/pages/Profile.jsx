@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Area, AreaChart, ResponsiveContainer, Tooltip, XAxis, YAxis, PieChart, Pie, Cell, CartesianGrid, Radar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis } from 'recharts';
-import { Plus, Trash2, Edit2, RefreshCw, Activity, Map as MapIcon, PlusCircle, Target, List, BarChart3, Radar as RadarIcon, GripVertical, Timer, Weight, Zap, ChevronDown } from 'lucide-react';
+import { Plus, Trash2, Edit2, RefreshCw, Activity, Map as MapIcon, PlusCircle, Target, List, BarChart3, Radar as RadarIcon, GripVertical, Timer, Weight, Dumbbell, ChevronDown } from 'lucide-react';
 import { api } from '../api/client.js';
 import LinkInput from '../components/LinkInput.jsx';
 import Skeleton from '../components/Skeleton.jsx';
@@ -246,7 +246,8 @@ export default function Profile({ preferences, lang }) {
   async function fetchExercises() {
     if (loadedData.exercises) return;
     const data = await api('/exercises/');
-    setExercises(data.results || data);
+    const list = data.results || data;
+    setExercises(list.sort((a, b) => t(lang, a.name).localeCompare(t(lang, b.name))));
     setLoadedData(prev => ({ ...prev, exercises: true }));
   }
 
@@ -712,7 +713,20 @@ export default function Profile({ preferences, lang }) {
             )}
             {graphMode === 'list' && (
               <div className="exercise-list" style={{ overflowY: 'auto', maxHeight: '100%' }}>
-                {filteredLogsList.map((log) => (<div key={log.id} className="exercise-row"><div><strong>{log.exercise_detail?.name}</strong><p>{log.date} — {log.sets}x{String(log.reps).padStart(2, '0')} @ {log.weight_kg}kg</p></div></div>))}
+                {filteredLogsList.map((log) => (
+                  <div key={log.id} className="exercise-row">
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.8rem' }}>
+                      <div className="text-brand">
+                        {log.exercise_detail?.exercise_type === 'calisthenics' ? <Activity size={18} /> : 
+                         <Dumbbell size={18} />}
+                      </div>
+                      <div>
+                        <strong>{log.exercise_detail?.name}</strong>
+                        <p>{log.date} — {log.sets}x{String(log.reps).padStart(2, '0')} @ {log.weight_kg}kg</p>
+                      </div>
+                    </div>
+                  </div>
+                ))}
               </div>
             )}
           </div>
@@ -766,7 +780,7 @@ export default function Profile({ preferences, lang }) {
               <button type="button" className={exerciseForm.is_time_based ? 'active' : ''} onClick={() => setExerciseForm({ ...exerciseForm, is_time_based: true })}><Timer size={16} /> {t(lang, 'time')}</button>
             </div>
             <div className="segmented ghost" style={{ marginTop: '0.5rem' }}>
-              <button type="button" className={exerciseForm.exercise_type === 'machine' ? 'active' : ''} onClick={() => setExerciseForm({ ...exerciseForm, exercise_type: 'machine' })}><Zap size={16} /> {t(lang, 'machine')}</button>
+              <button type="button" className={exerciseForm.exercise_type === 'machine' ? 'active' : ''} onClick={() => setExerciseForm({ ...exerciseForm, exercise_type: 'machine' })}><Dumbbell size={16} /> {t(lang, 'machine')}</button>
               <button type="button" className={exerciseForm.exercise_type === 'calisthenics' ? 'active' : ''} onClick={() => setExerciseForm({ ...exerciseForm, exercise_type: 'calisthenics' })}><Activity size={16} /> {t(lang, 'calisthenics')}</button>
             </div>
             <LinkInput label={t(lang, 'youtubeLink')} value={exerciseForm.youtube_url} onChange={(youtube_url) => setExerciseForm({ ...exerciseForm, youtube_url })} lang={lang} />

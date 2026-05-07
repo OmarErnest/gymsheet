@@ -58,7 +58,7 @@ class UserPreference(models.Model):
         BIG = 'big', 'Big'
 
     user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='preferences')
-    theme = models.CharField(max_length=10, choices=Theme.choices, default=Theme.DARK)
+    theme = models.CharField(max_length=10, choices=Theme.choices, default=Theme.LIGHT)
     language = models.CharField(max_length=5, choices=Language.choices, default=Language.EN)
     goals_paused = models.BooleanField(default=False)
     font_size = models.CharField(max_length=10, choices=FontSize.choices, default=FontSize.MEDIUM)
@@ -66,6 +66,7 @@ class UserPreference(models.Model):
     weight_kg = models.DecimalField(max_digits=5, decimal_places=2, null=True, blank=True)
     recommended_link = models.URLField(blank=True)
     hide_from_leaderboard = models.BooleanField(default=False)
+    cheer_message = models.CharField(max_length=240, blank=True)
 
     def __str__(self):
         return f'{self.user.email} preferences'

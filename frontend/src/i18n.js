@@ -322,7 +322,7 @@ export const dict = {
     avgLift: 'promedio levantado',
     activeDays: 'días',
     logs: 'registros',
-    score: 'Nivel de Poder',
+    score: 'Poder de Pelea',
     securityPreferences: 'Seguridad + preferencias',
     settingsHelp: 'Cambia tema, idioma, pausa de metas futuras y método de inicio.',
     pauseFutureGoals: 'Pausar metas futuras',

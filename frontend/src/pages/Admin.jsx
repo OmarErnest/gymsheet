@@ -4,7 +4,6 @@ import { api } from '../api/client.js';
 import { t } from '../i18n.js';
 
 export default function Admin({ lang }) {
-  const [messages, setMessages] = useState([]);
   const [globalNotices, setGlobalNotices] = useState([]);
   const [maintenanceNotices, setMaintenanceNotices] = useState([]);
   const [users, setUsers] = useState([]);
@@ -18,6 +17,8 @@ export default function Admin({ lang }) {
     timezone: 'EST'
   });
   const [status, setStatus] = useState('');
+  const [passwordForm, setPasswordForm] = useState({ newPassword: '', confirmPassword: '' });
+  const [passwordStatus, setPasswordStatus] = useState('');
 
   useEffect(() => {
     loadData();
@@ -26,12 +27,10 @@ export default function Admin({ lang }) {
 
   async function loadData() {
     try {
-      const [msgsRes, noticesRes, maintRes] = await Promise.all([
-        api('/admin-messages/'),
+      const [noticesRes, maintRes] = await Promise.all([
         api('/global-notices/'),
         api('/maintenance-notices/')
       ]);
-      setMessages(msgsRes.results || msgsRes);
       setGlobalNotices(noticesRes.results || noticesRes);
       setMaintenanceNotices(maintRes.results || maintRes);
     } catch (err) {}
@@ -68,12 +67,6 @@ export default function Admin({ lang }) {
             message: form.message 
           })
         });
-      } else {
-        // Specific user
-        await api('/notifications/', {
-          method: 'POST',
-          body: JSON.stringify({ user: form.userId, message: form.message })
-        });
       }
       setForm({ ...form, title: '', message: '', startTime: '', endTime: '' });
       setStatus('Sent successfully!');
@@ -84,11 +77,24 @@ export default function Admin({ lang }) {
     }
   }
 
-  async function markMessageRead(id) {
+  async function changePassword(e) {
+    e.preventDefault();
+    if (passwordForm.newPassword !== passwordForm.confirmPassword) {
+      setPasswordStatus('Passwords do not match');
+      return;
+    }
+    setPasswordStatus('Updating...');
     try {
-      await api(`/admin-messages/${id}/`, { method: 'PATCH', body: JSON.stringify({ is_read: true }) });
-      loadData();
-    } catch (err) {}
+      await api('/settings/', {
+        method: 'PATCH',
+        body: JSON.stringify({ new_password: passwordForm.newPassword, auth_mode: 'password' })
+      });
+      setPasswordForm({ newPassword: '', confirmPassword: '' });
+      setPasswordStatus('Password changed successfully!');
+      setTimeout(() => setPasswordStatus(''), 3000);
+    } catch (err) {
+      setPasswordStatus('Error: ' + err.message);
+    }
   }
 
   return (
@@ -100,6 +106,38 @@ export default function Admin({ lang }) {
           <p className="muted">Manage system notices and user messages</p>
         </div>
       </div>
+
+      <article className="glass-card form-stack">
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--brand)', marginBottom: '0.5rem' }}>
+          <Shield size={18} />
+          <h3 className="eyebrow" style={{ color: 'inherit', margin: 0 }}>CHANGE ADMIN PASSWORD</h3>
+        </div>
+        
+        <form onSubmit={changePassword} className="form-stack">
+          <label className="field">
+            <span>New Password</span>
+            <input 
+              type="password" 
+              value={passwordForm.newPassword} 
+              onChange={e => setPasswordForm({...passwordForm, newPassword: e.target.value})} 
+              required 
+            />
+          </label>
+          <label className="field">
+            <span>Confirm Password</span>
+            <input 
+              type="password" 
+              value={passwordForm.confirmPassword} 
+              onChange={e => setPasswordForm({...passwordForm, confirmPassword: e.target.value})} 
+              required 
+            />
+          </label>
+          <button className="primary-btn" disabled={!passwordForm.newPassword || !passwordForm.confirmPassword}>
+            Update Password
+          </button>
+          {passwordStatus && <p className="notice" style={{ textAlign: 'center', fontWeight: 'bold', color: passwordStatus.includes('Error') || passwordStatus.includes('not match') ? 'var(--danger)' : 'var(--brand)' }}>{passwordStatus}</p>}
+        </form>
+      </article>
 
       <article className="glass-card form-stack">
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--brand)', marginBottom: '0.5rem' }}>
@@ -123,13 +161,7 @@ export default function Admin({ lang }) {
               style={{ width: '100%', background: 'rgba(0,0,0,0.2)', color: 'var(--text)', border: '1px solid var(--line)', padding: '0.8rem', borderRadius: '8px' }}
             >
               <option value="all-popup">All Users (Big Popup)</option>
-              <option value="all-standard">All Users (Standard Message)</option>
-              <option value="maintenance">Maintenance Alert (Maintenence.png + Dates)</option>
-              <optgroup label="Specific User">
-                {users.map(u => (
-                  <option key={u.id} value={u.id}>{u.name} ({u.email})</option>
-                ))}
-              </optgroup>
+              <option value="maintenance">Maintenance Alert (Hotfix.png + Dates)</option>
             </select>
           </label>
 
@@ -197,33 +229,6 @@ export default function Admin({ lang }) {
         </form>
       </article>
 
-      <article className="glass-card">
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--brand)', marginBottom: '1rem' }}>
-          <MessageSquare size={18} />
-          <h3 className="eyebrow" style={{ color: 'inherit', margin: 0 }}>USER INQUIRIES</h3>
-        </div>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-          {messages.length === 0 && <p className="muted" style={{ textAlign: 'center', padding: '1rem' }}>No user messages</p>}
-          {messages.map(m => (
-            <div key={m.id} style={{ padding: '1rem', background: 'rgba(255,255,255,0.02)', border: '1px solid var(--line)', borderRadius: '12px' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
-                <strong style={{ fontSize: '0.85rem' }}>{m.user_email}</strong>
-                <span className="muted" style={{ fontSize: '0.7rem' }}>{new Date(m.created_at).toLocaleString()}</span>
-              </div>
-              <p style={{ fontSize: '0.9rem', margin: '0.5rem 0', lineHeight: '1.4' }}>{m.message}</p>
-              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.5rem' }}>
-                {!m.is_read ? (
-                  <button onClick={() => markMessageRead(m.id)} className="small-btn" style={{ gap: '0.3rem' }}>
-                    <Check size={14} /> Mark Read
-                  </button>
-                ) : (
-                  <span className="pill" style={{ fontSize: '0.7rem', opacity: 0.5 }}>READ</span>
-                )}
-              </div>
-            </div>
-          ))}
-        </div>
-      </article>
 
       <article className="glass-card">
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--brand)', marginBottom: '1rem' }}>

@@ -109,6 +109,12 @@ export async function api(path, options = {}) {
         localStorage.setItem(CACHE_KEY_PREFIX + path, JSON.stringify(data));
         return data;
       }
+      if (response.status === 401) {
+        clearTokens();
+        saveQueue([]);
+        window.location.href = '/'; 
+        return { _error: 'Session expired' };
+      }
       throw new Error(extractError(data));
     } catch (err) {
       const cached = localStorage.getItem(CACHE_KEY_PREFIX + path);

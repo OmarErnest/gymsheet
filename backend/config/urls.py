@@ -2,7 +2,7 @@ from django.contrib import admin
 from django.urls import include, path
 from rest_framework.routers import DefaultRouter
 
-from accounts.views import LoginPasswordView, LoginPinView, MeView, PreferencesView, RegisterView, TestEnvView, ResetTestEnvView, UserListView
+from accounts.views import LoginPasswordView, LoginPinView, MeView, PreferencesView, RegisterView, TestEnvView, ResetTestEnvView, UserListView, TakenIconsView
 from fitness.views import (
     BodyMeasurementViewSet,
     DailyProgressViewSet,
@@ -47,6 +47,7 @@ urlpatterns = [
     path('api/auth/test-env/', TestEnvView.as_view(), name='test-env'),
     path('api/auth/reset-test-env/', ResetTestEnvView.as_view(), name='reset-test-env'),
     path('api/auth/me/', MeView.as_view(), name='me'),
+    path('api/auth/taken-icons/', TakenIconsView.as_view(), name='taken-icons'),
     path('api/settings/', PreferencesView.as_view(), name='settings'),
     path('api/home/days/', HomeDaysView.as_view(), name='home-days'),
     path('api/leaderboard/', LeaderboardView.as_view(), name='leaderboard'),
