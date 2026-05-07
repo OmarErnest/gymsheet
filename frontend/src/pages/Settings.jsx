@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { LogOut, Save, Eye, EyeOff, FileText, User as UserIcon, ChevronDown, FileDown } from 'lucide-react';
+import { LogOut, Save, Eye, EyeOff, FileText, User as UserIcon, ChevronDown, FileDown, HelpCircle } from 'lucide-react';
 import { api } from '../api/client.js';
 import { useAuth } from '../state/AuthContext.jsx';
 import { t } from '../i18n.js';
@@ -32,6 +32,8 @@ export default function Settings({ preferences, setPreferences, lang }) {
   const [showSecret, setShowSecret] = useState(false);
   const [showLegal, setShowLegal] = useState(false);
   const [showIcons, setShowIcons] = useState(false);
+  const [showPauseHelp, setShowPauseHelp] = useState(false);
+  const [showHideHelp, setShowHideHelp] = useState(false);
 
   useEffect(() => {
     setForm((prev) => ({
@@ -253,12 +255,32 @@ export default function Settings({ preferences, setPreferences, lang }) {
         </div>
 
         <label className="switch-row">
-          <span>{t(lang, 'pauseFutureGoals')}<small>{t(lang, 'pauseHelp')}</small></span>
+          <span>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+              {t(lang, 'pauseFutureGoals')}
+              <HelpCircle 
+                size={14} 
+                style={{ opacity: 0.5, cursor: 'help' }} 
+                onClick={(e) => { e.preventDefault(); setShowPauseHelp(!showPauseHelp); }}
+              />
+            </div>
+            {showPauseHelp && <small style={{ display: 'block', marginTop: '0.3rem', fontSize: '0.75rem', color: 'var(--muted)', fontWeight: '400' }}>{t(lang, 'pauseHelp')}</small>}
+          </span>
           <input type="checkbox" checked={!!form.goals_paused} onChange={(e) => update('goals_paused', e.target.checked)} />
         </label>
 
         <label className="switch-row">
-          <span>{t(lang, 'hideFromLeaderboard')}<small>{t(lang, 'hideHelp')}</small></span>
+          <span>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+              {t(lang, 'hideFromLeaderboard')}
+              <HelpCircle 
+                size={14} 
+                style={{ opacity: 0.5, cursor: 'help' }} 
+                onClick={(e) => { e.preventDefault(); setShowHideHelp(!showHideHelp); }}
+              />
+            </div>
+            {showHideHelp && <small style={{ display: 'block', marginTop: '0.3rem', fontSize: '0.75rem', color: 'var(--muted)', fontWeight: '400' }}>{t(lang, 'hideHelp')}</small>}
+          </span>
           <input type="checkbox" checked={!!form.hide_from_leaderboard} onChange={(e) => update('hide_from_leaderboard', e.target.checked)} />
         </label>
 
