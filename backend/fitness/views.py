@@ -3,7 +3,7 @@ import io
 from datetime import date, timedelta
 
 from django.contrib.auth import get_user_model
-from django.db.models import Avg, Count, Max, Q, Sum
+from django.db.models import Avg, Count, Max, Q, Sum, Case, When, F, FloatField
 from django.http import HttpResponse
 from django.utils import timezone
 from rest_framework import status, viewsets
@@ -25,7 +25,6 @@ from .serializers import (
     ExerciseCSVUploadSerializer,
     LogCSVUploadSerializer,
     GlobalNoticeSerializer,
-    BroadcastNotificationSerializer,
     BroadcastNotificationSerializer,
     AdminMessageSerializer,
     MaintenanceNoticeSerializer,
@@ -196,9 +195,16 @@ class HomeDaysView(APIView):
         # All-time personal bests (max weight) per exercise for this user
         pb_rows = (
             ExerciseLog.objects
-            .filter(user=request.user, weight_kg__gt=0)
+            .filter(user=request.user)
+            .annotate(
+                effective_weight=Case(
+                    When(exercise__exercise_type='calisthenics', then=F('weight_kg') + 2.0),
+                    default=F('weight_kg'),
+                    output_field=FloatField()
+                )
+            )
             .values('exercise_id')
-            .annotate(best=Max('weight_kg'))
+            .annotate(best=Max('effective_weight'))
         )
         personal_bests = {row['exercise_id']: float(row['best']) for row in pb_rows}
 
@@ -241,11 +247,23 @@ def get_champion_for_week(week_start, week_end):
     best_score = -999999
     
     for user in users:
-        logs = ExerciseLog.objects.filter(user=user, date__range=[week_start, week_end])
-        last_logs = ExerciseLog.objects.filter(user=user, date__range=[week_start - timedelta(days=7), week_end - timedelta(days=7)])
+        logs = ExerciseLog.objects.filter(user=user, date__range=[week_start, week_end]).annotate(
+            eff=Case(
+                When(exercise__exercise_type='calisthenics', then=F('weight_kg') + 2.0),
+                default=F('weight_kg'),
+                output_field=FloatField()
+            )
+        )
+        last_logs = ExerciseLog.objects.filter(user=user, date__range=[week_start - timedelta(days=7), week_end - timedelta(days=7)]).annotate(
+            eff=Case(
+                When(exercise__exercise_type='calisthenics', then=F('weight_kg') + 2.0),
+                default=F('weight_kg'),
+                output_field=FloatField()
+            )
+        )
         
-        avg_weight = logs.aggregate(val=Avg('weight_kg'))['val'] or 0
-        last_avg_weight = last_logs.aggregate(val=Avg('weight_kg'))['val'] or 0
+        avg_weight = logs.aggregate(val=Avg('eff'))['val'] or 0
+        last_avg_weight = last_logs.aggregate(val=Avg('eff'))['val'] or 0
         
         reps_sum = logs.aggregate(val=Sum('reps'))['val'] or 0
         sets_sum = logs.aggregate(val=Sum('sets'))['val'] or 0

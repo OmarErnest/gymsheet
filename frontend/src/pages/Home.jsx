@@ -523,6 +523,7 @@ export default function Home({ lang }) {
 
                               const isExtra = !!item._isExtra;
                               const isTimeBased = item.exercise_detail?.is_time_based;
+                              const isCalisthenics = item.exercise_detail?.exercise_type === 'calisthenics';
                               const logKey = item.id || `extra-${idx}`;
                               const logVal = inlineLogs[logKey] || {};
 
@@ -611,16 +612,19 @@ export default function Home({ lang }) {
                                         style={{ flex: 1.5, minHeight: '40px' }}
                                       />
                                     ) : (
-                                      <input
-                                        placeholder="kg"
-                                        className="input-bubble"
-                                        type="number"
-                                        disabled={isLocked}
-                                        onFocus={(e) => e.target.select()}
-                                        value={logVal.weight_kg || ''}
-                                        onChange={(e) => handleChange(item.id || `extra-${idx}`, 'weight_kg', e.target.value)}
-                                        style={{ flex: 2, minHeight: '40px' }}
-                                      />
+                                      <div style={{ flex: 2, position: 'relative' }}>
+                                        <input
+                                          placeholder={isCalisthenics ? "+kg" : "kg"}
+                                          className="input-bubble"
+                                          type="number"
+                                          disabled={isLocked}
+                                          onFocus={(e) => e.target.select()}
+                                          value={logVal.weight_kg || ''}
+                                          onChange={(e) => handleChange(item.id || `extra-${idx}`, 'weight_kg', e.target.value)}
+                                          style={{ width: '100%', minHeight: '40px' }}
+                                        />
+                                        {isCalisthenics && <span style={{ position: 'absolute', right: '10px', top: '50%', transform: 'translateY(-50%)', fontSize: '0.65rem', opacity: 0.5, pointerEvents: 'none' }}>2kg base</span>}
+                                      </div>
                                     )}
                                     {isTimeBased && (
                                       <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem', flex: 1.5, position: 'relative' }}>

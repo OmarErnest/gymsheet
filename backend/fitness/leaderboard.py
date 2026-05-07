@@ -19,7 +19,7 @@ def get_leaderboard_data():
     for user in users:
         # Current Week Score
         weekly_logs = list(
-            ExerciseLog.objects.filter(user=user, date__range=[week_start, week_end])
+            ExerciseLog.objects.filter(user=user, date__range=[week_start, week_end]).select_related('exercise')
         )
         logs_by_date = defaultdict(list)
         for log in weekly_logs:
@@ -29,12 +29,15 @@ def get_leaderboard_data():
         score = 10
         for d in qualified_days:
             for log in logs_by_date[d]:
-                score += float(log.weight_kg or 0) * (log.sets or 0) * (log.reps or 0)
+                eff_w = float(log.weight_kg or 0)
+                if log.exercise.exercise_type == 'calisthenics':
+                    eff_w += 2.0
+                score += eff_w * (log.sets or 0) * (log.reps or 0)
         score = int(score)
 
         # Last Week Score
         last_weekly_logs = list(
-            ExerciseLog.objects.filter(user=user, date__range=[last_week_start, last_week_end])
+            ExerciseLog.objects.filter(user=user, date__range=[last_week_start, last_week_end]).select_related('exercise')
         )
         last_logs_by_date = defaultdict(list)
         for log in last_weekly_logs:
@@ -43,12 +46,21 @@ def get_leaderboard_data():
         last_score = 10
         for d in last_qualified_days:
             for log in last_logs_by_date[d]:
-                last_score += float(log.weight_kg or 0) * (log.sets or 0) * (log.reps or 0)
+                eff_w = float(log.weight_kg or 0)
+                if log.exercise.exercise_type == 'calisthenics':
+                    eff_w += 2.0
+                last_score += eff_w * (log.sets or 0) * (log.reps or 0)
         last_score = int(last_score)
 
         qualified_logs = [log for d in qualified_days for log in logs_by_date[d]]
+        def get_eff(l):
+            w = float(l.weight_kg or 0)
+            if l.exercise.exercise_type == 'calisthenics':
+                w += 2.0
+            return w
+
         avg_weight = (
-            sum(float(l.weight_kg or 0) for l in qualified_logs) / len(qualified_logs)
+            sum(get_eff(l) for l in qualified_logs) / len(qualified_logs)
         ) if qualified_logs else 0
 
         data.append({

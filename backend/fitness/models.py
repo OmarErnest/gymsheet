@@ -13,12 +13,16 @@ class Exercise(models.Model):
         CHEST = 'chest', 'Chest'
         BACK = 'back', 'Back'
         ARMS = 'arms', 'Arms'
-        CALISTHENICS = 'calisthenics', 'Calisthenics'
         OTHER = 'other', 'Other'
+
+    class ExerciseType(models.TextChoices):
+        MACHINE = 'machine', 'Machine'
+        CALISTHENICS = 'calisthenics', 'Calisthenics'
 
     name = models.CharField(max_length=120)
     youtube_url = models.URLField(blank=True)
     category = models.CharField(max_length=20, choices=Category.choices, default=Category.OTHER)
+    exercise_type = models.CharField(max_length=20, choices=ExerciseType.choices, default=ExerciseType.MACHINE)
     created_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, related_name='created_exercises')
     is_public = models.BooleanField(default=True)
     is_time_based = models.BooleanField(default=False)

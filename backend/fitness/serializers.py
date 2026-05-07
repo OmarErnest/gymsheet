@@ -45,7 +45,7 @@ class ExerciseSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Exercise
-        fields = ('id', 'name', 'youtube_url', 'category', 'is_public', 'is_time_based', 'created_by', 'created_by_name', 'created_at')
+        fields = ('id', 'name', 'youtube_url', 'category', 'exercise_type', 'is_public', 'is_time_based', 'created_by', 'created_by_name', 'created_at')
         read_only_fields = ('id', 'created_by', 'created_by_name', 'created_at')
 
 

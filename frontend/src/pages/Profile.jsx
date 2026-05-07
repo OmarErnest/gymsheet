@@ -12,7 +12,7 @@ import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, us
 import { arrayMove, SortableContext, sortableKeyboardCoordinates, verticalListSortingStrategy, useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 
-const categories = ['shoulder', 'legs', 'chest', 'back', 'arms', 'calisthenics', 'other'];
+const categories = ['shoulder', 'legs', 'chest', 'back', 'arms', 'other'];
 const bodyParts = ['biceps', 'forearms', 'chest', 'waist', 'hips', 'thigh', 'calf', 'shoulders', 'other'];
 const weekdays = [
   ['Mon', 0], ['Tue', 1], ['Wed', 2], ['Thu', 3], ['Fri', 4], ['Sat', 5], ['Sun', 6],
@@ -221,7 +221,7 @@ export default function Profile({ preferences, lang }) {
   const [showFrontBody, setShowFrontBody] = useState(true);
   const [selectedDot, setSelectedDot] = useState(null);
 
-  const [exerciseForm, setExerciseForm] = useState({ name: '', youtube_url: '', category: '', is_public: true, is_time_based: false });
+  const [exerciseForm, setExerciseForm] = useState({ name: '', youtube_url: '', category: '', exercise_type: 'machine', is_public: true, is_time_based: false });
   const [measurementForm, setMeasurementForm] = useState({
     body_part: 'biceps', value_cm: '', date: new Date().toISOString().slice(0, 10), notes: ''
   });
@@ -366,10 +366,13 @@ export default function Profile({ preferences, lang }) {
         grouped[d] = { date: d.slice(5), weight: 0, count: 0 };
       }
       let weight = Number(log.weight_kg || 0);
+      if (log.exercise_detail?.exercise_type === 'calisthenics') {
+        weight += 2;
+      }
       if (log.exercise_detail?.is_time_based) {
         const parts = (log.duration || '0:0').split(':');
         const mins = parts.length === 2 ? (parseInt(parts[0]) + parseInt(parts[1])/60) : (parseFloat(parts[0]) || 0);
-        weight = mins * (userWeight / 2);
+        weight = mins * (userWeight / 2) + (log.exercise_detail?.exercise_type === 'calisthenics' ? 2 : 0);
       }
       grouped[d].weight += weight;
       grouped[d].count += 1;
@@ -416,10 +419,13 @@ export default function Profile({ preferences, lang }) {
         dataGroup[name] = { totalWeight: 0, count: 0 };
       }
       let weight = Number(log.weight_kg || 0);
+      if (log.exercise_detail?.exercise_type === 'calisthenics') {
+        weight += 2;
+      }
       if (log.exercise_detail?.is_time_based) {
         const parts = (log.duration || '0:0').split(':');
         const mins = parts.length === 2 ? (parseInt(parts[0]) + parseInt(parts[1])/60) : (parseFloat(parts[0]) || 0);
-        weight = mins * (userWeight / 2);
+        weight = mins * (userWeight / 2) + (log.exercise_detail?.exercise_type === 'calisthenics' ? 2 : 0);
       }
       dataGroup[name].totalWeight += weight;
       dataGroup[name].count += 1;
@@ -436,7 +442,7 @@ export default function Profile({ preferences, lang }) {
     setMessage('');
     try {
       await api('/exercises/', { method: 'POST', body: JSON.stringify(exerciseForm) });
-      setExerciseForm({ name: '', youtube_url: '', category: '', is_public: true, is_time_based: false });
+      setExerciseForm({ name: '', youtube_url: '', category: '', exercise_type: 'machine', is_public: true, is_time_based: false });
       setMessage(t(lang, 'exerciseCreated'));
       await load();
     } catch (err) {
@@ -758,6 +764,10 @@ export default function Profile({ preferences, lang }) {
             <div className="segmented ghost" style={{ marginTop: '0.5rem' }}>
               <button type="button" className={!exerciseForm.is_time_based ? 'active' : ''} onClick={() => setExerciseForm({ ...exerciseForm, is_time_based: false })}><Weight size={16} /> {t(lang, 'weight')}</button>
               <button type="button" className={exerciseForm.is_time_based ? 'active' : ''} onClick={() => setExerciseForm({ ...exerciseForm, is_time_based: true })}><Timer size={16} /> {t(lang, 'time')}</button>
+            </div>
+            <div className="segmented ghost" style={{ marginTop: '0.5rem' }}>
+              <button type="button" className={exerciseForm.exercise_type === 'machine' ? 'active' : ''} onClick={() => setExerciseForm({ ...exerciseForm, exercise_type: 'machine' })}><Zap size={16} /> {t(lang, 'machine')}</button>
+              <button type="button" className={exerciseForm.exercise_type === 'calisthenics' ? 'active' : ''} onClick={() => setExerciseForm({ ...exerciseForm, exercise_type: 'calisthenics' })}><Activity size={16} /> {t(lang, 'calisthenics')}</button>
             </div>
             <LinkInput label={t(lang, 'youtubeLink')} value={exerciseForm.youtube_url} onChange={(youtube_url) => setExerciseForm({ ...exerciseForm, youtube_url })} lang={lang} />
             <label className="field"><span>{t(lang, 'category')}</span><select required value={exerciseForm.category} onChange={(e) => setExerciseForm({ ...exerciseForm, category: e.target.value })}><option value="" disabled>Select Category</option>{categories.map((category) => <option key={category} value={category}>{t(lang, category)}</option>)}</select></label>
