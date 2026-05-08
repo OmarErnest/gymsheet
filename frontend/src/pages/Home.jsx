@@ -462,7 +462,18 @@ export default function Home({ lang }) {
       <div className="nav-arrows">
         <button className="arrow-btn" onClick={() => changeWeek(-1)} disabled={relativeWeek <= -6}><ChevronLeft size={20} /></button>
         <div style={{ textAlign: 'center' }}>
-          <span style={{ fontWeight: '900', fontSize: '0.9rem', color: 'var(--brand)', minWidth: '180px', display: 'block' }}>
+          <span style={{ 
+            fontWeight: '950', 
+            fontSize: '0.8rem', 
+            color: 'var(--brand)', 
+            background: 'rgba(var(--brand-rgb), 0.1)', 
+            padding: '4px 16px', 
+            borderRadius: '999px', 
+            border: '1px solid rgba(var(--brand-rgb), 0.2)',
+            minWidth: '200px', 
+            display: 'inline-block',
+            letterSpacing: '1px'
+          }}>
             {relativeWeek === 0 ? 'CURRENT WEEK' : 
              relativeWeek === 1 ? '1 WEEK IN THE FUTURE' : 
              `${Math.abs(relativeWeek)} ${Math.abs(relativeWeek) === 1 ? 'WEEK' : 'WEEKS'} IN THE PAST`}
@@ -885,7 +896,7 @@ export default function Home({ lang }) {
             className="bubble-btn"
             onClick={scrollToTop}
             style={{ 
-              background: 'rgba(255, 255, 255, 0.05)', 
+              background: 'var(--bg-card)', 
               color: 'var(--muted)', 
               backdropFilter: 'blur(10px)',
               border: '1px solid var(--line)',

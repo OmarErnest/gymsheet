@@ -116,18 +116,31 @@ export default function Global({ lang }) {
                   </div>
                   {hasLink && <div className="link-badge"><ExternalLink size={12} /></div>}
                 </div>
-                <div className="rank-main">
-                  <h3 className="pixel-text" style={{ fontSize: '0.8rem', color: 'var(--brand)', textShadow: '1px 1px 0 #000' }}>{row.name} {row.rank === 1 && !row.is_test_user && <Crown size={14} style={{ verticalAlign: 'middle', marginLeft: '4px' }} />}</h3>
-                  <div className="rank-meta">
-                    <span className="pill pixel-text" style={{ fontSize: '0.6rem' }}>{row.active_days} {t(lang, 'activeDays')}</span>
-                    <span className="pill pixel-text" style={{ fontSize: '0.6rem' }}>{Math.round(row.average_lift_kg_this_week || 0)}kg {t(lang, 'avgLift')}</span>
+                <div className="rank-main" style={{ textAlign: 'center', flex: 1, padding: '0 0.5rem' }}>
+                  <h3 className="pixel-text" style={{ 
+                    margin: 0, 
+                    fontSize: '0.85rem', 
+                    color: isSelf ? 'var(--brand)' : 'var(--text)',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    gap: '2px'
+                  }}>
+                    {row.name}
+                    <span style={{ fontSize: '0.6rem', opacity: 0.8, color: 'var(--muted)', fontWeight: 'normal' }}>
+                      {row.active_days} {t(lang, 'activeDays')}
+                    </span>
+                  </h3>
+                </div>
+
+                <div style={{ textAlign: 'right', minWidth: '80px' }}>
+                  <div className="brand" style={{ fontWeight: '950', fontSize: '1.1rem', letterSpacing: '-0.5px' }}>
+                    {Math.round(row.average_lift_kg_this_week || 0)}kg
+                  </div>
+                  <div className="muted pixel-text" style={{ fontSize: '0.55rem', opacity: 0.8 }}>
+                    {t(lang, 'avgLift')}
                   </div>
                 </div>
-                <strong className="rank-score pixel-text" style={{ color: 'var(--text)', textShadow: '1px 1px 0 rgba(0,0,0,0.1)' }}>
-                  {row.score}
-                  <br />
-                  <small style={{ fontSize: '0.55rem', color: 'var(--brand)' }}>{t(lang, 'score')}</small>
-                </strong>
               </article>
             </div>
           );

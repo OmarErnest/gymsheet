@@ -222,8 +222,9 @@ export default function Profile({ preferences, lang }) {
   const [showFrontBody, setShowFrontBody] = useState(true);
   const [selectedDot, setSelectedDot] = useState(null);
   const [showWarriorStats, setShowWarriorStats] = useState(false);
-
-  const [exerciseForm, setExerciseForm] = useState({ name: '', youtube_url: '', category: '', exercise_type: 'machine', is_public: true, is_time_based: false });
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [exerciseForm, setExerciseForm] = useState({ id: null, name: '', youtube_url: '', category: '', exercise_type: 'machine', is_public: false, is_time_based: false });
+  const [editingExercise, setEditingExercise] = useState(null);
   const [measurementForm, setMeasurementForm] = useState({
     body_part: 'biceps', value_cm: '', date: new Date().toISOString().slice(0, 10), notes: ''
   });
@@ -312,11 +313,12 @@ export default function Profile({ preferences, lang }) {
   );
 
   async function fetchExercises() {
-    if (loadedData.exercises) return;
-    const data = await api('/exercises/');
-    const list = data.results || data;
-    setExercises(list.sort((a, b) => t(lang, a.name).localeCompare(t(lang, b.name))));
-    setLoadedData(prev => ({ ...prev, exercises: true }));
+    try {
+      const exRes = await api('/exercises/');
+      const list = exRes.results || exRes;
+      setExercises(list.sort((a, b) => t(lang, a.name).localeCompare(t(lang, b.name))));
+      setLoadedData(prev => ({ ...prev, exercises: true }));
+    } catch (err) {}
   }
 
   async function fetchLogs() {
@@ -506,22 +508,55 @@ export default function Profile({ preferences, lang }) {
     })).sort((a, b) => b.value - a.value).slice(0, 8); // Limit to top 8 for readability
   }, [filteredLogsList, lang, selectedCategories]);
 
-  async function createExercise(e) {
-    if (e) e.preventDefault();
+  async function handleCreateExercise(e) {
+    e.preventDefault();
     if (isDummy) {
       setMessage(lang === 'es' ? 'Acción restringida para cuenta demo' : 'Action restricted for demo account');
       return;
     }
     setMessage('');
+    
+    const isUpdate = !!exerciseForm.id;
+    const method = isUpdate ? 'PATCH' : 'POST';
+    const endpoint = isUpdate ? `/exercises/${exerciseForm.id}/` : '/exercises/';
+
     try {
-      await api('/exercises/', { method: 'POST', body: JSON.stringify(exerciseForm) });
-      setExerciseForm({ name: '', youtube_url: '', category: '', exercise_type: 'machine', is_public: true, is_time_based: false });
-      setMessage(t(lang, 'exerciseCreated'));
-      await load();
+      await api(endpoint, {
+        method,
+        body: JSON.stringify(exerciseForm),
+      });
+      setExerciseForm({ id: null, name: '', youtube_url: '', category: '', exercise_type: 'machine', is_public: false, is_time_based: false });
+      setEditingExercise(null);
+      await fetchExercises();
+      setMessage(isUpdate ? "Exercise updated!" : t(lang, 'exerciseCreated'));
     } catch (err) {
       setMessage(err.message);
     }
   }
+
+  const handleEditExercise = (ex) => {
+    setExerciseForm({
+      id: ex.id,
+      name: ex.name,
+      youtube_url: ex.youtube_url || '',
+      category: ex.category,
+      exercise_type: ex.exercise_type,
+      is_public: ex.is_public,
+      is_time_based: ex.is_time_based
+    });
+    setEditingExercise(ex.id);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const handleDeleteExercise = async (id) => {
+    if (!window.confirm(lang === 'es' ? '¿Estás seguro de que quieres eliminar este ejercicio?' : 'Are you sure you want to delete this exercise?')) return;
+    try {
+      await api(`/exercises/${id}/`, { method: 'DELETE' });
+      await fetchExercises();
+    } catch (err) {
+      setMessage(err.message);
+    }
+  };
 
   async function addMeasurement(e) {
     if (e) e.preventDefault();
@@ -534,7 +569,7 @@ export default function Profile({ preferences, lang }) {
       await api('/body-measurements/', { method: 'POST', body: JSON.stringify(measurementForm) });
       setMeasurementForm((prev) => ({ ...prev, value_cm: '', notes: '' }));
       setMessage(t(lang, 'measurementSaved'));
-      await load();
+      await fetchMeasurements();
     } catch (err) {
       setMessage(err.message);
     }
@@ -612,7 +647,7 @@ export default function Profile({ preferences, lang }) {
         await api('/goal-plans/', { method: 'POST', body: JSON.stringify(body) });
       }
       setGoalForm({ id: null, title: '', start_date: new Date().toISOString().slice(0, 10), repeat_type: 'weekly', weekdays: [], repeat_weeks: '', goal_exercises: [emptyGoalExercise()] });
-      await load();
+      await fetchGoals();
       setMessage(t(lang, 'settingsSaved'));
     } catch (err) {
       setMessage(err.message);
@@ -627,7 +662,7 @@ export default function Profile({ preferences, lang }) {
     }
     try {
       await api(`/goal-plans/${id}/`, { method: 'DELETE' });
-      await load();
+      await fetchGoals();
     } catch (err) { setMessage(err.message); }
   }
 
@@ -937,8 +972,8 @@ export default function Profile({ preferences, lang }) {
         <article className="glass-card profile-section">
           <p className="eyebrow">{t(lang, 'createExercise')}</p>
           <h2>{t(lang, 'addExercise')}</h2>
-          <form onSubmit={createExercise} className="form-stack">
-            <label className="field"><span>{t(lang, 'name')}</span><input value={exerciseForm.name} onChange={(e) => setExerciseForm({ ...exerciseForm, name: e.target.value })} /></label>
+          <form onSubmit={handleCreateExercise} className="form-stack">
+            <label className="field"><span>{t(lang, 'name')}</span><input value={exerciseForm.name} onChange={(e) => setExerciseForm({ ...exerciseForm, name: e.target.value })} required /></label>
             <div className="segmented ghost" style={{ marginTop: '0.5rem' }}>
               <button type="button" className={!exerciseForm.is_time_based ? 'active' : ''} onClick={() => setExerciseForm({ ...exerciseForm, is_time_based: false })}><Weight size={16} /> {t(lang, 'weight')}</button>
               <button type="button" className={exerciseForm.is_time_based ? 'active' : ''} onClick={() => setExerciseForm({ ...exerciseForm, is_time_based: true })}><Timer size={16} /> {t(lang, 'time')}</button>
@@ -949,8 +984,63 @@ export default function Profile({ preferences, lang }) {
             </div>
             <LinkInput label={t(lang, 'youtubeLink')} value={exerciseForm.youtube_url} onChange={(youtube_url) => setExerciseForm({ ...exerciseForm, youtube_url })} lang={lang} />
             <label className="field"><span>{t(lang, 'category')}</span><select required value={exerciseForm.category} onChange={(e) => setExerciseForm({ ...exerciseForm, category: e.target.value })}><option value="" disabled>Select Category</option>{categories.map((category) => <option key={category} value={category}>{t(lang, category)}</option>)}</select></label>
-            <button className="primary-btn">{t(lang, 'createExerciseButton')}</button>
+            
+            <button className="primary-btn" type="submit" style={{ width: '100%', marginTop: '0.5rem' }}>
+              {editingExercise ? (lang === 'es' ? 'ACTUALIZAR EJERCICIO' : 'UPDATE EXERCISE') : t(lang, 'createExerciseButton')}
+            </button>
+            {editingExercise && (
+              <button 
+                type="button" 
+                className="small-btn" 
+                onClick={() => {
+                  setEditingExercise(null);
+                  setExerciseForm({ id: null, name: '', youtube_url: '', category: '', exercise_type: 'machine', is_public: false, is_time_based: false });
+                }}
+                style={{ width: '100%', background: 'transparent', border: '1px solid var(--line)', color: 'var(--muted)' }}
+              >
+                {lang === 'es' ? 'CANCELAR EDICIÓN' : 'CANCEL EDIT'}
+              </button>
+            )}
           </form>
+
+          {/* Manage Private Exercises List */}
+          <article className="glass-card" style={{ marginTop: '1.5rem' }}>
+            <h3 className="eyebrow" style={{ color: 'var(--brand)', marginBottom: '1rem' }}>
+              {lang === 'es' ? 'MIS EJERCICIOS PRIVADOS' : 'MY PRIVATE EXERCISES'}
+            </h3>
+            <div style={{ display: 'grid', gap: '0.8rem' }}>
+              {exercises.filter(ex => ex.created_by === user.id).length === 0 ? (
+                <p className="muted" style={{ fontSize: '0.85rem', textAlign: 'center', padding: '1rem' }}>
+                  {lang === 'es' ? 'No has creado ejercicios privados todavía.' : 'You haven\'t created any private exercises yet.'}
+                </p>
+              ) : (
+                exercises.filter(ex => ex.created_by === user.id).map(ex => (
+                  <div key={ex.id} className="glass-card" style={{ padding: '0.8rem', background: 'rgba(255,255,255,0.02)', border: '1px solid var(--line)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <div>
+                      <div style={{ fontWeight: '800', fontSize: '0.9rem' }}>{ex.name}</div>
+                      <div className="muted" style={{ fontSize: '0.7rem' }}>{t(lang, ex.category)} • {ex.is_time_based ? t(lang, 'time') : t(lang, 'weight')}</div>
+                    </div>
+                    <div style={{ display: 'flex', gap: '0.5rem' }}>
+                      <button 
+                        onClick={() => handleEditExercise(ex)}
+                        style={{ background: 'none', border: 'none', color: 'var(--brand)', cursor: 'pointer', padding: '4px' }}
+                        title="Edit"
+                      >
+                        <Settings size={18} />
+                      </button>
+                      <button 
+                        onClick={() => handleDeleteExercise(ex.id)}
+                        style={{ background: 'none', border: 'none', color: 'var(--danger)', cursor: 'pointer', padding: '4px' }}
+                        title="Delete"
+                      >
+                        <Trash2 size={18} />
+                      </button>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+          </article>
         </article>
       )}
 

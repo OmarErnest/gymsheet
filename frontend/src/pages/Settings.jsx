@@ -7,7 +7,7 @@ import LinkInput from '../components/LinkInput.jsx';
 
 const CHARACTER_ICONS = [
   'Android16.png', 'Babidi.png', 'Captain.png', 'Doctor.png', 'Hercule.png',
-  'Jeice.png', 'Korin.png', 'Nappa.png', 'Piccolo.png', 'Racoome.png', 'Radiz.png', 'Tao.png', 'Tien.png',
+  'Jeice.png', 'Korin.png', 'Nappa.png', 'Piccolo.png', 'Porunga.png', 'Racoome.png', 'Radiz.png', 'Tao.png', 'Tien.png',
   'Tama.png', 'Giru.png'
 ];
 
