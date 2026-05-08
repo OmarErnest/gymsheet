@@ -705,7 +705,7 @@ export default function Profile({ preferences, lang }) {
         )}
       </div>
 
-      <div className="profile-nav-grid" style={{ margin: '0 0 1rem' }}>
+      <div className="profile-nav-grid" style={{ margin: '0 0 0.5rem' }}>
         <button className={`nav-square ${activeTab === 'strength' ? 'active' : ''}`} onClick={() => setActiveTab('strength')}>
           <Activity />
           <span>{t(lang, 'strength')}</span>
@@ -729,8 +729,8 @@ export default function Profile({ preferences, lang }) {
       </div>
 
       {activeTab === 'strength' && (
-        <article className="glass-card profile-section" style={{ padding: '1.2rem 0.8rem' }}>
-          <div style={{ textAlign: 'center', marginBottom: '1rem' }}>
+        <article className="glass-card profile-section" style={{ padding: '0.8rem' }}>
+          <div style={{ textAlign: 'center', marginBottom: '0.5rem' }}>
             <p className="eyebrow">{t(lang, 'reviewProgress')}</p>
             <h2>{t(lang, 'strengthGraph')}</h2>
             <div className="tab-pill-box" style={{ margin: '0.8rem auto 0', width: 'fit-content' }}>
