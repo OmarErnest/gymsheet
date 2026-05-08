@@ -109,9 +109,9 @@ export default function Global({ lang }) {
                   overflow: 'hidden',
                   ...(row.is_test_user ? { opacity: 0.7 } : {}),
                   ...(row.profile_pic_url ? {
-                    backgroundImage: `linear-gradient(to right, rgba(7, 19, 13, 0.92) 20%, rgba(7, 19, 13, 0.7) 50%, rgba(7, 19, 13, 0.92) 80%), url(${getIconUrl(row.profile_pic_url)})`,
+                    backgroundImage: `linear-gradient(to right, rgba(7, 19, 13, 0.95) 15%, rgba(7, 19, 13, 0.65) 50%, rgba(7, 19, 13, 0.95) 85%), url(${getIconUrl(row.profile_pic_url)})`,
                     backgroundSize: 'cover',
-                    backgroundPosition: 'center 20%',
+                    backgroundPosition: '20% 5%',
                     border: '1px solid var(--line)'
                   } : {})
                 }}
@@ -134,7 +134,7 @@ export default function Global({ lang }) {
                   <div className="rank-main" style={{ textAlign: 'center', flex: 1, padding: '0 0.5rem' }}>
                     <h3 className="pixel-text" style={{ 
                       margin: 0, 
-                      fontSize: '0.85rem', 
+                      fontSize: '0.9rem', 
                       color: row.id === user?.id ? 'var(--brand)' : 'var(--text)',
                       display: 'flex',
                       flexDirection: 'column',
@@ -142,8 +142,8 @@ export default function Global({ lang }) {
                       gap: '2px'
                     }}>
                       {row.name}
-                      <span style={{ fontSize: '0.6rem', opacity: 0.8, color: 'var(--muted)', fontWeight: 'normal' }}>
-                        {row.active_days} {t(lang, 'activeDays')}
+                      <span style={{ fontSize: '0.65rem', opacity: 0.9, color: 'var(--brand)', fontWeight: '800', letterSpacing: '0.5px' }}>
+                        POWER: {Math.round(row.score || 0).toLocaleString()}
                       </span>
                     </h3>
                   </div>
