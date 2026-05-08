@@ -252,7 +252,7 @@ export default function App() {
         {user?.is_staff && <div style={{ display: activeTab === 'admin' ? 'block' : 'none' }}><Admin lang={lang} /></div>}
       </main>
 
-      <EventManager activeTab={activeTab} user={user} />
+      <EventManager activeTab={activeTab} user={user} lang={lang} />
       <BottomNav active={activeTab} onChange={setActiveTab} labels={labels} isStaff={user?.is_staff} />
     </div>
   );

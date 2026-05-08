@@ -70,9 +70,6 @@ class ExerciseViewSet(viewsets.ModelViewSet):
 
     def perform_create(self, serializer):
         user = self.request.user
-        # Limit extra exercises to 40. Base exercises are those where created_by is null or is_public is true by default?
-        # User request: "cannot create more than 40 extra exercises on top of the already existing 44"
-        # We assume existing 44 are public and created by admin.
         user_exercises_count = Exercise.objects.filter(created_by=user).count()
         if user_exercises_count >= 40:
             raise ValidationError("You cannot create more than 40 custom exercises.")

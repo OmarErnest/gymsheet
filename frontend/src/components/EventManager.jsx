@@ -1,8 +1,9 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { api } from '../api/client';
 import EventModal from './EventModal';
+import { t } from '../i18n';
 
-export default function EventManager({ activeTab, user }) {
+export default function EventManager({ activeTab, user, lang }) {
   const [modal, setModal] = useState({ open: false, image: '', title: '', message: '', subMessage: '', type: '' });
   const [eventQueue, setEventQueue] = useState([]);
 
@@ -204,6 +205,22 @@ export default function EventManager({ activeTab, user }) {
     window.addEventListener('trigger-hydration', handleHydrate);
     return () => window.removeEventListener('trigger-hydration', handleHydrate);
   }, [user, triggerEvent]);
+
+  useEffect(() => {
+    if (!user) return;
+    
+    const handleRest = () => {
+      triggerEvent({
+        image: '/icons/events/Rest.png',
+        title: t(lang, 'restTitle'),
+        message: t(lang, 'restMessage'),
+        type: 'rest'
+      });
+    };
+
+    window.addEventListener('trigger-rest', handleRest);
+    return () => window.removeEventListener('trigger-rest', handleRest);
+  }, [user, triggerEvent, lang]);
 
   return (
     <EventModal 

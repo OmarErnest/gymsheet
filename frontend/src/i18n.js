@@ -220,6 +220,8 @@ export const dict = {
     'Back Squat': 'Back Squat',
     'Dumbbell Shoulder Press': 'Dumbbell Shoulder Press',
     'Biceps Curl': 'Biceps Curl',
+    restTitle: 'RECOVERY TIME',
+    restMessage: 'Take it easy, pal. We are all out of senzu beans.',
   },
   es: {
     appName: 'GymSheet',
@@ -442,6 +444,8 @@ export const dict = {
     'Back Squat': 'Sentadilla trasera',
     'Dumbbell Shoulder Press': 'Press de hombro con mancuernas',
     'Biceps Curl': 'Curl de bíceps',
+    restTitle: 'TIEMPO DE RECUPERACIÓN',
+    restMessage: 'Tómalo con calma, amigo. Se nos acabaron las semillas del ermitaño.',
   }
 };
 

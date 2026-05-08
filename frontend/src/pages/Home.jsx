@@ -377,8 +377,17 @@ export default function Home({ lang }) {
       setToDelete([]);
       setTimeout(() => setSaveMessage(''), 3000);
 
-      await loadInitial();
+      const updatedDays = await loadInitial();
       
+      // Check if today has > 6 exercises to trigger rest reminder
+      const todayDay = updatedDays?.find(d => d.is_today);
+      if (todayDay) {
+        const todayLogsCount = todayDay.logs?.length || 0;
+        if (todayLogsCount > 6) {
+          window.dispatchEvent(new CustomEvent('trigger-rest'));
+        }
+      }
+
       const allLogsRes = await api('/exercise-logs/');
       const totalGlobalLogs = allLogsRes.count || allLogsRes.length || 0;
       
@@ -423,17 +432,18 @@ export default function Home({ lang }) {
                   background: 'rgba(var(--brand-rgb), 0.1)', 
                   border: '1px solid rgba(var(--brand-rgb), 0.3)', 
                   color: 'var(--brand)', 
-                  fontSize: '0.65rem', 
-                  fontWeight: '1000', 
                   cursor: 'pointer', 
-                  padding: '6px 14px', 
+                  padding: '6px 12px', 
                   borderRadius: '999px', 
                   transition: 'all 0.3s ease',
-                  letterSpacing: '1px',
-                  boxShadow: '0 2px 10px rgba(0,0,0,0.1)'
+                  boxShadow: '0 2px 10px rgba(0,0,0,0.1)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center'
                 }}
+                title="Back to Present"
               >
-                BACK TO PRESENT
+                <CalendarDays size={16} strokeWidth={2.5} />
               </button>
             )}
             <button 
@@ -465,8 +475,8 @@ export default function Home({ lang }) {
 
 
       {viewMode === 'spreadsheet' ? (
-        <div className="glass-card" style={{ padding: '0', borderRadius: '24px', border: '1px solid var(--line)', animation: 'slideUp 0.4s ease-out' }}>
-          <table className="spreadsheet-table" style={{ width: '100%', borderCollapse: 'separate', borderSpacing: '0', fontSize: '0.85rem' }}>
+        <div className="glass-card" style={{ padding: '0', borderRadius: '24px', border: '1px solid var(--line)', animation: 'slideUp 0.4s ease-out', overflowX: 'auto', maxWidth: '100%' }}>
+          <table className="spreadsheet-table" style={{ width: '100%', minWidth: '700px', borderCollapse: 'separate', borderSpacing: '0', fontSize: '0.85rem' }}>
             <thead>
               <tr>
                 <th style={{ padding: '1.2rem 1rem', textAlign: 'left', background: 'rgba(255,255,255,0.03)', borderBottom: '2px solid var(--line)', color: 'var(--muted)', textTransform: 'uppercase', fontSize: '0.7rem', letterSpacing: '1px', fontWeight: '900' }}>Day</th>
