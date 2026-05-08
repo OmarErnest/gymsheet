@@ -316,7 +316,7 @@ export default function Profile({ preferences, lang }) {
     try {
       const exRes = await api('/exercises/');
       const list = exRes.results || exRes;
-      setExercises(list.sort((a, b) => t(lang, a.name).localeCompare(t(lang, b.name))));
+      setExercises(list.sort((a, b) => (t(lang, a.name) || '').localeCompare(t(lang, b.name) || '')));
       setLoadedData(prev => ({ ...prev, exercises: true }));
     } catch (err) { }
   }
@@ -1058,12 +1058,12 @@ export default function Profile({ preferences, lang }) {
                 {lang === 'es' ? 'MIS EJERCICIOS PRIVADOS' : 'MY PRIVATE EXERCISES'}
               </h3>
               <div style={{ display: 'grid', gap: '0.8rem' }}>
-                {exercises.filter(ex => ex.created_by === user.id).length === 0 ? (
+                {exercises.filter(ex => ex.created_by === user?.id).length === 0 ? (
                   <p className="muted" style={{ fontSize: '0.85rem', textAlign: 'center', padding: '1rem' }}>
                     {lang === 'es' ? 'No has creado ejercicios privados todavía.' : 'You haven\'t created any private exercises yet.'}
                   </p>
                 ) : (
-                  exercises.filter(ex => ex.created_by === user.id).map(ex => (
+                  exercises.filter(ex => ex.created_by === user?.id).map(ex => (
                     <div key={ex.id} className="glass-card" style={{ padding: '0.8rem', background: 'rgba(255,255,255,0.02)', border: '1px solid var(--line)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                       <div>
                         <div style={{ fontWeight: '800', fontSize: '0.9rem' }}>{ex.name}</div>

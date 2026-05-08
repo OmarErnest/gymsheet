@@ -692,17 +692,6 @@ export default function Home({ lang }) {
                                 }}>
                                   <button
                                     className="small-btn"
-                                    style={{ padding: '0.4rem 0.6rem', fontSize: '0.7rem', fontWeight: '900', color: '#10b981' }}
-                                    onClick={async () => {
-                                      try {
-                                        await api('/weekly-shift/', { method: 'POST', body: JSON.stringify({ today: day.date, day_index: dayIdx, direction: 1 }) });
-                                        setPushMenuDay(null);
-                                        loadInitial();
-                                      } catch (err) { setError(err.message); }
-                                    }}
-                                  >+1</button>
-                                  <button
-                                    className="small-btn"
                                     style={{ padding: '0.4rem 0.6rem', fontSize: '0.7rem', fontWeight: '900', color: '#ef4444' }}
                                     onClick={async () => {
                                       try {
@@ -712,6 +701,17 @@ export default function Home({ lang }) {
                                       } catch (err) { setError(err.message); }
                                     }}
                                   >-1</button>
+                                  <button
+                                    className="small-btn"
+                                    style={{ padding: '0.4rem 0.6rem', fontSize: '0.7rem', fontWeight: '900', color: '#10b981' }}
+                                    onClick={async () => {
+                                      try {
+                                        await api('/weekly-shift/', { method: 'POST', body: JSON.stringify({ today: day.date, day_index: dayIdx, direction: 1 }) });
+                                        setPushMenuDay(null);
+                                        loadInitial();
+                                      } catch (err) { setError(err.message); }
+                                    }}
+                                  >+1</button>
                                 </div>
                               </>
                             )}
