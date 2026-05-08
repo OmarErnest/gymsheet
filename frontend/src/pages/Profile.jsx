@@ -4,6 +4,7 @@ import { Plus, Trash2, Edit2, RefreshCw, Activity, Map as MapIcon, PlusCircle, T
 import { api } from '../api/client.js';
 import LinkInput from '../components/LinkInput.jsx';
 import Skeleton from '../components/Skeleton.jsx';
+import BodyMap from '../components/BodyMap.jsx';
 import { useAuth } from '../state/AuthContext.jsx';
 import { t } from '../i18n.js';
 
@@ -237,6 +238,46 @@ export default function Profile({ preferences, lang }) {
   });
 
   const [message, setMessage] = useState('');
+
+  const restStreak = useMemo(() => {
+    if (!logs || logs.length === 0) return 0;
+    
+    // Get unique dates with logs, sorted descending
+    const loggedDates = [...new Set(logs.map(l => l.date))].sort((a, b) => b.localeCompare(a));
+    const today = new Date().toISOString().slice(0, 10);
+    const yesterday = new Date(Date.now() - 86400000).toISOString().slice(0, 10);
+
+    // If they worked out today, streak is 0
+    if (loggedDates[0] === today) return 0;
+
+    let streak = 0;
+    let checkDate = new Date();
+    
+    // Start checking from today backwards
+    while (true) {
+      const dateStr = checkDate.toISOString().slice(0, 10);
+      if (loggedDates.includes(dateStr)) break;
+      streak++;
+      checkDate.setDate(checkDate.getDate() - 1);
+      if (streak > 365) break; // Safety
+    }
+    return streak;
+  }, [logs]);
+
+  const activeDaysThisWeek = useMemo(() => {
+    const today = new Date();
+    const day = today.getDay();
+    const diff = today.getDate() - day + (day === 0 ? -6 : 1);
+    const monday = new Date(today.setDate(diff));
+    monday.setHours(0,0,0,0);
+    
+    const weekDates = new Set();
+    logs.forEach(l => {
+      const d = new Date(l.date + 'T12:00:00');
+      if (d >= monday) weekDates.add(l.date);
+    });
+    return weekDates.size;
+  }, [logs]);
 
   const sensors = useSensors(
     useSensor(PointerSensor),
@@ -566,10 +607,49 @@ export default function Profile({ preferences, lang }) {
   );
 
   return (
-    <section className="stack profile-page" style={{ paddingBottom: '8rem' }}>
+    <section className="stack profile-page animate-fade-in" style={{ paddingBottom: '8rem' }}>
       {message && <p className="notice">{message}</p>}
 
-      <div className="profile-nav-grid" style={{ margin: '1rem 0' }}>
+      <header className="profile-header glass-card" style={{ marginBottom: '1rem', padding: '1.2rem' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+          <div className={`avatar-container large ${user.current_rank === 1 ? 'border-gold' : user.current_rank === 2 ? 'border-silver' : user.current_rank === 3 ? 'border-bronze' : user.has_link ? 'border-green' : ''}`}>
+            <div className="avatar">
+              {user.profile_pic_url ? <img src={user.profile_pic_url} alt="" /> : user.name?.charAt(0)}
+            </div>
+          </div>
+          <div style={{ flex: 1 }}>
+            <h1 style={{ margin: 0, fontSize: '1.5rem', fontWeight: '900' }}>{user.name}</h1>
+            <p className="muted" style={{ margin: '0.1rem 0 0.5rem', fontWeight: '600', fontSize: '0.85rem' }}>{user.email}</p>
+            <LinkInput initialValue={preferences?.recommended_link} />
+          </div>
+        </div>
+      </header>
+
+      <div className="profile-stats-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '0.8rem', marginBottom: '1rem' }}>
+        <div className="glass-card stat-card" style={{ padding: '0.8rem', textAlign: 'center', border: restStreak >= 2 ? '1px solid var(--brand)' : '1px solid var(--line)' }}>
+          <RefreshCw size={20} style={{ color: 'var(--brand)', marginBottom: '0.4rem', opacity: 0.8 }} />
+          <h3 style={{ margin: 0, fontSize: '1.2rem', fontWeight: '900' }}>{restStreak}</h3>
+          <p className="muted" style={{ margin: 0, fontSize: '0.6rem', fontWeight: '800', textTransform: 'uppercase' }}>
+            {lang === 'es' ? 'Descanso' : 'Rest'}
+          </p>
+        </div>
+        <div className="glass-card stat-card" style={{ padding: '0.8rem', textAlign: 'center' }}>
+          <Activity size={20} style={{ color: '#10b981', marginBottom: '0.4rem', opacity: 0.8 }} />
+          <h3 style={{ margin: 0, fontSize: '1.2rem', fontWeight: '900' }}>{activeDaysThisWeek}</h3>
+          <p className="muted" style={{ margin: 0, fontSize: '0.6rem', fontWeight: '800', textTransform: 'uppercase' }}>
+            {lang === 'es' ? 'Activo' : 'Active'}
+          </p>
+        </div>
+        <div className="glass-card stat-card" style={{ padding: '0.8rem', textAlign: 'center' }}>
+          <Dumbbell size={20} style={{ color: '#f59e0b', marginBottom: '0.4rem', opacity: 0.8 }} />
+          <h3 style={{ margin: 0, fontSize: '1.2rem', fontWeight: '900' }}>{logs.length}</h3>
+          <p className="muted" style={{ margin: 0, fontSize: '0.6rem', fontWeight: '800', textTransform: 'uppercase' }}>
+            {lang === 'es' ? 'Total' : 'Total'}
+          </p>
+        </div>
+      </div>
+
+      <div className="profile-nav-grid" style={{ margin: '0 0 1rem' }}>
         <button className={`nav-square ${activeTab === 'strength' ? 'active' : ''}`} onClick={() => setActiveTab('strength')}>
           <Activity />
           <span>{t(lang, 'strength')}</span>
@@ -856,59 +936,53 @@ export default function Profile({ preferences, lang }) {
       )}
 
       {activeTab === 'bodymap' && (
-        <article className="glass-card profile-section">
-          <p className="eyebrow">{t(lang, 'bodyMap')}</p>
-          <div className="body-map">
-            <img src={showFrontBody ? "/front_body.png" : "/back_body.png"} style={{ width: '100%', opacity: 0.8 }} />
-            {(showFrontBody ? frontDots : backDots).map(dot => {
-              const latest = measurements
-                .filter(m => m.body_part === dot.part)
-                .sort((a, b) => new Date(b.date) - new Date(a.date))[0];
-
-              return (
-                <button 
-                  key={dot.part} 
-                  className={`body-point ${selectedDot === dot.part ? 'active' : ''}`} 
-                  style={{ top: dot.top, left: dot.left, position: 'absolute' }} 
-                  onClick={() => { 
-                    setSelectedDot(dot.part); 
-                    setMeasurementForm(p => ({ 
-                      ...p, 
-                      body_part: dot.part,
-                      value_cm: latest ? latest.value_cm : ''
-                    })); 
-                  }}
-                >
-                  <div className="body-dot" />
-                  {selectedDot === dot.part && (
-                    <div className={`body-popup ${parseFloat(dot.left) > 50 ? 'on-left' : ''}`}>
-                      <h4 style={{ textTransform: 'capitalize' }}>{t(lang, dot.part)}</h4>
-                      {latest ? (
-                        <p>{latest.value_cm}cm <br/><small className="muted">{latest.date}</small></p>
-                      ) : (
-                        <p className="muted" style={{ fontSize: '0.7rem' }}>No data</p>
-                      )}
-                    </div>
-                  )}
-                </button>
-              );
-            })}
-            <button className="small-btn" onClick={() => setShowFrontBody(!showFrontBody)} style={{ position: 'absolute', bottom: '1rem', right: '1rem' }}><RefreshCw size={20} /></button>
+        <article className="glass-card profile-section animate-fade-in" style={{ padding: '1.2rem' }}>
+          <div style={{ textAlign: 'center', marginBottom: '1.2rem' }}>
+            <p className="eyebrow">{t(lang, 'bodyMap')}</p>
+            <h2 style={{ marginBottom: '0.5rem' }}>{t(lang, 'biometricVisualization')}</h2>
+            <div className="tab-pill-box" style={{ margin: '0.8rem auto 0', width: 'fit-content' }}>
+              <button className={`tab-pill ${showFrontBody ? 'active' : ''}`} onClick={() => setShowFrontBody(true)}>{lang === 'es' ? 'Frontal' : 'Front'}</button>
+              <button className={`tab-pill ${!showFrontBody ? 'active' : ''}`} onClick={() => setShowFrontBody(false)}>{lang === 'es' ? 'Posterior' : 'Back'}</button>
+            </div>
           </div>
-          <form onSubmit={createMeasurement} className="form-stack" style={{ marginTop: '1rem' }}>
-            <label className="field">
-              <span>{t(lang, 'bodyPart')}</span>
-              <select value={measurementForm.body_part} onChange={(e) => setMeasurementForm({ ...measurementForm, body_part: e.target.value })}>{bodyParts.map(p => <option key={p} value={p}>{t(lang, p)}</option>)}</select>
-            </label>
-            <label className="field">
-              <span>{t(lang, 'valueCm')}</span>
-              <input type="number" step="0.1" placeholder="cm" value={measurementForm.value_cm} onFocus={(e) => e.target.select()} onChange={(e) => setMeasurementForm({ ...measurementForm, value_cm: e.target.value })} required />
-            </label>
-            <label className="field">
+
+          <div style={{ position: 'relative' }}>
+            <BodyMap 
+              side={showFrontBody ? 'front' : 'back'}
+              selected={selectedDot} 
+              onSelect={(part) => {
+                setSelectedDot(part);
+                const latest = measurements
+                  .filter(m => m.body_part === part)
+                  .sort((a, b) => new Date(b.date) - new Date(a.date))[0];
+                setMeasurementForm(p => ({ 
+                  ...p, 
+                  body_part: part,
+                  value_cm: latest ? latest.value_cm : ''
+                }));
+              }}
+              measurements={measurements}
+            />
+          </div>
+
+          <form onSubmit={createMeasurement} className="form-stack glass-card" style={{ marginTop: '1.5rem', padding: '1.5rem', border: '1px solid var(--line)' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+              <label className="field">
+                <span>{t(lang, 'bodyPart')}</span>
+                <select value={measurementForm.body_part} onChange={(e) => setMeasurementForm({ ...measurementForm, body_part: e.target.value })} style={{ textTransform: 'capitalize' }}>
+                  {bodyParts.map(p => <option key={p} value={p}>{t(lang, p)}</option>)}
+                </select>
+              </label>
+              <label className="field">
+                <span>{t(lang, 'valueCm')}</span>
+                <input type="number" step="0.1" placeholder="cm" value={measurementForm.value_cm} onFocus={(e) => e.target.select()} onChange={(e) => setMeasurementForm({ ...measurementForm, value_cm: e.target.value })} required />
+              </label>
+            </div>
+            <label className="field" style={{ marginTop: '0.5rem' }}>
               <span>{t(lang, 'date')}</span>
               <input type="date" value={measurementForm.date} onChange={(e) => setMeasurementForm({ ...measurementForm, date: e.target.value })} required />
             </label>
-            <button className="primary-btn">{t(lang, 'saveMeasure')}</button>
+            <button className="primary-btn" style={{ marginTop: '1rem' }}>{t(lang, 'saveMeasure')}</button>
           </form>
         </article>
       )}

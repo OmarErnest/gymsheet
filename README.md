@@ -1,7 +1,11 @@
-# GymJourney: An Integrated Fitness Tracking System
+# GymSheet
+
+[![Project Status](https://img.shields.io/badge/Status-v--03a.034-brightgreen)](https://www.notion.so/Patch-Notes-35ad39c119be8102b79aca4189267c51)
+
+> **Official Patch Notes:** [GymSheet Update Log](https://www.notion.so/Patch-Notes-35ad39c119be8102b79aca4189267c51)
 
 **Live Application:** [https://gymsheetapp.onrender.com/](https://gymsheetapp.onrender.com/)  
-*Last Deployment Update: May 7, 2026*
+*Version: v-03a.034 | Last Deployment Update: May 8, 2026*
 
 GymJourney is a full-stack application designed for longitudinal fitness data management and community-driven performance benchmarking. It provides a technical framework for goal-setting, anthropometric tracking, and relative strength analysis.
 

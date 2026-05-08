@@ -136,15 +136,18 @@ class ExerciseLogViewSet(viewsets.ModelViewSet):
         category = self.request.query_params.get('category')
         start = self.request.query_params.get('start')
         end = self.request.query_params.get('end')
+        search = self.request.query_params.get('search')
         if exercise_id:
             qs = qs.filter(exercise_id=exercise_id)
         if category:
             qs = qs.filter(exercise__category=category)
+        if search:
+            qs = qs.filter(exercise__name__icontains=search)
         if start:
             qs = qs.filter(date__gte=start)
         if end:
             qs = qs.filter(date__lte=end)
-        return qs
+        return qs.order_by('-date', '-created_at')
 
     def perform_create(self, serializer):
         serializer.save(user=self.request.user)

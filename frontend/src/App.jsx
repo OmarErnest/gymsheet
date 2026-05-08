@@ -12,6 +12,8 @@ import Global from './pages/Global.jsx';
 import Settings from './pages/Settings.jsx';
 import Admin from './pages/Admin.jsx';
 import EventManager from './components/EventManager.jsx';
+import SearchModal from './components/SearchModal.jsx';
+import { Search } from 'lucide-react';
 
 export default function App() {
   const { user, booting, logout } = useAuth();
@@ -21,6 +23,7 @@ export default function App() {
 
   const lang = preferences.language || 'en';
   const [showProfilePopup, setShowProfilePopup] = useState(false);
+  const [showSearch, setShowSearch] = useState(false);
 
   useEffect(() => {
     // Initial sync
@@ -199,6 +202,26 @@ export default function App() {
               {lang === 'es' ? 'SINCRONIZANDO' : 'SYNCING'}...
             </button>
           )}
+
+          <button 
+            className="icon-btn" 
+            onClick={() => setShowSearch(true)}
+            style={{ 
+              background: 'var(--card-soft)', 
+              color: 'var(--text)', 
+              border: '1px solid var(--line)', 
+              borderRadius: '10px', 
+              width: '38px', 
+              height: '38px', 
+              display: 'flex', 
+              alignItems: 'center', 
+              justifyContent: 'center',
+              cursor: 'pointer'
+            }}
+          >
+            <Search size={18} />
+          </button>
+
           <div className="avatar-btn" onClick={() => setShowProfilePopup(true)} style={{ cursor: 'pointer' }}>
             <div className={`avatar-container ${user.current_rank === 1 ? 'border-gold' : user.current_rank === 2 ? 'border-silver' : user.current_rank === 3 ? 'border-bronze' : user.has_link ? 'border-green' : ''}`} aria-label="Current user">
               <div className="avatar">
@@ -253,6 +276,7 @@ export default function App() {
       </main>
 
       <EventManager activeTab={activeTab} user={user} lang={lang} />
+      {showSearch && <SearchModal onClose={() => setShowSearch(false)} lang={lang} />}
       <BottomNav active={activeTab} onChange={setActiveTab} labels={labels} isStaff={user?.is_staff} />
     </div>
   );

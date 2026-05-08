@@ -14,24 +14,29 @@ function buildInitialLogs(daysData) {
 
   daysData.forEach((day) => {
     const logsByPlan = {};
+    const unassignedLogs = [];
+    const dayUsedLogIds = new Set();
+
     (day.logs || []).forEach((log) => {
       if (log.source_goal_plan) {
         if (!logsByPlan[log.source_goal_plan]) logsByPlan[log.source_goal_plan] = [];
         logsByPlan[log.source_goal_plan].push(log);
+      } else {
+        unassignedLogs.push(log);
       }
     });
 
     (day.goals || []).forEach((goal) => {
-      const planLogs = logsByPlan[goal.id] || [];
-      const usedLogIds = new Set();
+      // We combine logs explicitly tied to this plan with logs that have no plan (legacy or manual)
+      const planLogs = [...(logsByPlan[goal.id] || []), ...unassignedLogs];
 
-      // Pass 1: Exact matches
+      // Pass 1: Exact matches by Exercise ID
       (goal.goal_exercises || []).forEach((item) => {
         const exId = String(item.exercise_detail?.id);
-        const exactLog = planLogs.find(l => String(l.exercise) === exId);
+        const exactLog = planLogs.find(l => !dayUsedLogIds.has(l.id) && String(l.exercise) === exId);
         
         if (exactLog) {
-          usedLogIds.add(exactLog.id);
+          dayUsedLogIds.add(exactLog.id);
           logs[item.id] = {
             sets: String(exactLog.sets),
             reps: String(exactLog.reps),
@@ -45,9 +50,9 @@ function buildInitialLogs(daysData) {
       // Pass 2: Unmatched logs map to unlogged exercises (infer replacements)
       (goal.goal_exercises || []).forEach((item) => {
         if (!logs[item.id]) {
-          const replacementLog = planLogs.find(l => !usedLogIds.has(l.id));
+          const replacementLog = planLogs.find(l => !dayUsedLogIds.has(l.id));
           if (replacementLog) {
-            usedLogIds.add(replacementLog.id);
+            dayUsedLogIds.add(replacementLog.id);
             const tempId = `temp-override-${replacementLog.id}`;
             if (!newOverrides[goal.id]) newOverrides[goal.id] = [];
             
@@ -69,10 +74,13 @@ function buildInitialLogs(daysData) {
           }
         }
       });
-      // Pass 3: Any remaining unused logs are Extra Exercises!
-      planLogs.forEach((log) => {
-        if (!usedLogIds.has(log.id)) {
-          usedLogIds.add(log.id);
+
+      // Pass 3: Any remaining unused logs tied to THIS plan are Extra Exercises!
+      // (Note: we don't automatically add all unassignedLogs as extras here to avoid duplication across goals)
+      const specificPlanLogs = logsByPlan[goal.id] || [];
+      specificPlanLogs.forEach((log) => {
+        if (!dayUsedLogIds.has(log.id)) {
+          dayUsedLogIds.add(log.id);
           const tempId = `temp-extra-${log.id}`;
           if (!newOverrides[goal.id]) newOverrides[goal.id] = [];
           
@@ -94,6 +102,35 @@ function buildInitialLogs(daysData) {
         }
       });
     });
+
+    // Pass 4: Any remaining unassigned logs that didn't match ANY goal for the day
+    // We'll attach them to the first goal or create a dummy container if needed
+    if (unassignedLogs.length > 0) {
+      unassignedLogs.forEach(log => {
+        if (!dayUsedLogIds.has(log.id)) {
+          dayUsedLogIds.add(log.id);
+          const goalId = day.goals?.[0]?.id || 'manual-logs';
+          const tempId = `temp-extra-${log.id}`;
+          if (!newOverrides[goalId]) newOverrides[goalId] = [];
+          
+          newOverrides[goalId].push({
+            id: tempId,
+            exercise_detail: log.exercise_detail,
+            sets: log.sets,
+            reps: log.reps,
+            _isExtra: true
+          });
+          
+          logs[tempId] = {
+            sets: String(log.sets),
+            reps: String(log.reps),
+            weight_kg: log.weight_kg !== null && log.weight_kg !== undefined ? String(log.weight_kg) : '',
+            duration: log.duration || '',
+            log_id: log.id,
+          };
+        }
+      });
+    }
   });
   
   return { logs, newOverrides };
@@ -422,30 +459,29 @@ export default function Home({ lang }) {
              `${Math.abs(relativeWeek)} ${Math.abs(relativeWeek) === 1 ? 'WEEK' : 'WEEKS'} IN THE PAST`}
           </span>
           <div style={{ display: 'flex', justifyContent: 'center', gap: '0.6rem', marginTop: '0.4rem' }}>
-            {relativeWeek !== 0 && (
-              <button 
-                onClick={() => {
-                  setRelativeWeek(0);
-                  setShouldScrollToToday(true);
-                }} 
-                style={{ 
-                  background: 'rgba(var(--brand-rgb), 0.1)', 
-                  border: '1px solid rgba(var(--brand-rgb), 0.3)', 
-                  color: 'var(--brand)', 
-                  cursor: 'pointer', 
-                  padding: '6px 12px', 
-                  borderRadius: '999px', 
-                  transition: 'all 0.3s ease',
-                  boxShadow: '0 2px 10px rgba(0,0,0,0.1)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center'
-                }}
-                title="Back to Present"
-              >
-                <CalendarDays size={16} strokeWidth={2.5} />
-              </button>
-            )}
+            <button 
+              onClick={() => {
+                setRelativeWeek(0);
+                setShouldScrollToToday(true);
+              }} 
+              style={{ 
+                background: relativeWeek === 0 ? 'rgba(var(--brand-rgb), 0.05)' : 'rgba(var(--brand-rgb), 0.1)', 
+                border: relativeWeek === 0 ? '1px solid var(--line)' : '1px solid rgba(var(--brand-rgb), 0.3)', 
+                color: 'var(--brand)', 
+                cursor: 'pointer', 
+                padding: '6px 12px', 
+                borderRadius: '999px', 
+                transition: 'all 0.3s ease',
+                boxShadow: '0 2px 10px rgba(0,0,0,0.1)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                opacity: relativeWeek === 0 ? 0.7 : 1
+              }}
+              title={relativeWeek === 0 ? "Scroll to Today" : "Back to Present"}
+            >
+              <CalendarDays size={16} strokeWidth={2.5} />
+            </button>
             <button 
               onClick={() => setViewMode(prev => prev === 'feed' ? 'spreadsheet' : 'feed')} 
               style={{ 

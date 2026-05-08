@@ -791,6 +791,37 @@ input[type=number] { -moz-appearance: textfield; appearance: textfield; }
 .body-popup.on-left { left: auto; right: 105%; }
 .body-popup h4 { font-size: 0.75rem; color: var(--brand-2); margin-bottom: 0.3rem; }
 .body-popup p { margin: 0; font-size: 0.85rem; font-weight: 900; }
+
+/* Search Modal */
+.animate-pop {
+  animation: pop-in 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+}
+
+@keyframes pop-in {
+  from { opacity: 0; transform: scale(0.9) translateY(20px); }
+  to { opacity: 1; transform: scale(1) translateY(0); }
+}
+
+.search-result-item:hover {
+  background: rgba(var(--brand-rgb), 0.08) !important;
+  border-color: rgba(var(--brand-rgb), 0.3) !important;
+  transform: translateX(5px);
+}
+
+.body-map-container {
+  background:
+    linear-gradient(rgba(134, 239, 172, 0.04) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(134, 239, 172, 0.04) 1px, transparent 1px) !important;
+  background-size: 20px 20px !important;
+}
+
+.stat-card {
+  transition: transform 0.2s, border-color 0.2s;
+}
+.stat-card:hover {
+  transform: translateY(-3px);
+  border-color: var(--brand) !important;
+}
 .note-badge {
   position: absolute;
   top: -8px;
