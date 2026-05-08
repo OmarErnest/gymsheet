@@ -54,7 +54,7 @@ class GoalExerciseSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = GoalExercise
-        fields = ('id', 'exercise', 'exercise_detail', 'sets', 'reps', 'duration', 'order', 'notes')
+        fields = ('id', 'exercise', 'exercise_detail', 'sets', 'reps', 'duration', 'order', 'notes', 'superset_id', 'is_pr_set')
         read_only_fields = ('id',)
 
 
@@ -132,7 +132,7 @@ class ExerciseLogSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = ExerciseLog
-        fields = ('id', 'exercise', 'exercise_detail', 'date', 'weight_kg', 'duration', 'sets', 'reps', 'source_goal_plan', 'notes', 'created_at')
+        fields = ('id', 'exercise', 'exercise_detail', 'date', 'weight_kg', 'duration', 'sets', 'reps', 'source_goal_plan', 'notes', 'superset_id', 'is_pr_set', 'created_at')
         read_only_fields = ('id', 'created_at')
 
     def validate_date(self, value):

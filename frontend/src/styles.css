@@ -439,19 +439,23 @@ input[type=number] { -moz-appearance: textfield; appearance: textfield; }
 }
 
 .arrow-btn {
-  background: var(--card-strong);
-  border: 1px solid var(--line);
-  color: var(--text);
-  width: 48px;
-  height: 48px;
+  background: rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: var(--brand);
+  width: 42px;
+  height: 42px;
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
   transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-  box-shadow: var(--shadow);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+  opacity: 0.9;
 }
-.arrow-btn:active { transform: scale(0.9); background: var(--brand); color: #052e16; }
+.arrow-btn:disabled { opacity: 0.2; pointer-events: none; }
+.arrow-btn:active { transform: scale(0.9); background: rgba(var(--brand-rgb), 0.2); }
 
 .exercise-item-old {
   background: var(--bg-soft);
@@ -970,7 +974,7 @@ input[type=number] { -moz-appearance: textfield; appearance: textfield; }
     align-items: center;
   }
   .input-bubble {
-    width: 72px !important; /* Fixed width to ensure it fits */
+    min-width: 60px;
     min-height: 38px !important;
     font-size: 0.9rem;
     padding: 0 0.5rem !important;

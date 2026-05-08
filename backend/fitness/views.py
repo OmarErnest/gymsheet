@@ -32,7 +32,7 @@ from .serializers import (
 from .models import (
     BodyMeasurement, DailyProgress, Exercise, ExerciseLog, GoalPlan, 
     CSVRequest, Notification, ExerciseCSVUpload, LogCSVUpload, GlobalNotice,
-    BroadcastNotification, AdminMessage, MaintenanceNotice
+    BroadcastNotification, AdminMessage, MaintenanceNotice, WeeklyShift
 )
 
 
@@ -207,6 +207,37 @@ class BodyMeasurementViewSet(viewsets.ModelViewSet):
 
 
 
+class WeeklyShiftView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        today_raw = request.data.get('today')
+        day_index = int(request.data.get('day_index', -1))
+        direction = int(request.data.get('direction', 1))
+
+        if day_index < 0 or day_index > 6:
+            return Response({'detail': 'Invalid day index.'}, status=400)
+
+        today = parse_date_param(today_raw, timezone.localdate())
+        week_start = today - timedelta(days=today.weekday())
+        
+        shift_obj, created = WeeklyShift.objects.get_or_create(user=request.user, week_start=week_start)
+        # Use a copy to avoid mutation issues before re-assignment
+        offsets = list(shift_obj.shifts.get('offsets', [0]*7))
+
+        # We shift all goals that are CURRENTLY landing on or after the clicked day
+        for i in range(7):
+            current_pos = i + offsets[i]
+            if current_pos >= day_index:
+                new_offset = offsets[i] + direction
+                # Stay within the week [0, 6]
+                if 0 <= (i + new_offset) <= 6:
+                    offsets[i] = new_offset
+        
+        shift_obj.shifts['offsets'] = offsets
+        shift_obj.save()
+        return Response({'offsets': offsets})
+
 class HomeDaysView(APIView):
     permission_classes = [IsAuthenticated]
 
@@ -217,6 +248,16 @@ class HomeDaysView(APIView):
         end = parse_date_param(request.query_params.get('end'), today)
         if start > end:
             return Response({'detail': 'Start date cannot be after end date.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Get shifts for the week(s) in range
+        # Usually we only look at one week in /home/days, but we'll be safe
+        week_starts = []
+        curr_w = start - timedelta(days=start.weekday())
+        while curr_w <= end:
+            week_starts.append(curr_w)
+            curr_w += timedelta(days=7)
+        
+        shifts_map = {s.week_start: s.shifts.get('offsets', [0]*7) for s in WeeklyShift.objects.filter(user=request.user, week_start__in=week_starts)}
 
         plans = list(
             GoalPlan.objects.filter(user=request.user)
@@ -233,7 +274,7 @@ class HomeDaysView(APIView):
             .filter(user=request.user)
             .annotate(
                 effective_weight=Case(
-                    When(exercise__exercise_type='calisthenics', then=F('weight_kg') + 2.0),
+                    When(exercise__exercise_type='calisthenics', then=F('weight_kg') + (F('user__preferences__weight_kg') * 0.5)),
                     default=F('weight_kg'),
                     output_field=FloatField()
                 )
@@ -255,11 +296,33 @@ class HomeDaysView(APIView):
         current = start
         while current <= end:
             goals_paused_for_future = getattr(request.user.preferences, 'goals_paused', False) and current > today
+            
+            # Apply shifts logic
+            # A goal shows up on 'current' if its original day + offset == current day
+            # or if it's a 'once' goal and it matches exactly (we don't shift 'once' goals for now or do we?)
+            # The user said "push that goal", usually implies recurring routine.
+            
+            w_start = current - timedelta(days=current.weekday())
+            offsets = shifts_map.get(w_start, [0]*7)
+            
             matching_plans = []
             if not goals_paused_for_future:
-                matching_plans = [plan for plan in plans if plan.matches_date(current)]
+                # Normal check
+                for plan in plans:
+                    # Which original days would land on 'current' after shift?
+                    # original_day + offset[original_day] == current_day
+                    for d_idx in range(7):
+                        target_day = w_start + timedelta(days=d_idx)
+                        if plan.matches_date(target_day):
+                            # This goal originally belongs to target_day (d_idx)
+                            # After shift, does it land on 'current'?
+                            if d_idx + offsets[d_idx] == current.weekday():
+                                matching_plans.append(plan)
+                                break
+                
                 if any(p.repeat_type == GoalPlan.RepeatType.ONCE for p in matching_plans):
                     matching_plans = [p for p in matching_plans if p.repeat_type == GoalPlan.RepeatType.ONCE]
+            
             goals_data = GoalPlanSerializer(matching_plans, many=True, context={'request': request}).data
             days.append({
                 'date': current,
@@ -270,6 +333,7 @@ class HomeDaysView(APIView):
                 'goals': enrich_goals(goals_data),
                 'progress': DailyProgressSerializer(progress_by_date.get(current)).data if progress_by_date.get(current) else None,
                 'logs': ExerciseLogSerializer(logs_by_date.get(current, []), many=True).data,
+                'offsets': offsets, # Pass offsets for UI
             })
             current += timedelta(days=1)
         return Response(days)
@@ -284,14 +348,14 @@ def get_champion_for_week(week_start, week_end):
     for user in users:
         logs = ExerciseLog.objects.filter(user=user, date__range=[week_start, week_end]).annotate(
             eff=Case(
-                When(exercise__exercise_type='calisthenics', then=F('weight_kg') + 2.0),
+                When(exercise__exercise_type='calisthenics', then=F('weight_kg') + (F('user__preferences__weight_kg') * 0.5)),
                 default=F('weight_kg'),
                 output_field=FloatField()
             )
         )
         last_logs = ExerciseLog.objects.filter(user=user, date__range=[week_start - timedelta(days=7), week_end - timedelta(days=7)]).annotate(
             eff=Case(
-                When(exercise__exercise_type='calisthenics', then=F('weight_kg') + 2.0),
+                When(exercise__exercise_type='calisthenics', then=F('weight_kg') + (F('user__preferences__weight_kg') * 0.5)),
                 default=F('weight_kg'),
                 output_field=FloatField()
             )

@@ -31,7 +31,8 @@ def get_leaderboard_data():
             for log in logs_by_date[d]:
                 eff_w = float(log.weight_kg or 0)
                 if log.exercise.exercise_type == 'calisthenics':
-                    eff_w += 2.0
+                    user_weight = float(user.preferences.weight_kg or 70)
+                    eff_w += user_weight * 0.5
                 score += eff_w * (log.sets or 0) * (log.reps or 0)
         score = int(score)
 
@@ -48,7 +49,8 @@ def get_leaderboard_data():
             for log in last_logs_by_date[d]:
                 eff_w = float(log.weight_kg or 0)
                 if log.exercise.exercise_type == 'calisthenics':
-                    eff_w += 2.0
+                    user_weight = float(user.preferences.weight_kg or 70)
+                    eff_w += user_weight * 0.5
                 last_score += eff_w * (log.sets or 0) * (log.reps or 0)
         last_score = int(last_score)
 
@@ -56,7 +58,8 @@ def get_leaderboard_data():
         def get_eff(l):
             w = float(l.weight_kg or 0)
             if l.exercise.exercise_type == 'calisthenics':
-                w += 2.0
+                user_weight = float(user.preferences.weight_kg or 70)
+                w += user_weight * 0.5
             return w
 
         avg_weight = (

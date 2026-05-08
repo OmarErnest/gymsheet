@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Area, AreaChart, ResponsiveContainer, Tooltip, XAxis, YAxis, PieChart, Pie, Cell, CartesianGrid, Radar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis } from 'recharts';
-import { Plus, Trash2, Edit2, RefreshCw, Activity, Map as MapIcon, PlusCircle, Target, List, BarChart3, Radar as RadarIcon, GripVertical, Timer, Weight, Dumbbell, ChevronDown, Zap, Trophy, Menu } from 'lucide-react';
+import { Plus, Trash2, Edit2, RefreshCw, Activity, Map as MapIcon, PlusCircle, Target, List, BarChart3, Radar as RadarIcon, GripVertical, Timer, Weight, Dumbbell, ChevronDown, Zap, Trophy, Medal, Menu } from 'lucide-react';
 import { api } from '../api/client.js';
 import LinkInput from '../components/LinkInput.jsx';
 import Skeleton from '../components/Skeleton.jsx';
@@ -30,7 +30,7 @@ function getGoalDayName(goal) {
   return 'No Day';
 }
 
-const emptyGoalExercise = () => ({ categoryFilter: '', exercise: '', sets: 4, reps: 10 });
+const emptyGoalExercise = () => ({ categoryFilter: '', exercise: '', sets: 4, reps: 10, superset_id: null, is_pr_set: false });
 
 const frontDots = [
   { part: 'shoulders', top: '23%', left: '30%' },
@@ -589,19 +589,60 @@ export default function Profile({ preferences, lang }) {
   }
 
   function updateGoalExercise(index, field, value) {
-    setGoalForm((prev) => ({
-      ...prev,
-      goal_exercises: prev.goal_exercises.map((item, idx) => {
-        if (idx === index) {
-          if (field === 'categoryFilter') return { ...item, categoryFilter: value, exercise: '' };
-          let finalValue = value;
-          if (field === 'sets' && Number(value) > 8) finalValue = 8;
-          if (field === 'reps' && Number(value) > 99) finalValue = 99;
-          return { ...item, [field]: finalValue };
+    setGoalForm((prev) => {
+      const newExs = [...prev.goal_exercises];
+      let val = value;
+      if (field === 'exercise') {
+        const fullEx = exercises.find(ex => String(ex.id) === String(value));
+        if (fullEx && fullEx.exercise_type === 'pr') {
+          newExs[index].is_pr_set = true;
+          newExs[index].sets = 1;
+          newExs[index].reps = 1;
         }
-        return item;
-      }),
-    }));
+      }
+      if (field === 'sets' || field === 'reps') {
+        if (newExs[index].is_pr_set) {
+          val = Math.min(2, Math.max(1, parseInt(value) || 1));
+        }
+      }
+      newExs[index] = { ...newExs[index], [field]: val };
+      return { ...prev, goal_exercises: newExs };
+    });
+  }
+
+  function toggleSuperset(index) {
+    setGoalForm((prev) => {
+      const newExs = [...prev.goal_exercises];
+      const current = newExs[index];
+      const next = newExs[index + 1];
+      if (!next) return prev;
+
+      if (current.superset_id && current.superset_id === next.superset_id) {
+        // Break link
+        newExs[index] = { ...current, superset_id: null };
+        newExs[index + 1] = { ...next, superset_id: null };
+      } else {
+        // Create link
+        const sid = `ss-${Date.now()}`;
+        newExs[index] = { ...current, superset_id: sid };
+        newExs[index + 1] = { ...next, superset_id: sid };
+      }
+      return { ...prev, goal_exercises: newExs };
+    });
+  }
+
+  function togglePR(index) {
+    setGoalForm((prev) => {
+      const newExs = [...prev.goal_exercises];
+      const isPR = !newExs[index].is_pr_set;
+      newExs[index] = { 
+        ...newExs[index], 
+        is_pr_set: isPR,
+        sets: isPR ? 1 : newExs[index].sets,
+        reps: isPR ? 1 : newExs[index].reps
+      };
+      return { ...prev, goal_exercises: newExs };
+    });
   }
 
   function addGoalExercise() {
@@ -612,12 +653,10 @@ export default function Profile({ preferences, lang }) {
   }
 
   function removeGoalExercise(index) {
-    setGoalForm((prev) => ({
-      ...prev,
-      goal_exercises: prev.goal_exercises.length === 1
-        ? [emptyGoalExercise()]
-        : prev.goal_exercises.filter((_, idx) => idx !== index),
-    }));
+    setGoalForm((prev) => {
+      const newExs = prev.goal_exercises.filter((_, idx) => idx !== index);
+      return { ...prev, goal_exercises: newExs.length === 0 ? [emptyGoalExercise()] : newExs };
+    });
   }
 
   async function saveGoal(e) {
@@ -966,7 +1005,7 @@ export default function Profile({ preferences, lang }) {
                               <div style={{ flex: 1, height: '1px', background: 'var(--line)' }} />
                             </div>
                           )}
-                          <SortableGoalItem goal={g} lang={lang} onEdit={(goal) => { setGoalForm({ ...goal, goal_exercises: goal.goal_exercises.map(ge => ({ categoryFilter: ge.exercise_detail?.category || '', exercise: ge.exercise, sets: ge.sets, reps: ge.reps })) }); setActiveTab('creategoal'); }} onDelete={deleteGoal} />
+                          <SortableGoalItem goal={g} lang={lang} onEdit={(goal) => { setGoalForm({ ...goal, goal_exercises: goal.goal_exercises.map(ge => ({ categoryFilter: ge.exercise_detail?.category || '', exercise: ge.exercise, sets: ge.sets, reps: ge.reps, superset_id: ge.superset_id, is_pr_set: ge.is_pr_set })) }); setActiveTab('creategoal'); }} onDelete={deleteGoal} />
                         </div>
                       );
                     });
@@ -987,9 +1026,10 @@ export default function Profile({ preferences, lang }) {
                 <button type="button" className={!exerciseForm.is_time_based ? 'active' : ''} onClick={() => setExerciseForm({ ...exerciseForm, is_time_based: false })}><Weight size={16} /> {t(lang, 'weight')}</button>
                 <button type="button" className={exerciseForm.is_time_based ? 'active' : ''} onClick={() => setExerciseForm({ ...exerciseForm, is_time_based: true })}><Timer size={16} /> {t(lang, 'time')}</button>
               </div>
-              <div className="segmented ghost" style={{ marginTop: '0.5rem' }}>
-                <button type="button" className={exerciseForm.exercise_type === 'machine' ? 'active' : ''} onClick={() => setExerciseForm({ ...exerciseForm, exercise_type: 'machine' })}><Dumbbell size={16} /> {t(lang, 'machine')}</button>
-                <button type="button" className={exerciseForm.exercise_type === 'calisthenics' ? 'active' : ''} onClick={() => setExerciseForm({ ...exerciseForm, exercise_type: 'calisthenics' })}><Activity size={16} /> {t(lang, 'calisthenics')}</button>
+              <div className="segmented ghost" style={{ marginTop: '0.5rem', display: 'flex', flexWrap: 'nowrap' }}>
+                <button type="button" style={{ flex: 1 }} className={exerciseForm.exercise_type === 'machine' ? 'active' : ''} onClick={() => setExerciseForm({ ...exerciseForm, exercise_type: 'machine' })}><Dumbbell size={16} /> {t(lang, 'machine')}</button>
+                <button type="button" style={{ flex: 1 }} className={exerciseForm.exercise_type === 'calisthenics' ? 'active' : ''} onClick={() => setExerciseForm({ ...exerciseForm, exercise_type: 'calisthenics' })}><Activity size={16} /> {t(lang, 'calisthenics')}</button>
+                <button type="button" className={exerciseForm.exercise_type === 'pr' ? 'active' : ''} onClick={() => setExerciseForm({ ...exerciseForm, exercise_type: 'pr' })} style={{ flex: 1 }}><Medal size={16} /> PR</button>
               </div>
               <LinkInput label={t(lang, 'youtubeLink')} value={exerciseForm.youtube_url} onChange={(youtube_url) => setExerciseForm({ ...exerciseForm, youtube_url })} lang={lang} />
               <label className="field"><span>{t(lang, 'category')}</span><select required value={exerciseForm.category} onChange={(e) => setExerciseForm({ ...exerciseForm, category: e.target.value })}><option value="" disabled>Select Category</option>{categories.map((category) => <option key={category} value={category}>{t(lang, category)}</option>)}</select></label>
@@ -1067,21 +1107,52 @@ export default function Profile({ preferences, lang }) {
                   <strong style={{ fontSize: '0.9rem', opacity: 0.7 }}>Exercises ({goalForm.goal_exercises.length}/10)</strong>
                 </div>
 
-                {/* Add Button moved to bottom */}
-
                 {goalForm.goal_exercises.map((item, index) => {
                   const availableExercises = item.categoryFilter ? exercises.filter(ex => ex.category === item.categoryFilter) : exercises;
                   return (
-                    <div className="goal-exercise-row glass-card" key={index} style={{ padding: '1rem', marginBottom: '1rem' }}>
-                      <div className="goal-exercise-selectors">
-                        <select value={item.categoryFilter} onChange={(e) => updateGoalExercise(index, 'categoryFilter', e.target.value)}><option value="">All</option>{categories.map((c) => <option key={c} value={c}>{t(lang, c)}</option>)}</select>
-                        <select required value={item.exercise} onChange={(e) => updateGoalExercise(index, 'exercise', e.target.value)} style={{ textOverflow: 'ellipsis' }}><option value="" disabled>Pick Exercise</option>{availableExercises.map((ex) => <option key={ex.id} value={ex.id}>{ex.name}</option>)}</select>
+                    <div key={index} className="goal-exercise-row glass-card" style={{ display: 'grid', gap: '0.6rem', position: 'relative', padding: '1rem', marginBottom: '1rem' }}>
+                      <div style={{ display: 'flex', gap: '0.6rem' }}>
+                        <select value={item.categoryFilter} onChange={(e) => updateGoalExercise(index, 'categoryFilter', e.target.value)} style={{ flex: 1 }}><option value="">All</option>{categories.map((c) => <option key={c} value={c}>{t(lang, c)}</option>)}</select>
+                        <select required value={item.exercise} onChange={(e) => updateGoalExercise(index, 'exercise', e.target.value)} style={{ flex: 2, textOverflow: 'ellipsis' }}><option value="" disabled>Pick Exercise</option>{availableExercises.map((ex) => <option key={ex.id} value={ex.id}>{ex.name}</option>)}</select>
                       </div>
-                      <div className="goal-exercise-inputs">
-                        <input type="number" placeholder={t(lang, 'sets')} value={item.sets} onFocus={(e) => e.target.select()} onChange={(e) => updateGoalExercise(index, 'sets', e.target.value)} className="input-bubble" style={{ width: '100%', textAlign: 'center' }} max="8" />
-                        <input type="number" placeholder={t(lang, 'reps')} value={item.reps} onFocus={(e) => e.target.select()} onChange={(e) => updateGoalExercise(index, 'reps', e.target.value)} className="input-bubble" style={{ width: '100%', textAlign: 'center' }} max="99" />
-                        <button className="small-btn danger-btn" type="button" onClick={() => removeGoalExercise(index)} style={{ minWidth: '46px' }}><Trash2 size={16} /></button>
+                      <div style={{ display: 'flex', gap: '0.6rem', alignItems: 'center' }}>
+                        <div style={{ display: 'flex', flex: 1, gap: '0.3rem' }}>
+                          <div style={{ flex: 1 }}>
+                            <small style={{ fontSize: '0.6rem', opacity: 0.6, display: 'block', textAlign: 'center' }}>SETS</small>
+                            <input type="number" value={item.sets} onFocus={(e) => e.target.select()} onChange={(e) => updateGoalExercise(index, 'sets', e.target.value)} className="input-bubble" style={{ width: '100%', textAlign: 'center' }} max={item.is_pr_set ? "2" : "8"} />
+                          </div>
+                          <div style={{ flex: 1 }}>
+                            <small style={{ fontSize: '0.6rem', opacity: 0.6, display: 'block', textAlign: 'center' }}>REPS</small>
+                            <input type="number" value={item.reps} onFocus={(e) => e.target.select()} onChange={(e) => updateGoalExercise(index, 'reps', e.target.value)} className="input-bubble" style={{ width: '100%', textAlign: 'center' }} max={item.is_pr_set ? "2" : "99"} />
+                          </div>
+                        </div>
+                        
+                        <div style={{ display: 'flex', gap: '0.3rem' }}>
+                          <button 
+                            type="button" 
+                            onClick={() => togglePR(index)} 
+                            className={`small-btn ${item.is_pr_set ? 'active' : ''}`}
+                            style={{ padding: '0.4rem', borderRadius: '8px', fontSize: '0.6rem', fontWeight: '900', minWidth: '35px', background: item.is_pr_set ? 'rgba(var(--brand-rgb), 0.2)' : 'rgba(255,255,255,0.05)', color: item.is_pr_set ? 'var(--brand)' : 'var(--text)' }}
+                          >PR</button>
+                          
+                          {index < goalForm.goal_exercises.length - 1 && (
+                            <button 
+                              disabled
+                              type="button" 
+                              className="small-btn"
+                              style={{ padding: '0.4rem', borderRadius: '8px', opacity: 0.3, cursor: 'not-allowed', background: (item.superset_id && item.superset_id === goalForm.goal_exercises[index+1].superset_id) ? 'rgba(var(--brand-rgb), 0.2)' : 'rgba(255,255,255,0.05)', color: (item.superset_id && item.superset_id === goalForm.goal_exercises[index+1].superset_id) ? 'var(--brand)' : 'var(--text)' }}
+                            >
+                              <RefreshCw size={14} style={{ transform: (item.superset_id && item.superset_id === goalForm.goal_exercises[index+1].superset_id) ? 'rotate(90deg)' : 'none' }} />
+                            </button>
+                          )}
+                          
+                          <button className="small-btn danger-btn" type="button" onClick={() => removeGoalExercise(index)} style={{ padding: '0.4rem', minWidth: '35px' }}><Trash2 size={16} /></button>
+                        </div>
                       </div>
+                      
+                      {item.superset_id && index < goalForm.goal_exercises.length - 1 && item.superset_id === goalForm.goal_exercises[index+1].superset_id && (
+                        <div style={{ position: 'absolute', left: '-12px', top: '50%', bottom: '-20px', width: '3px', background: 'var(--brand)', borderRadius: '2px', opacity: 0.4 }} />
+                      )}
                     </div>
                   );
                 })}

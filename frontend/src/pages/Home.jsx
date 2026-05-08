@@ -1,5 +1,5 @@
 import { useEffect, useState, useRef, useMemo, Fragment } from 'react';
-import { Save, Plus, Trash2, CheckCircle2, ChevronRight, ChevronLeft, Trophy, Play, Timer, Pause, RotateCcw, Droplets, Square, Settings, Table, LayoutGrid, CalendarDays, RefreshCw, Activity, Dumbbell } from 'lucide-react';
+import { Save, Plus, Trash2, CheckCircle2, ChevronRight, ChevronLeft, Trophy, Medal, Play, Timer, Pause, RotateCcw, Droplets, Square, Settings, Table, LayoutGrid, CalendarDays, RefreshCw, Activity, Dumbbell } from 'lucide-react';
 import { api, iso } from '../api/client.js';
 import Skeleton from '../components/Skeleton.jsx';
 import { t } from '../i18n.js';
@@ -156,6 +156,7 @@ export default function Home({ lang }) {
   const [viewMode, setViewMode] = useState('feed'); // 'feed' or 'spreadsheet'
 
   const [relativeWeek, setRelativeWeek] = useState(0);
+  const [pushMenuDay, setPushMenuDay] = useState(null); // dayIdx of active push menu
 
   const currentWeekStart = useMemo(() => {
     const d = new Date();
@@ -211,11 +212,23 @@ export default function Home({ lang }) {
     loadInitial();
   }, [currentWeekStart]);
 
+  const fetchExercises = () => {
+    api('/exercises/?page_size=1000').then(res => {
+      const data = res.results || res;
+      setAllExercises([...data].sort((a, b) => t(lang, a.name).localeCompare(t(lang, b.name))));
+    }).catch(() => {});
+  };
+
+  useEffect(() => {
+    fetchExercises();
+  }, [lang]);
+
   useEffect(() => {
     const handleTab = (e) => {
       if (e.detail === 'home') {
         setRelativeWeek(0);
         setShouldScrollToToday(true);
+        fetchExercises(); // Refetch to catch any new custom exercises
       }
     };
     window.addEventListener('change-app-tab', handleTab);
@@ -229,13 +242,6 @@ export default function Home({ lang }) {
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
-
-  useEffect(() => {
-    api('/exercises/').then(res => {
-      const data = res.results || res;
-      setAllExercises([...data].sort((a, b) => t(lang, a.name).localeCompare(t(lang, b.name))));
-    }).catch(() => {});
-  }, [lang]);
 
   useEffect(() => {
     if (!loading && days.some(d => d.is_today) && shouldScrollToToday) {
@@ -394,6 +400,7 @@ export default function Home({ lang }) {
               reps: isTimeBased ? 1 : (logVal?.reps !== undefined && logVal?.reps !== '' ? Number(logVal.reps) : item.reps),
               weight_kg: isTimeBased ? 0 : cleanWeight,
               duration: isTimeBased ? (logVal?.duration || '') : '',
+              is_pr_set: logVal?.is_pr_set ?? item.is_pr_set,
               source_goal_plan: goal.id || null, 
             };
 
@@ -462,23 +469,16 @@ export default function Home({ lang }) {
       <div className="nav-arrows">
         <button className="arrow-btn" onClick={() => changeWeek(-1)} disabled={relativeWeek <= -6}><ChevronLeft size={20} /></button>
         <div style={{ textAlign: 'center' }}>
-          <span style={{ 
-            fontWeight: '950', 
-            fontSize: '0.8rem', 
-            color: 'var(--brand)', 
-            background: 'rgba(var(--brand-rgb), 0.1)', 
-            padding: '4px 16px', 
-            borderRadius: '999px', 
-            border: '1px solid rgba(var(--brand-rgb), 0.2)',
-            minWidth: '200px', 
-            display: 'inline-block',
-            letterSpacing: '1px'
-          }}>
-            {relativeWeek === 0 ? 'CURRENT WEEK' : 
-             relativeWeek === 1 ? '1 WEEK IN THE FUTURE' : 
-             `${Math.abs(relativeWeek)} ${Math.abs(relativeWeek) === 1 ? 'WEEK' : 'WEEKS'} IN THE PAST`}
-          </span>
-          <div style={{ display: 'flex', justifyContent: 'center', gap: '0.6rem', marginTop: '0.4rem' }}>
+          <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '0.6rem' }}>
+            <span style={{ 
+              fontSize: '0.9rem', 
+              fontWeight: '1000', 
+              color: 'var(--brand)',
+              minWidth: '35px',
+              textAlign: 'right'
+            }}>
+              {relativeWeek > 0 ? `+${relativeWeek}` : relativeWeek}
+            </span>
             <button 
               onClick={() => {
                 if (relativeWeek !== 0) {
@@ -493,7 +493,7 @@ export default function Home({ lang }) {
                 border: relativeWeek === 0 ? '1px solid var(--line)' : '1px solid rgba(var(--brand-rgb), 0.3)', 
                 color: 'var(--brand)', 
                 cursor: 'pointer', 
-                padding: '6px 12px', 
+                padding: '8px 12px', 
                 borderRadius: '999px', 
                 transition: 'all 0.3s ease',
                 boxShadow: '0 2px 10px rgba(0,0,0,0.1)',
@@ -504,7 +504,7 @@ export default function Home({ lang }) {
               }}
               title={relativeWeek === 0 ? "Scroll to Today" : "Back to Present"}
             >
-              <CalendarDays size={16} strokeWidth={2.5} />
+              <CalendarDays size={18} strokeWidth={2.5} />
             </button>
             <button 
               onClick={() => setViewMode(prev => prev === 'feed' ? 'spreadsheet' : 'feed')} 
@@ -515,7 +515,7 @@ export default function Home({ lang }) {
                 fontSize: '0.65rem', 
                 fontWeight: '1000', 
                 cursor: 'pointer', 
-                padding: '6px 14px', 
+                padding: '8px 14px', 
                 borderRadius: '999px', 
                 display: 'flex', 
                 alignItems: 'center', 
@@ -579,18 +579,43 @@ export default function Home({ lang }) {
                 return (
                   <Fragment key={day.date}>
                     {allExercises.map((item, idx) => {
-                      const isTimeBased = item.exercise_detail?.is_time_based;
                       const logVal = inlineLogs[item.id] || {};
                       const isDone = !!logVal.log_id;
+                      const nextItem = allExercises[idx + 1];
+                      const prevItem = allExercises[idx - 1];
+                      const nextLog = nextItem ? (inlineLogs[nextItem.id] || {}) : {};
+                      const prevLog = prevItem ? (inlineLogs[prevItem.id] || {}) : {};
+                      
+                      const currentSid = logVal.superset_id ?? item.superset_id;
+                      const nextSid = nextLog.superset_id ?? nextItem?.superset_id;
+                      const prevSid = prevLog.superset_id ?? prevItem?.superset_id;
+
+                      const isSupersetWithNext = currentSid && nextSid && currentSid === nextSid;
+                      const isSupersetWithPrev = currentSid && prevSid && currentSid === prevSid;
+                      const isPR = logVal.is_pr_set ?? item.is_pr_set;
+                      const isTimeBased = item.exercise_detail?.is_time_based;
                       
                       return (
-                        <tr key={item.id} className={`spreadsheet-row ${isDone ? 'done' : ''} ${day.is_today ? 'today' : ''}`}>
+                        <tr 
+                          key={item.id} 
+                          className={`spreadsheet-row ${isDone ? 'done' : ''} ${day.is_today ? 'today' : ''}`}
+                          style={{ 
+                            borderBottom: isSupersetWithNext ? 'none' : '1px solid rgba(255,255,255,0.05)',
+                            background: (isSupersetWithNext || isSupersetWithPrev) ? 'rgba(var(--brand-rgb), 0.01)' : 'transparent'
+                          }}
+                        >
                           {idx === 0 && dayCell}
-                          <td className="spreadsheet-td exercise-name-cell" style={{ color: isDone ? 'var(--brand)' : 'var(--text)' }}>
+                          <td className="spreadsheet-td exercise-name-cell" style={{ 
+                            color: isDone ? 'var(--brand)' : 'var(--text)',
+                            borderLeft: (isSupersetWithNext || isSupersetWithPrev) ? '2px solid var(--brand)' : 'none',
+                            paddingLeft: (isSupersetWithNext || isSupersetWithPrev) ? '1.5rem' : '1rem'
+                          }}>
                             <div className="flex-center-gap">
                               {item.exercise_detail?.exercise_type === 'calisthenics' ? <Activity size={16} /> : 
+                               item.exercise_detail?.exercise_type === 'pr' ? <Trophy size={16} /> :
                                <Dumbbell size={16} />}
                               {t(lang, item.exercise_detail?.name)}
+                              {isPR && <span style={{ fontSize: '0.6rem', color: 'var(--brand)', border: '1px solid var(--brand)', padding: '0 4px', borderRadius: '4px', marginLeft: '0.3rem' }}>PR</span>}
                             </div>
                           </td>
                           <td className="spreadsheet-td" style={{ textAlign: 'center' }}>
@@ -616,7 +641,7 @@ export default function Home({ lang }) {
             <div className="stack" style={{ padding: '0 1rem' }}>
               <Skeleton count={3} />
             </div>
-          ) : days.map((day) => {
+          ) : days.map((day, dayIdx) => {
             const isCompleted = day.progress?.completed;
             const showStart = day.is_today && !isCompleted;
             const isCurrentWeek = days.some(d => d.is_today);
@@ -635,21 +660,79 @@ export default function Home({ lang }) {
                   </div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
                     {isCurrentWeek && (
-                      <button
-                        onClick={() => setEditMode(!editMode)}
-                        className={editMode ? 'small-btn active' : 'small-btn'}
-                        style={{ 
-                          padding: '0.5rem', 
-                          borderRadius: '12px', 
-                          background: editMode ? 'var(--brand)' : 'rgba(255,255,255,0.05)',
-                          color: editMode ? '#052e16' : 'var(--text)',
-                          border: 'none',
-                          boxShadow: editMode ? '0 0 15px var(--brand)' : 'none',
-                          transition: 'all 0.3s ease'
-                        }}
-                      >
-                        <Settings size={18} className={editMode ? 'spin' : ''} />
-                      </button>
+                      <div style={{ display: 'flex', gap: '0.4rem', alignItems: 'center' }}>
+                        {isCurrentWeek && (
+                          <div style={{ position: 'relative' }}>
+                            <button
+                              onClick={() => setPushMenuDay(pushMenuDay === dayIdx ? null : dayIdx)}
+                              className="small-btn"
+                              title="Shift goals"
+                              style={{ padding: '0.5rem', borderRadius: '12px', background: 'rgba(255,255,255,0.05)', color: 'var(--text)', border: 'none', display: 'flex', alignItems: 'center', gap: '4px' }}
+                            >
+                              <CalendarDays size={16} />
+                              <span style={{ fontSize: '0.6rem', fontWeight: '900' }}>PUSH</span>
+                            </button>
+
+                            {pushMenuDay === dayIdx && (
+                              <>
+                                <div style={{ position: 'fixed', inset: 0, zIndex: 100 }} onClick={() => setPushMenuDay(null)} />
+                                <div className="glass-card" style={{
+                                  position: 'absolute',
+                                  top: '100%',
+                                  left: 0,
+                                  zIndex: 101,
+                                  marginTop: '0.4rem',
+                                  padding: '0.3rem',
+                                  display: 'flex',
+                                  gap: '0.3rem',
+                                  background: 'var(--bg-strong)',
+                                  border: '1px solid var(--line)',
+                                  boxShadow: '0 8px 32px rgba(0,0,0,0.4)',
+                                  borderRadius: '12px'
+                                }}>
+                                  <button
+                                    className="small-btn"
+                                    style={{ padding: '0.4rem 0.6rem', fontSize: '0.7rem', fontWeight: '900', color: '#10b981' }}
+                                    onClick={async () => {
+                                      try {
+                                        await api('/weekly-shift/', { method: 'POST', body: JSON.stringify({ today: day.date, day_index: dayIdx, direction: 1 }) });
+                                        setPushMenuDay(null);
+                                        loadInitial();
+                                      } catch (err) { setError(err.message); }
+                                    }}
+                                  >+1</button>
+                                  <button
+                                    className="small-btn"
+                                    style={{ padding: '0.4rem 0.6rem', fontSize: '0.7rem', fontWeight: '900', color: '#ef4444' }}
+                                    onClick={async () => {
+                                      try {
+                                        await api('/weekly-shift/', { method: 'POST', body: JSON.stringify({ today: day.date, day_index: dayIdx, direction: -1 }) });
+                                        setPushMenuDay(null);
+                                        loadInitial();
+                                      } catch (err) { setError(err.message); }
+                                    }}
+                                  >-1</button>
+                                </div>
+                              </>
+                            )}
+                          </div>
+                        )}
+                        <button
+                          onClick={() => setEditMode(!editMode)}
+                          className={editMode ? 'small-btn active' : 'small-btn'}
+                          style={{ 
+                            padding: '0.5rem', 
+                            borderRadius: '12px', 
+                            background: editMode ? 'var(--brand)' : 'rgba(255,255,255,0.05)',
+                            color: editMode ? '#052e16' : 'var(--text)',
+                            border: 'none',
+                            boxShadow: editMode ? '0 0 15px var(--brand)' : 'none',
+                            transition: 'all 0.3s ease'
+                          }}
+                        >
+                          <Settings size={18} className={editMode ? 'spin' : ''} />
+                        </button>
+                      </div>
                     )}
                     {isCompleted && !editMode && <CheckCircle2 size={18} className="success" />}
                   </div>
@@ -681,7 +764,7 @@ export default function Home({ lang }) {
                           padding: editMode && isCurrentWeek ? '0.5rem' : '0',
                           background: editMode && isCurrentWeek ? 'rgba(var(--brand-rgb), 0.02)' : 'transparent'
                         }}>
-                          <div className="exercise-stack" style={{ display: 'grid', gap: '0.8rem' }}>
+<div className="exercise-stack" style={{ display: 'grid', gap: '0.8rem' }}>
                             {allCurrentExercises.map((item, idx) => {
                               // If this is an original item that has been replaced, don't show it
                               if (!item._isExtra && overrides.some(o => o._replacedId === item.id)) return null;
@@ -691,163 +774,205 @@ export default function Home({ lang }) {
                               
                               // If marked for deletion, hide it
                               if (toDelete.includes(item.id) || (logVal?.log_id && toDelete.includes(logVal.log_id))) return null;
-
                               const isExtra = !!item._isExtra;
                               const isTimeBased = item.exercise_detail?.is_time_based;
                               const isCalisthenics = item.exercise_detail?.exercise_type === 'calisthenics';
+                              
+                              const currentSid = logVal.superset_id ?? item.superset_id;
+                              const nextItem = allCurrentExercises[idx + 1];
+                              const nextLog = nextItem ? (inlineLogs[nextItem.id || `extra-${idx+1}`] || {}) : {};
+                              const nextSid = nextItem ? (nextLog.superset_id ?? nextItem.superset_id) : null;
+                              const isSupersetWithNext = currentSid && nextSid && currentSid === nextSid;
+                              const isPR = logVal.is_pr_set ?? item.is_pr_set;
 
                               return (
-                                <div key={item.id || `extra-${idx}`} className="exercise-item-old">
-                                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                                    <div style={{ flex: 1 }}>
-                                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-                                        {editMode && isCurrentWeek ? (
-                                          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', width: '100%' }}>
-                                            <select 
-                                              style={{ flex: 1, background: 'none', border: '1px solid var(--line)', color: 'var(--brand)', fontWeight: '900', fontSize: '0.9rem', padding: '2px 4px', borderRadius: '4px' }}
-                                              value={item.exercise_detail?.id}
-                                              onChange={(e) => {
-                                                const newEx = allExercises.find(ex => String(ex.id) === e.target.value);
-                                                if (isExtra) {
-                                                  setTodayOverrides(prev => ({
-                                                    ...prev,
-                                                    [goal.id]: prev[goal.id].map((it, i) => i === (idx - (goal.goal_exercises?.length || 0)) ? { ...it, exercise_detail: newEx } : it)
-                                                  }));
-                                                } else {
-                                                  // Replace existing
-                                                  const tempId = `temp-override-${Date.now()}`;
-                                                  setTodayOverrides(prev => ({
-                                                    ...prev,
-                                                    [goal.id]: [...(prev[goal.id] || []), { 
-                                                      ...item, 
-                                                      id: tempId,
-                                                      exercise_detail: newEx, 
-                                                      _isExtra: false, 
-                                                      _replacedId: item.id 
-                                                    }]
-                                                  }));
-                                                  setInlineLogs(prev => ({
-                                                    ...prev,
-                                                    [tempId]: {
-                                                      sets: String(item.sets),
-                                                      reps: String(item.reps),
-                                                      weight_kg: '',
-                                                      duration: ''
-                                                    }
-                                                  }));
-                                                }
-                                              }}
-                                            >
-                                              {allExercises.map(ex => <option key={ex.id} value={ex.id}>{t(lang, ex.name)}</option>)}
-                                            </select>
-                                            <button 
-                                              onClick={() => {
-                                                if (window.confirm("Delete this exercise for today? (This won't affect your permanent routine)")) {
-                                                  setToDelete(prev => [...prev, item.id]);
-                                                }
-                                              }}
-                                              style={{ background: 'rgba(239, 68, 68, 0.1)', color: '#ef4444', border: '1px solid rgba(239, 68, 68, 0.3)', padding: '4px', borderRadius: '4px', cursor: 'pointer', display: 'flex', alignItems: 'center' }}
-                                            >
-                                              <Trash2 size={16} />
-                                            </button>
-                                          </div>
-                                        ) : (
-                                          <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
-                                            {item.exercise_detail?.exercise_type === 'calisthenics' ? <Activity size={16} className="text-brand" /> : 
-                                             <Dumbbell size={16} className="text-brand" />}
-                                            <strong style={{ fontSize: '0.95rem' }}>{t(lang, item.exercise_detail?.name)}</strong>
-                                          </div>
-                                        )}
-                                        {item.exercise_detail?.youtube_url && (
-                                          <a
-                                            href={item.exercise_detail.youtube_url}
-                                            target="_blank"
-                                            rel="noopener noreferrer"
-                                            style={{ color: 'var(--brand)', display: 'flex', alignItems: 'center' }}
-                                            title="Watch Video"
-                                          >
-                                            <Play size={16} fill="var(--brand)" />
-                                          </a>
-                                        )}
-                                      </div>
-                                      <p style={{ fontSize: '0.75rem', opacity: 0.6, margin: '0.1rem 0' }}>
-                                        {item.sets}x{item.reps} · {t(lang, item.exercise_detail?.category)}
-                                      </p>
-                                    </div>
-                                    {item.personal_best && (
-                                      <div style={{ fontSize: '0.65rem', color: 'var(--brand)', fontWeight: '900', background: 'rgba(34, 197, 94, 0.1)', padding: '4px 10px', borderRadius: '999px', border: '1px solid var(--brand)', display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
-                                        <Trophy size={12} /> {item.personal_best}kg
-                                      </div>
-                                    )}
-                                  </div>
+                                <div key={item.id || `extra-${idx}`} style={{ position: 'relative' }}>
+                                  <div className="exercise-item-old" style={{ 
+                                    marginBottom: isSupersetWithNext ? '-0.8rem' : '0',
+                                    paddingBottom: isSupersetWithNext ? '1.2rem' : '1rem',
+                                    borderBottom: isSupersetWithNext ? 'none' : '1px solid var(--line)',
+                                    borderRadius: isSupersetWithNext ? '16px 16px 0 0' : '16px',
+                                    position: 'relative',
+                                    zIndex: 2,
+                                    background: 'rgba(255,255,255,0.02)', width: '100%'
+                                  }}>
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '0.6rem' }}>
+                                      <div style={{ flex: 1 }}>
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                                          {editMode && isCurrentWeek ? (
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', width: '100%' }}>
+                                              <select 
+                                                style={{ flex: 1, background: 'none', border: '1px solid var(--line)', color: 'var(--brand)', fontWeight: '900', fontSize: '0.9rem', padding: '2px 4px', borderRadius: '4px' }}
+                                                value={item.exercise_detail?.id}
+                                                onChange={(e) => {
+                                                  const newEx = allExercises.find(ex => String(ex.id) === e.target.value);
+                                                  const updateFn = (it) => ({ ...it, exercise_detail: newEx });
+                                                  if (isExtra) {
+                                                    setTodayOverrides(prev => ({ ...prev, [goal.id]: prev[goal.id].map((it, i) => i === (idx - (goal.goal_exercises?.length || 0)) ? updateFn(it) : it) }));
+                                                  } else {
+                                                    const tempId = `temp-override-${Date.now()}`;
+                                                    setTodayOverrides(prev => ({ ...prev, [goal.id]: [...(prev[goal.id] || []), { ...item, id: tempId, _replacedId: item.id, exercise_detail: newEx }] }));
+                                                  }
+                                                }}
+                                              >
+                                                {allExercises.map(ex => <option key={ex.id} value={ex.id}>{ex.name}</option>)}
+                                              </select>
 
-                                  <div style={{ display: 'flex', gap: '0.6rem' }}>
-                                    <input
-                                      placeholder="S"
-                                      className="input-bubble"
-                                      type="number"
-                                      disabled={isLocked}
-                                      onFocus={(e) => e.target.select()}
-                                      value={logVal.sets ?? item.sets}
-                                      onChange={(e) => handleChange(item.id || `extra-${idx}`, 'sets', e.target.value)}
-                                      style={{ flex: 1, minHeight: '40px' }}
-                                    />
-                                    <input
-                                      placeholder="R"
-                                      className="input-bubble"
-                                      type="number"
-                                      disabled={isLocked || isTimeBased}
-                                      onFocus={(e) => e.target.select()}
-                                      value={isTimeBased ? "1" : (logVal.reps ?? item.reps)}
-                                      onChange={(e) => handleChange(item.id || `extra-${idx}`, 'reps', e.target.value)}
-                                      style={{ flex: 1, minHeight: '40px' }}
-                                    />
-                                    {isTimeBased ? (
+                                              <button 
+                                                type="button"
+                                                className={`small-btn ${isPR ? 'active' : ''}`}
+                                                style={{ 
+                                                  padding: '0.2rem 0.4rem', 
+                                                  borderRadius: '6px', 
+                                                  fontSize: '0.6rem', 
+                                                  fontWeight: '900', 
+                                                  background: isPR ? 'rgba(var(--brand-rgb), 0.2)' : 'rgba(255,255,255,0.05)', 
+                                                  color: isPR ? 'var(--brand)' : 'var(--text)' 
+                                                }}
+                                                onClick={() => {
+                                                  const nextPR = !isPR;
+                                                  handleChange(logKey, 'is_pr_set', nextPR);
+                                                  if (nextPR) {
+                                                    handleChange(logKey, 'sets', '1');
+                                                    handleChange(logKey, 'reps', '1');
+                                                  }
+                                                }}
+                                              >PR</button>
+
+                                              {idx < allCurrentExercises.length - 1 && (
+                                                <button 
+                                                  disabled
+                                                  className="small-btn"
+                                                  style={{ padding: '0.2rem 0.4rem', borderRadius: '6px', opacity: 0.3, cursor: 'not-allowed', background: 'rgba(255,255,255,0.05)', color: 'var(--text)' }}
+                                                >
+                                                  <RefreshCw size={12} />
+                                                </button>
+                                              )}
+
+                                              <button 
+                                                onClick={() => {
+                                                  if (window.confirm("Delete for today?")) {
+                                                    setToDelete(prev => [...prev, item.id]);
+                                                  }
+                                                }}
+                                                style={{ background: 'rgba(239, 68, 68, 0.1)', color: '#ef4444', border: '1px solid rgba(239, 68, 68, 0.3)', padding: '4px', borderRadius: '4px', cursor: 'pointer' }}
+                                              >
+                                                <Trash2 size={16} />
+                                              </button>
+                                            </div>
+                                          ) : (
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
+                                              {isPR ? <Medal size={16} style={{ color: 'var(--brand)' }} /> : isCalisthenics ? <Activity size={16} style={{ color: 'var(--brand)' }} /> : <Dumbbell size={16} style={{ color: 'var(--brand)' }} />}
+                                              <h4 style={{ margin: 0, fontSize: '0.95rem', fontWeight: '800', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                                                {t(lang, item.exercise_detail?.name)}
+                                                {isPR && <span style={{ fontSize: '0.6rem', background: 'rgba(var(--brand-rgb), 0.2)', color: 'var(--brand)', padding: '2px 6px', borderRadius: '4px' }}>PR</span>}
+                                              </h4>
+                                              {item.personal_best && (
+                                                <div style={{ fontSize: '0.65rem', color: 'var(--brand)', fontWeight: '900', background: 'rgba(34, 197, 94, 0.1)', padding: '2px 8px', borderRadius: '999px', border: '1px solid var(--brand)', display: 'inline-flex', alignItems: 'center', gap: '0.2rem' }}>
+                                                  <Medal size={10} /> {item.personal_best}kg
+                                                </div>
+                                              )}
+                                            </div>
+                                          )}
+                                        </div>
+                                        {!editMode && (
+                                          <p style={{ fontSize: '0.75rem', opacity: 0.6, margin: '0.1rem 0' }}>
+                                            {t(lang, item.exercise_detail?.category)}
+                                          </p>
+                                        )}
+                                      </div>
+                                      {item.exercise_detail?.youtube_url && !editMode && (
+                                        <a href={item.exercise_detail.youtube_url} target="_blank" rel="noopener noreferrer" style={{ color: 'var(--brand)', display: 'flex', alignItems: 'center' }}>
+                                          <Play size={16} fill="var(--brand)" />
+                                        </a>
+                                      )}
+                                    </div>
+
+
+                                    <div style={{ display: 'flex', gap: '0.6rem', width: '100%', flexWrap: 'wrap' }}>
                                       <input
-                                        placeholder="MM:SS"
+                                        placeholder="S"
                                         className="input-bubble"
+                                        type="number"
                                         disabled={isLocked}
                                         onFocus={(e) => e.target.select()}
-                                        value={logVal.duration || ''}
-                                        onChange={(e) => handleChange(item.id || `extra-${idx}`, 'duration', e.target.value)}
-                                        style={{ flex: 1.5, minHeight: '40px' }}
+                                        value={logVal.sets ?? item.sets}
+                                        onChange={(e) => {
+                                          let val = e.target.value;
+                                          if (isPR && val !== '') {
+                                            val = Math.min(2, Math.max(1, parseInt(val) || 1));
+                                          }
+                                          handleChange(item.id || `extra-${idx}`, 'sets', val);
+                                        }}
+                                        style={{ flex: 1, minHeight: '40px', textAlign: 'center' }}
+                                        max={isPR ? 2 : 8}
                                       />
-                                    ) : (
-                                      <div style={{ flex: 2, position: 'relative' }}>
-                                        <input
-                                          placeholder={isCalisthenics ? "+kg" : "kg"}
-                                          className="input-bubble"
-                                          type="number"
-                                          disabled={isLocked}
-                                          onFocus={(e) => e.target.select()}
-                                          value={logVal.weight_kg || ''}
-                                          onChange={(e) => handleChange(item.id || `extra-${idx}`, 'weight_kg', e.target.value)}
-                                          style={{ width: '100%', minHeight: '40px' }}
-                                        />
-                                        {isCalisthenics && <span style={{ position: 'absolute', right: '10px', top: '50%', transform: 'translateY(-50%)', fontSize: '0.65rem', opacity: 0.5, pointerEvents: 'none' }}>2kg base</span>}
-                                      </div>
-                                    )}
-                                    {isTimeBased && (
-                                      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem', flex: 1.5, position: 'relative' }}>
-                                        {activeTimer?.id === (item.id || `extra-${idx}`) ? (
-                                          <InlineTimer
-                                            initialSeconds={activeTimer.time}
-                                            onFinish={(s) => handleTimerFinish(item.id || `extra-${idx}`, s)}
-                                            onCancel={() => setActiveTimer(null)}
-                                          />
-                                        ) : (
-                                          <button
-                                            className="small-btn"
+                                      <input
+                                        placeholder="R"
+                                        className="input-bubble"
+                                        type="number"
+                                        disabled={isLocked || isTimeBased}
+                                        onFocus={(e) => e.target.select()}
+                                        value={isTimeBased ? "1" : (logVal.reps ?? item.reps)}
+                                        onChange={(e) => {
+                                          let val = e.target.value;
+                                          if (isPR && val !== '') {
+                                            val = Math.min(2, Math.max(1, parseInt(val) || 1));
+                                          }
+                                          handleChange(item.id || `extra-${idx}`, 'reps', val);
+                                        }}
+                                        style={{ flex: 1, minHeight: '40px', textAlign: 'center' }}
+                                        max={isPR ? 2 : 99}
+                                      />
+                                      {isTimeBased ? (
+                                        <div style={{ flex: '1 1 100%', position: 'relative' }}>
+                                          {activeTimer?.id === (item.id || `extra-${idx}`) ? (
+                                            <InlineTimer
+                                              initialSeconds={activeTimer.time}
+                                              onFinish={(s) => handleTimerFinish(item.id || `extra-${idx}`, s)}
+                                              onCancel={() => setActiveTimer(null)}
+                                            />
+                                          ) : (
+                                            <div style={{ display: 'flex', gap: '0.4rem' }}>
+                                              <input
+                                                placeholder="MM:SS"
+                                                className="input-bubble"
+                                                disabled={isLocked}
+                                                onFocus={(e) => e.target.select()}
+                                                value={logVal.duration || ''}
+                                                onChange={(e) => handleChange(item.id || `extra-${idx}`, 'duration', e.target.value)}
+                                                style={{ flex: 1, minHeight: '40px' }}
+                                              />
+                                              <button
+                                                className="small-btn"
+                                                disabled={isLocked}
+                                                onClick={() => setActiveTimer({ id: item.id || `extra-${idx}`, time: 0 })}
+                                                style={{ height: '40px', background: 'rgba(var(--brand-rgb), 0.1)', color: 'var(--brand)', border: '1px solid var(--brand)', display: 'flex', justifyContent: 'center', alignItems: 'center', padding: '0 10px' }}
+                                              >
+                                                <Timer size={18} />
+                                              </button>
+                                            </div>
+                                          )}
+                                        </div>
+                                      ) : (
+                                        <div style={{ flex: '1 1 100%', position: 'relative', minWidth: 0 }}>
+                                          <input
+                                            placeholder="kg"
+                                            className="input-bubble"
+                                            type="number"
                                             disabled={isLocked}
-                                            onClick={() => setActiveTimer({ id: item.id || `extra-${idx}`, time: 0 })}
-                                            style={{ height: '40px', background: 'rgba(var(--brand-rgb), 0.1)', color: 'var(--brand)', border: '1px solid var(--brand)', display: 'flex', justifyContent: 'center', alignItems: 'center' }}
-                                          >
-                                            <Timer size={18} />
-                                          </button>
-                                        )}
-                                      </div>
-                                    )}
+                                            onFocus={(e) => e.target.select()}
+                                            value={logVal.weight_kg ?? ''}
+                                            onChange={(e) => handleChange(item.id || `extra-${idx}`, 'weight_kg', e.target.value)}
+                                            style={{ width: '100%', minHeight: '40px' }}
+                                          />
+                                        </div>
+                                      )}
+                                    </div>
                                   </div>
+                                  {isSupersetWithNext && (
+                                    <div style={{ position: 'absolute', left: '0.8rem', top: '50%', bottom: '-0.8rem', width: '2px', background: 'var(--brand)', zIndex: 1, opacity: 0.5 }} />
+                                  )}
                                 </div>
                               );
                             })}

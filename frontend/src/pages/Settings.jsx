@@ -346,7 +346,7 @@ export default function Settings({ preferences, setPreferences, lang }) {
           <input type="checkbox" checked={!!form.hide_from_leaderboard} onChange={(e) => update('hide_from_leaderboard', e.target.checked)} />
         </label>
 
-        <LinkInput 
+        <LinkInput
           label={t(lang, 'recommendLink')}
           value={form.recommended_link}
           onChange={(val) => update('recommended_link', val)}
@@ -472,7 +472,7 @@ export default function Settings({ preferences, setPreferences, lang }) {
           <div style={{ display: 'flex', justifyContent: 'space-between', opacity: 0.8 }}>
             <span>{t(lang, 'version')}</span>
             <span style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
-              <strong className="brand" style={{ fontWeight: '900' }}>v-03a.034</strong>
+              <strong className="brand" style={{ fontWeight: '900' }}>v-03a.038</strong>
               <small className="muted" style={{ fontWeight: '800', opacity: 0.8 }}>05.08.26</small>
             </span>
           </div>

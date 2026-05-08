@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Crown, Trophy, ExternalLink, Users, X, Flame } from 'lucide-react';
+import { Crown, Trophy, ExternalLink, Users, X, Flame, ChevronDown } from 'lucide-react';
 import { useAuth } from '../state/AuthContext.jsx';
 import { api, iso } from '../api/client.js';
 import Skeleton from '../components/Skeleton.jsx';
@@ -119,20 +119,22 @@ export default function Global({ lang }) {
                 <div style={{ 
                   position: 'relative', 
                   zIndex: 2, 
-                  display: 'flex', 
+                  display: 'grid',
+                  gridTemplateColumns: '100px 1fr 100px',
                   alignItems: 'center', 
                   width: '100%', 
-                  textShadow: '0 1px 2px rgba(0,0,0,1), 0 0 12px rgba(0,0,0,1)',
-                  justifyContent: 'space-between'
+                  textShadow: '0 1px 2px rgba(0,0,0,1), 0 0 12px rgba(0,0,0,1)'
                 }}>
-                  {/* LEFT: RANK & AVATAR (Left Aligned) */}
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', flex: '0 0 85px' }}>
+                  {/* LEFT: RANK & AVATAR */}
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                     <div className="rank-number" style={{ 
                       fontSize: row.rank <= 10 ? '1.4rem' : '0.8rem', 
                       fontWeight: '900',
                       fontFamily: row.rank <= 10 ? "'Ma Shan Zheng', cursive" : 'inherit',
                       color: '#fff',
-                      minWidth: '25px'
+                      width: '36px',
+                      height: '36px',
+                      flexShrink: 0
                     }}>
                       {row.rank <= 10 ? ['一', '二', '三', '四', '五', '六', '七', '八', '九', '十'][row.rank - 1] : row.rank}
                     </div>
@@ -144,30 +146,30 @@ export default function Global({ lang }) {
                     </div>
                   </div>
 
-                  {/* CENTER: NAME & POWER LEVEL (Centered) */}
-                  <div style={{ textAlign: 'center', flex: 1, minWidth: 0 }}>
+                  {/* CENTER: NAME & POWER LEVEL */}
+                  <div style={{ textAlign: 'center', minWidth: 0, padding: '0 0.2rem' }}>
                     <h3 className="pixel-text" style={{ 
                       margin: 0, 
-                      fontSize: '0.9rem', 
+                      fontSize: '0.85rem', 
                       color: '#fff',
                       display: 'flex',
                       flexDirection: 'column',
                       alignItems: 'center',
-                      gap: '4px'
+                      gap: '6px',
+                      lineHeight: '1.1'
                     }}>
-                      <span style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '100%' }}>{row.name}</span>
-                      <span style={{ fontSize: '0.7rem', color: 'var(--brand)', fontWeight: '1000', letterSpacing: '0.5px', whiteSpace: 'nowrap' }}>
+                      <span style={{ fontSize: '0.75rem', color: 'var(--brand)', fontWeight: '1000', letterSpacing: '0.5px' }}>
                         POWER LEVEL: {Math.round(row.score || 0).toLocaleString()}
                       </span>
                     </h3>
                   </div>
 
-                  {/* RIGHT: AVG LIFT (Right Aligned) */}
-                  <div style={{ textAlign: 'right', flex: '0 0 85px' }}>
-                    <div className="brand" style={{ fontWeight: '1000', fontSize: '1.2rem', letterSpacing: '-0.5px', color: 'var(--brand)', lineHeight: 1 }}>
+                  {/* RIGHT: AVG LIFT */}
+                  <div style={{ textAlign: 'right' }}>
+                    <div className="brand" style={{ fontWeight: '1000', fontSize: '1.2rem', letterSpacing: '-1px', color: 'var(--brand)', lineHeight: 1 }}>
                       {Math.round(row.average_lift_kg_this_week || 0)}kg
                     </div>
-                    <div className="pixel-text" style={{ fontSize: '0.55rem', fontWeight: '1000', color: '#fff', marginTop: '2px' }}>
+                    <div className="pixel-text" style={{ fontSize: '0.5rem', fontWeight: '1000', color: '#fff', marginTop: '4px', letterSpacing: '0.5px' }}>
                       AVG LIFT
                     </div>
                   </div>
@@ -179,9 +181,30 @@ export default function Global({ lang }) {
       </div>
 
       <div style={{ display: 'flex', justifyContent: 'center', marginTop: '2rem' }}>
-        <button className={`chip ${showBeta ? 'active' : ''}`} onClick={() => setShowBeta(!showBeta)} style={{ gap: '0.4rem', padding: '0.6rem 1rem' }}>
-          <Users size={14} />
+        <button
+          onClick={() => setShowBeta(!showBeta)}
+          style={{
+            width: 'fit-content',
+            margin: '0 auto',
+            padding: '0.4rem 1rem',
+            background: 'none',
+            border: 'none',
+            color: showBeta ? 'var(--brand)' : 'var(--muted)',
+            fontSize: '0.65rem',
+            fontWeight: '1000',
+            letterSpacing: '1.5px',
+            textTransform: 'uppercase',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: '0.4rem',
+            transition: 'all 0.2s ease',
+            cursor: 'pointer',
+            opacity: 0.8
+          }}
+        >
           {showBeta ? 'Hide Beta Users' : t(lang, 'showBeta')}
+          {showBeta ? <ChevronDown size={14} style={{ transform: 'rotate(180deg)' }} /> : <ChevronDown size={14} />}
         </button>
       </div>
 

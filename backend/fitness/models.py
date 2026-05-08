@@ -18,6 +18,7 @@ class Exercise(models.Model):
     class ExerciseType(models.TextChoices):
         MACHINE = 'machine', 'Machine'
         CALISTHENICS = 'calisthenics', 'Calisthenics'
+        PR = 'pr', 'PR'
 
     name = models.CharField(max_length=120)
     youtube_url = models.URLField(blank=True)
@@ -85,6 +86,8 @@ class GoalExercise(models.Model):
     duration = models.CharField(max_length=10, blank=True)
     order = models.PositiveIntegerField(default=0)
     notes = models.CharField(max_length=240, blank=True)
+    superset_id = models.CharField(max_length=50, blank=True, null=True)
+    is_pr_set = models.BooleanField(default=False)
 
     class Meta:
         ordering = ('order', 'id')
@@ -118,6 +121,8 @@ class ExerciseLog(models.Model):
     reps = models.PositiveIntegerField(default=0)
     source_goal_plan = models.ForeignKey(GoalPlan, on_delete=models.SET_NULL, null=True, blank=True)
     notes = models.CharField(max_length=240, blank=True)
+    superset_id = models.CharField(max_length=50, blank=True, null=True)
+    is_pr_set = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
@@ -348,3 +353,13 @@ class AdminMessage(models.Model):
 
     def __str__(self):
         return f"Message from {self.user.email} at {self.created_at}"
+class WeeklyShift(models.Model):
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='weekly_shifts')
+    week_start = models.DateField()
+    shifts = models.JSONField(default=dict) # Maps original day index to shifted day index
+
+    class Meta:
+        unique_together = ('user', 'week_start')
+
+    def __str__(self):
+        return f"Shift for {self.user} - week {self.week_start}"
