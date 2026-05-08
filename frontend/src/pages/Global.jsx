@@ -55,8 +55,8 @@ export default function Global({ lang }) {
           {data.champion_name && (
             <p className="muted pixel-text" style={{ fontSize: '0.62rem', marginTop: '0.6rem', lineHeight: '1.6', letterSpacing: '0px' }}>
               {lang === 'es' 
-                ? <><strong style={{ color: 'var(--brand)' }}>{data.champion_name}</strong> demostró ser el peleador más fuerte de todos.</>
-                : <><strong style={{ color: 'var(--brand)' }}>{data.champion_name}</strong> proved to be the strongest fighter of them all.</>
+                ? <><strong style={{ color: 'var(--brand)', fontFamily: "'Ma Shan Zheng', cursive", fontSize: '1rem', verticalAlign: 'middle', marginRight: '0.4rem' }}>{data.champion_name}</strong> demostró ser el peleador más fuerte de todos.</>
+                : <><strong style={{ color: 'var(--brand)', fontFamily: "'Ma Shan Zheng', cursive", fontSize: '1rem', verticalAlign: 'middle', marginRight: '0.4rem' }}>{data.champion_name}</strong> proved to be the strongest fighter of them all.</>
               }
             </p>
           )}

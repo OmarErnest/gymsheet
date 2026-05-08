@@ -12,7 +12,8 @@ const CHARACTER_ICONS = [
 ];
 
 export default function Settings({ preferences, setPreferences, lang }) {
-  const { logout, user, setUser } = useAuth();
+  const { logout, user, setUser, lang: authLang } = useAuth();
+  const isDummy = user?.email === 'dummy@gym.sheet';
   const [form, setForm] = useState({
     ...preferences,
     auth_mode: user?.auth_mode || 'pin',
@@ -54,6 +55,10 @@ export default function Settings({ preferences, setPreferences, lang }) {
   async function update(field, value) {
     setForm((prev) => ({ ...prev, [field]: value }));
     if (field === 'language' || field === 'theme' || field === 'font_size' || field === 'hide_from_leaderboard') {
+      if (isDummy) {
+        setMessage(lang === 'es' ? 'Acción restringida para cuenta demo' : 'Action restricted for demo account');
+        return;
+      }
       setPreferences((prev) => ({ ...prev, [field]: value }));
       try {
         await api('/settings/', { method: 'PATCH', body: JSON.stringify({ [field]: value }) });
@@ -65,6 +70,10 @@ export default function Settings({ preferences, setPreferences, lang }) {
 
   async function save(event) {
     if (event) event.preventDefault();
+    if (isDummy) {
+      setMessage(lang === 'es' ? 'Acción restringida para cuenta demo' : 'Action restricted for demo account');
+      return;
+    }
     setMessage('');
     setSavingSettings(true);
     try {

@@ -3,6 +3,7 @@ import { Save, Plus, Trash2, CheckCircle2, ChevronRight, ChevronLeft, Trophy, Pl
 import { api, iso } from '../api/client.js';
 import Skeleton from '../components/Skeleton.jsx';
 import { t } from '../i18n.js';
+import { useAuth } from '../state/AuthContext.jsx';
 
 
 
@@ -137,6 +138,8 @@ function buildInitialLogs(daysData) {
 }
 
 export default function Home({ lang }) {
+  const { user } = useAuth();
+  const isDummy = user?.email === 'dummy@gym.sheet';
   const [days, setDays] = useState([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -328,6 +331,12 @@ export default function Home({ lang }) {
 
 
   async function saveAll() {
+    if (saving) return;
+    if (isDummy) {
+      setSaveMessage(lang === 'es' ? 'Acción restringida para cuenta demo' : 'Action restricted for demo account');
+      setTimeout(() => setSaveMessage(''), 3000);
+      return;
+    }
     setSaving(true);
     setSaveMessage('');
     let sessionLogsCount = 0;

@@ -190,6 +190,7 @@ function MultiSelect({ label, options, selected, onToggle, onToggleAll, lang, al
 
 export default function Profile({ preferences, lang }) {
   const { user } = useAuth();
+  const isDummy = user?.email === 'dummy@gym.sheet';
   const [loading, setLoading] = useState(true);
   const [exercises, setExercises] = useState([]);
   const [logs, setLogs] = useState([]);
@@ -505,8 +506,12 @@ export default function Profile({ preferences, lang }) {
     })).sort((a, b) => b.value - a.value).slice(0, 8); // Limit to top 8 for readability
   }, [filteredLogsList, lang, selectedCategories]);
 
-  async function createExercise(event) {
-    event.preventDefault();
+  async function createExercise(e) {
+    if (e) e.preventDefault();
+    if (isDummy) {
+      setMessage(lang === 'es' ? 'Acción restringida para cuenta demo' : 'Action restricted for demo account');
+      return;
+    }
     setMessage('');
     try {
       await api('/exercises/', { method: 'POST', body: JSON.stringify(exerciseForm) });
@@ -518,8 +523,12 @@ export default function Profile({ preferences, lang }) {
     }
   }
 
-  async function createMeasurement(event) {
-    event.preventDefault();
+  async function addMeasurement(e) {
+    if (e) e.preventDefault();
+    if (isDummy) {
+      setMessage(lang === 'es' ? 'Acción restringida para cuenta demo' : 'Action restricted for demo account');
+      return;
+    }
     setMessage('');
     try {
       await api('/body-measurements/', { method: 'POST', body: JSON.stringify(measurementForm) });
@@ -570,8 +579,12 @@ export default function Profile({ preferences, lang }) {
     }));
   }
 
-  async function saveGoal(event) {
-    event.preventDefault();
+  async function saveGoal(e) {
+    if (e) e.preventDefault();
+    if (isDummy) {
+      setMessage(lang === 'es' ? 'Acción restringida para cuenta demo' : 'Action restricted for demo account');
+      return;
+    }
     setMessage('');
     const payloadExercises = goalForm.goal_exercises
       .filter((item) => item.exercise)
@@ -608,6 +621,10 @@ export default function Profile({ preferences, lang }) {
 
   async function deleteGoal(id) {
     if (!confirm("Are you sure?")) return;
+    if (isDummy) {
+      setMessage(lang === 'es' ? 'Acción restringida para cuenta demo' : 'Action restricted for demo account');
+      return;
+    }
     try {
       await api(`/goal-plans/${id}/`, { method: 'DELETE' });
       await load();
@@ -674,12 +691,12 @@ export default function Profile({ preferences, lang }) {
               </p>
             </div>
             <div className="glass-card stat-card" style={{ padding: '0.8rem', textAlign: 'center' }}>
-              <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="#f59e0b" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ marginBottom: '0.4rem', opacity: 0.9 }}>
-                <path d="M18 11V6a2 2 0 0 0-2-2v0a2 2 0 0 0-2 2v0" />
-                <path d="M14 10V4a2 2 0 0 0-2-2v0a2 2 0 0 0-2 2v2" />
-                <path d="M10 10.5V6a2 2 0 0 0-2-2v0a2 2 0 0 0-2 2v8" />
-                <path d="M18 8a2 2 0 1 1 4 0v6a8 8 0 0 1-8 8h-2c-2.8 0-4.5-.86-5.99-2.34l-3.6-3.6a2 2 0 0 1 2.83-2.82L7 15" />
-              </svg>
+                <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="#f59e0b" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" style={{ marginBottom: '0.4rem', opacity: 1 }}>
+                  <path d="M6 11V6a2 2 0 0 1 4 0v5" />
+                  <path d="M10 11V4a2 2 0 0 1 4 0v7" />
+                  <path d="M14 11V6a2 2 0 0 1 4 0v5" />
+                  <path d="M18 11V9a2 2 0 0 1 4 0v6a7 7 0 0 1-7 7H9a7 7 0 0 1-7-7v-4a2 2 0 0 1 4 0v6" />
+                </svg>
               <h3 style={{ margin: 0, fontSize: '1.2rem', fontWeight: '900' }}>{logs.length}</h3>
               <p className="muted" style={{ margin: 0, fontSize: '0.6rem', fontWeight: '800', textTransform: 'uppercase' }}>
                 {lang === 'es' ? 'Oponentes Totales' : 'Total Opponents'}
@@ -712,35 +729,36 @@ export default function Profile({ preferences, lang }) {
         )}
       </div>
 
-      <div className="profile-nav-grid" style={{ margin: 0 }}>
-        <button className={`nav-square ${activeTab === 'strength' ? 'active' : ''}`} onClick={() => setActiveTab('strength')}>
-          <Activity />
-          <span>{t(lang, 'strength')}</span>
-        </button>
-        <button className={`nav-square ${activeTab === 'goals' ? 'active' : ''}`} onClick={() => setActiveTab('goals')}>
-          <Target />
-          <span>{t(lang, 'yourGoals')}</span>
-        </button>
-        <button className={`nav-square ${activeTab === 'creategoal' ? 'active' : ''}`} onClick={() => setActiveTab('creategoal')}>
-          <Plus />
-          <span>{t(lang, 'createGoal')}</span>
-        </button>
-        <button className={`nav-square ${activeTab === 'bodymap' ? 'active' : ''}`} onClick={() => setActiveTab('bodymap')}>
-          <MapIcon />
-          <span>{t(lang, 'bodyMap')}</span>
-        </button>
-        <button className={`nav-square ${activeTab === 'addexercise' ? 'active' : ''}`} onClick={() => setActiveTab('addexercise')}>
-          <PlusCircle />
-          <span>{t(lang, 'addEx')}</span>
-        </button>
-        <button className={`nav-square ${activeTab === 'menu' ? 'active' : ''}`} onClick={() => setActiveTab('menu')}>
-          <Menu />
-          <span>{lang === 'es' ? 'Menú' : 'Menu'}</span>
-        </button>
-      </div>
+      <div className="profile-tabs-container" style={{ display: 'grid', gap: 0, marginTop: 0 }}>
+        <div className="profile-nav-grid" style={{ margin: 0, paddingLeft: 0, paddingRight: 0 }}>
+          <button className={`nav-square ${activeTab === 'strength' ? 'active' : ''}`} onClick={() => setActiveTab('strength')}>
+            <Activity />
+            <span>{t(lang, 'strength')}</span>
+          </button>
+          <button className={`nav-square ${activeTab === 'goals' ? 'active' : ''}`} onClick={() => setActiveTab('goals')}>
+            <Target />
+            <span>{t(lang, 'yourGoals')}</span>
+          </button>
+          <button className={`nav-square ${activeTab === 'creategoal' ? 'active' : ''}`} onClick={() => setActiveTab('creategoal')}>
+            <Plus />
+            <span>{t(lang, 'createGoal')}</span>
+          </button>
+          <button className={`nav-square ${activeTab === 'bodymap' ? 'active' : ''}`} onClick={() => setActiveTab('bodymap')}>
+            <MapIcon />
+            <span>{t(lang, 'bodyMap')}</span>
+          </button>
+          <button className={`nav-square ${activeTab === 'addexercise' ? 'active' : ''}`} onClick={() => setActiveTab('addexercise')}>
+            <PlusCircle />
+            <span>{t(lang, 'addEx')}</span>
+          </button>
+          <button className={`nav-square ${activeTab === 'menu' ? 'active' : ''}`} onClick={() => setActiveTab('menu')}>
+            <Menu />
+            <span>{lang === 'es' ? 'Menú' : 'Menu'}</span>
+          </button>
+        </div>
 
-      {activeTab === 'strength' && (
-        <article className="glass-card profile-section" style={{ padding: '0.8rem' }}>
+        {activeTab === 'strength' && (
+          <article className="glass-card profile-section" style={{ padding: '0.8rem' }}>
           <div style={{ textAlign: 'center', marginBottom: '0.5rem' }}>
             {/* Removed redundant headers to save space for the graph */}
             <div className="tab-pill-box" style={{ margin: '0.8rem auto 0', width: 'fit-content' }}>
@@ -1041,9 +1059,13 @@ export default function Profile({ preferences, lang }) {
             </button>
             
             {(showFrontBody ? frontDots : backDots).map((dot) => {
-              const latest = measurements
-                .filter(m => m.body_part === dot.part)
-                .sort((a, b) => new Date(b.date) - new Date(a.date))[0];
+              const latest = (measurements || [])
+                .filter(m => m && m.body_part === dot.part)
+                .sort((a, b) => {
+                  const da = a.date ? new Date(a.date) : 0;
+                  const db = b.date ? new Date(b.date) : 0;
+                  return db - da;
+                })[0];
               const isActive = selectedDot === dot.part;
               
               return (
@@ -1079,7 +1101,7 @@ export default function Profile({ preferences, lang }) {
             })}
           </div>
 
-          <form onSubmit={createMeasurement} className="form-stack glass-card" style={{ marginTop: '1.5rem', padding: '1.5rem', border: '1px solid var(--line)' }}>
+          <form onSubmit={addMeasurement} className="form-stack glass-card" style={{ marginTop: '1.5rem', padding: '1.5rem', border: '1px solid var(--line)' }}>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
               <label className="field">
                 <span>{t(lang, 'bodyPart')}</span>
@@ -1101,18 +1123,58 @@ export default function Profile({ preferences, lang }) {
         </article>
       )}
       {activeTab === 'menu' && (
-        <article className="glass-card profile-section animate-fade-in" style={{ padding: '4rem 2rem', textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
-          <div style={{ opacity: 0.6 }}>
-            <Menu size={64} strokeWidth={1.5} style={{ marginBottom: '1.5rem', color: 'var(--brand)' }} />
-            <h2 style={{ fontSize: '1.8rem', fontWeight: '950', letterSpacing: '-0.02em', textTransform: 'uppercase' }}>
-              {lang === 'es' ? 'Menú de Combate' : 'Combat Menu'}
-            </h2>
-            <p className="muted" style={{ marginTop: '1.5rem', fontStyle: 'italic', fontSize: '1rem', fontWeight: '800' }}>
-              {lang === 'es' ? 'Función disponible próximamente...' : 'Feature coming soon...'}
+        <article className="profile-section animate-fade-in" style={{ 
+          padding: '4rem 2rem', 
+          textAlign: 'left', 
+          position: 'relative', 
+          overflow: 'hidden', 
+          minHeight: '400px',
+          background: '#0a0a0a', 
+          border: '2px solid #333',
+          borderRadius: '8px',
+          fontFamily: 'monospace'
+        }}>
+          {/* CRT Scanning Line */}
+          <div className="crt-scanline" style={{ position: 'absolute', inset: 0, background: 'linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.2) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.03), rgba(0, 255, 0, 0.01), rgba(0, 0, 255, 0.03))', backgroundSize: '100% 4px, 3px 100%', pointerEvents: 'none', zIndex: 5 }} />
+          <div className="crt-beam" style={{ position: 'absolute', top: '-10%', left: 0, right: 0, height: '120px', background: 'linear-gradient(to bottom, transparent, rgba(var(--brand-rgb), 0.1), transparent)', animation: 'scan 4s linear infinite', pointerEvents: 'none', zIndex: 6 }} />
+          
+          <div style={{ position: 'relative', zIndex: 10, animation: 'flicker 0.15s infinite' }}>
+            <p className="pixel-text" style={{ fontSize: '1.1rem', color: 'var(--brand)', letterSpacing: '1px', lineHeight: '2', margin: 0, textShadow: '0 0 8px var(--brand)' }}>
+              Z:\&gt; INITIALIZING SCOUTER PROTOCOL...<br/>
+              Z:\&gt; SCANNING FOR BIO-SIGNATURES...<br/>
+              Z:\&gt; DATA RESTRICTED: KI FREQUENCY UNKNOWN.<br/>
+              Z:\&gt; <span style={{ animation: 'blink 1s step-end infinite' }}>_</span>
             </p>
           </div>
+          
+          <style>{`
+            @keyframes scan {
+              0% { top: -10%; opacity: 0; }
+              10% { opacity: 1; }
+              90% { opacity: 1; }
+              100% { top: 110%; opacity: 0; }
+            }
+            @keyframes pulse {
+              0% { transform: scale(1); opacity: 0.4; }
+              50% { transform: scale(1.05); opacity: 0.8; }
+              100% { transform: scale(1); opacity: 0.4; }
+            }
+            @keyframes flicker {
+              0% { opacity: 0.95; }
+              5% { opacity: 0.85; }
+              10% { opacity: 0.95; }
+              15% { opacity: 0.9; }
+              20% { opacity: 1; }
+              100% { opacity: 1; }
+            }
+            @keyframes blink {
+              from, to { opacity: 1; }
+              50% { opacity: 0; }
+            }
+          `}</style>
         </article>
       )}
+      </div>
     </section>
   );
 }
