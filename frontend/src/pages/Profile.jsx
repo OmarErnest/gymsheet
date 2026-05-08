@@ -1041,7 +1041,7 @@ export default function Profile({ preferences, lang }) {
                         style={{ background: 'none', border: 'none', color: 'var(--brand)', cursor: 'pointer', padding: '4px' }}
                         title="Edit"
                       >
-                        <Settings size={18} />
+                        <Edit2 size={18} />
                       </button>
                       <button 
                         onClick={() => handleDeleteExercise(ex.id)}

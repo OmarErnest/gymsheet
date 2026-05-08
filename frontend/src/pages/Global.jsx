@@ -120,7 +120,7 @@ export default function Global({ lang }) {
                   <h3 className="pixel-text" style={{ 
                     margin: 0, 
                     fontSize: '0.85rem', 
-                    color: isSelf ? 'var(--brand)' : 'var(--text)',
+                    color: row.id === user?.id ? 'var(--brand)' : 'var(--text)',
                     display: 'flex',
                     flexDirection: 'column',
                     alignItems: 'center',
