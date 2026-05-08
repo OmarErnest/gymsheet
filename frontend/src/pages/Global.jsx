@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Crown, Trophy, ExternalLink, Users, X } from 'lucide-react';
+import { Crown, Trophy, ExternalLink, Users, X, Flame } from 'lucide-react';
 import { useAuth } from '../state/AuthContext.jsx';
 import { api, iso } from '../api/client.js';
 import Skeleton from '../components/Skeleton.jsx';
@@ -48,12 +48,40 @@ export default function Global({ lang }) {
 
   return (
     <section className="stack">
-      <div className="hero-card global-hero sheet-hero">
-        <Trophy />
-        <div>
-          <h2>{t(lang, 'leaderboard')}</h2>
-          {data.champion_name && <p className="muted" style={{ fontSize: '0.9rem' }}>Last week's #1: <strong>{data.champion_name}</strong></p>}
+      <div className="hero-card global-hero sheet-hero" style={{ position: 'relative', overflow: 'hidden' }}>
+        <Flame size={32} style={{ color: 'var(--brand)' }} />
+        <div style={{ flex: 1 }}>
+          <h2 className="pixel-text">{t(lang, 'leaderboard')}</h2>
+          {data.champion_name && (
+            <p className="muted" style={{ fontSize: '0.8rem', marginTop: '0.2rem' }}>
+              {lang === 'es' 
+                ? <><strong style={{ color: 'var(--brand)' }}>{data.champion_name}</strong> es, sin lugar a dudas, el peleador más fuerte de todos.</>
+                : <><strong style={{ color: 'var(--brand)' }}>{data.champion_name}</strong> is without question the strongest fighter of them all.</>
+              }
+            </p>
+          )}
           {!navigator.onLine && <p className="notice" style={{ marginTop: '0.5rem', fontSize: '0.8rem', padding: '0.3rem 0.6rem' }}>Showing offline/cached data</p>}
+        </div>
+
+        {/* Supreme Seal */}
+        <div style={{ 
+          width: '48px', 
+          height: '48px', 
+          border: '3px solid #10b981', 
+          borderRadius: '50%', 
+          display: 'flex', 
+          alignItems: 'center', 
+          justifyContent: 'center',
+          fontSize: '24px',
+          fontWeight: '900',
+          fontFamily: "'Ma Shan Zheng', cursive",
+          color: '#10b981',
+          marginLeft: '1rem',
+          opacity: 0.8,
+          flexShrink: 0,
+          boxShadow: '0 0 15px rgba(16, 185, 129, 0.2)'
+        }}>
+          覇
         </div>
       </div>
 
@@ -72,7 +100,13 @@ export default function Global({ lang }) {
                 </div>
               )}
               <article className={`rank-card ${row.id === user?.id ? 'self-highlight' : ''}`} style={row.is_test_user ? { opacity: 0.7 } : {}}>
-                <div className="rank-number">#{row.rank}</div>
+                <div className="rank-number" style={{ 
+                  fontSize: row.rank <= 10 ? '1.5rem' : '0.8rem', 
+                  fontWeight: '900',
+                  fontFamily: row.rank <= 10 ? "'Ma Shan Zheng', cursive" : 'inherit'
+                }}>
+                  {row.rank <= 10 ? ['一', '二', '三', '四', '五', '六', '七', '八', '九', '十'][row.rank - 1] : row.rank}
+                </div>
                 <div className={`avatar-container ${getBorderClass(row.rank, hasLink)}`} onClick={() => setPopupUser(row)}>
                   <div className="avatar big">
                     {row.profile_pic_url ? <img src={getIconUrl(row.profile_pic_url)} alt="" /> : row.name?.charAt(0)}

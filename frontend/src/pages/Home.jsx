@@ -461,8 +461,12 @@ export default function Home({ lang }) {
           <div style={{ display: 'flex', justifyContent: 'center', gap: '0.6rem', marginTop: '0.4rem' }}>
             <button 
               onClick={() => {
-                setRelativeWeek(0);
-                setShouldScrollToToday(true);
+                if (relativeWeek !== 0) {
+                  setRelativeWeek(0);
+                  setShouldScrollToToday(true);
+                } else {
+                  todayRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                }
               }} 
               style={{ 
                 background: relativeWeek === 0 ? 'rgba(var(--brand-rgb), 0.05)' : 'rgba(var(--brand-rgb), 0.1)', 
@@ -511,14 +515,14 @@ export default function Home({ lang }) {
 
 
       {viewMode === 'spreadsheet' ? (
-        <div className="glass-card" style={{ padding: '0', borderRadius: '24px', border: '1px solid var(--line)', animation: 'slideUp 0.4s ease-out', overflowX: 'auto', maxWidth: '100%' }}>
-          <table className="spreadsheet-table" style={{ width: '100%', minWidth: '700px', borderCollapse: 'separate', borderSpacing: '0', fontSize: '0.85rem' }}>
+        <div className="glass-card spreadsheet-container" style={{ maxWidth: '100%' }}>
+          <table className="spreadsheet-table">
             <thead>
               <tr>
-                <th style={{ padding: '1.2rem 1rem', textAlign: 'left', background: 'rgba(255,255,255,0.03)', borderBottom: '2px solid var(--line)', color: 'var(--muted)', textTransform: 'uppercase', fontSize: '0.7rem', letterSpacing: '1px', fontWeight: '900' }}>Day</th>
-                <th style={{ padding: '1.2rem 1rem', textAlign: 'left', background: 'rgba(255,255,255,0.03)', borderBottom: '2px solid var(--line)', color: 'var(--muted)', textTransform: 'uppercase', fontSize: '0.7rem', letterSpacing: '1px', fontWeight: '900' }}>Exercise</th>
-                <th style={{ padding: '1.2rem 1rem', textAlign: 'left', background: 'rgba(255,255,255,0.03)', borderBottom: '2px solid var(--line)', color: 'var(--muted)', textTransform: 'uppercase', fontSize: '0.7rem', letterSpacing: '1px', fontWeight: '900' }}>Sets x Reps</th>
-                <th style={{ padding: '1.2rem 1rem', textAlign: 'left', background: 'rgba(255,255,255,0.03)', borderBottom: '2px solid var(--line)', color: 'var(--muted)', textTransform: 'uppercase', fontSize: '0.7rem', letterSpacing: '1px', fontWeight: '900' }}>Weight / Time</th>
+                <th className="spreadsheet-th">Day</th>
+                <th className="spreadsheet-th">Exercise</th>
+                <th className="spreadsheet-th" style={{ textAlign: 'center' }}>Sets x Reps</th>
+                <th className="spreadsheet-th" style={{ textAlign: 'right' }}>Weight / Time</th>
               </tr>
             </thead>
             <tbody>
@@ -527,19 +531,14 @@ export default function Home({ lang }) {
                 const rowCount = Math.max(allExercises.length, 1);
                 
                 const dayCell = (
-                  <td rowSpan={rowCount} style={{ 
-                    padding: '1.2rem 1rem', 
-                    verticalAlign: 'top', 
-                    borderBottom: '1px solid var(--line)',
-                    width: '120px',
-                    borderRight: '1px solid var(--line)',
+                  <td rowSpan={rowCount} className="day-cell" style={{ 
                     background: day.is_today ? 'rgba(var(--brand-rgb), 0.05)' : 'transparent'
                   }}>
                     <div style={{ display: 'flex', flexDirection: 'column' }}>
-                      <span style={{ fontWeight: '1000', fontSize: '1rem', color: day.is_today ? 'var(--brand)' : 'var(--text)' }}>
+                      <span className="day-label-main" style={{ color: day.is_today ? 'var(--brand)' : 'var(--text)' }}>
                         {day.label.split(',')[0]}
                       </span>
-                      <span style={{ fontSize: '0.65rem', opacity: 0.5, fontWeight: '800' }}>
+                      <span className="day-label-sub">
                         {day.label.split(',')[1]}
                       </span>
                     </div>
@@ -550,8 +549,8 @@ export default function Home({ lang }) {
                   return (
                     <tr key={day.date} style={{ background: day.is_today ? 'rgba(var(--brand-rgb), 0.08)' : 'transparent' }}>
                       {dayCell}
-                      <td colSpan={3} style={{ padding: '1.2rem 1rem', borderBottom: '1px solid var(--line)', fontStyle: 'italic', opacity: 0.3 }}>
-                        Rest Day
+                      <td colSpan={3} className="spreadsheet-td" style={{ textAlign: 'center', color: 'var(--brand)', opacity: 0.2 }}>
+                        —
                       </td>
                     </tr>
                   );
@@ -565,32 +564,21 @@ export default function Home({ lang }) {
                       const isDone = !!logVal.log_id;
                       
                       return (
-                        <tr key={item.id} style={{ 
-                          background: isDone ? 'rgba(var(--brand-rgb), 0.08)' : (day.is_today ? 'rgba(var(--brand-rgb), 0.03)' : 'transparent'),
-                          transition: 'background 0.3s'
-                        }}>
+                        <tr key={item.id} className={`spreadsheet-row ${isDone ? 'done' : ''} ${day.is_today ? 'today' : ''}`}>
                           {idx === 0 && dayCell}
-                          <td style={{ padding: '1.2rem 1rem', borderBottom: '1px solid var(--line)', fontWeight: '700', color: isDone ? 'var(--brand)' : 'var(--text)' }}>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
+                          <td className="spreadsheet-td exercise-name-cell" style={{ color: isDone ? 'var(--brand)' : 'var(--text)' }}>
+                            <div className="flex-center-gap">
                               {item.exercise_detail?.exercise_type === 'calisthenics' ? <Activity size={16} /> : 
                                <Dumbbell size={16} />}
                               {t(lang, item.exercise_detail?.name)}
                             </div>
                           </td>
-                          <td style={{ padding: '1.2rem 1rem', borderBottom: '1px solid var(--line)' }}>
-                            <span style={{ 
-                              fontSize: '0.75rem', 
-                              fontWeight: '900', 
-                              padding: '4px 10px', 
-                              background: isDone ? 'var(--brand)' : 'var(--card-strong)',
-                              color: isDone ? '#052e16' : 'var(--muted)',
-                              borderRadius: '8px',
-                              whiteSpace: 'nowrap'
-                            }}>
+                          <td className="spreadsheet-td" style={{ textAlign: 'center' }}>
+                            <span className={`sets-reps-pill ${isDone ? 'done' : ''}`}>
                               {logVal.sets ?? item.sets}x{String(logVal.reps ?? item.reps).padStart(2, '0')}
                             </span>
                           </td>
-                          <td style={{ padding: '1.2rem 1rem', borderBottom: '1px solid var(--line)', fontSize: '0.8rem', fontWeight: '800', opacity: 0.8, whiteSpace: 'nowrap' }}>
+                          <td className="spreadsheet-td weight-time-cell">
                             {isTimeBased ? `${logVal.duration || item.duration || '00:00'} min` : `${logVal.weight_kg || '0'}kg`}
                           </td>
                         </tr>

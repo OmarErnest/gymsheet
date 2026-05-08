@@ -1,10 +1,9 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Area, AreaChart, ResponsiveContainer, Tooltip, XAxis, YAxis, PieChart, Pie, Cell, CartesianGrid, Radar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis } from 'recharts';
-import { Plus, Trash2, Edit2, RefreshCw, Activity, Map as MapIcon, PlusCircle, Target, List, BarChart3, Radar as RadarIcon, GripVertical, Timer, Weight, Dumbbell, ChevronDown } from 'lucide-react';
+import { Plus, Trash2, Edit2, RefreshCw, Activity, Map as MapIcon, PlusCircle, Target, List, BarChart3, Radar as RadarIcon, GripVertical, Timer, Weight, Dumbbell, ChevronDown, Zap, Trophy } from 'lucide-react';
 import { api } from '../api/client.js';
 import LinkInput from '../components/LinkInput.jsx';
 import Skeleton from '../components/Skeleton.jsx';
-import BodyMap from '../components/BodyMap.jsx';
 import { useAuth } from '../state/AuthContext.jsx';
 import { t } from '../i18n.js';
 
@@ -221,6 +220,7 @@ export default function Profile({ preferences, lang }) {
   }); 
   const [showFrontBody, setShowFrontBody] = useState(true);
   const [selectedDot, setSelectedDot] = useState(null);
+  const [showWarriorStats, setShowWarriorStats] = useState(false);
 
   const [exerciseForm, setExerciseForm] = useState({ name: '', youtube_url: '', category: '', exercise_type: 'machine', is_public: true, is_time_based: false });
   const [measurementForm, setMeasurementForm] = useState({
@@ -239,44 +239,70 @@ export default function Profile({ preferences, lang }) {
 
   const [message, setMessage] = useState('');
 
-  const restStreak = useMemo(() => {
+
+  const highestWeeklyPower = useMemo(() => {
     if (!logs || logs.length === 0) return 0;
     
-    // Get unique dates with logs, sorted descending
-    const loggedDates = [...new Set(logs.map(l => l.date))].sort((a, b) => b.localeCompare(a));
-    const today = new Date().toISOString().slice(0, 10);
-    const yesterday = new Date(Date.now() - 86400000).toISOString().slice(0, 10);
+    const weeklyLogs = {};
 
-    // If they worked out today, streak is 0
-    if (loggedDates[0] === today) return 0;
+    // Group logs by week and date
+    logs.forEach(log => {
+      const [year, month, day] = log.date.split('-').map(Number);
+      const d = new Date(year, month - 1, day, 12, 0, 0);
+      
+      const dayOfWeek = d.getDay();
+      const diff = d.getDate() - (dayOfWeek === 0 ? 6 : dayOfWeek - 1);
+      const monday = new Date(d);
+      monday.setDate(diff);
+      monday.setHours(0,0,0,0);
+      const mondayStr = monday.toISOString().split('T')[0];
 
-    let streak = 0;
-    let checkDate = new Date();
-    
-    // Start checking from today backwards
-    while (true) {
-      const dateStr = checkDate.toISOString().slice(0, 10);
-      if (loggedDates.includes(dateStr)) break;
-      streak++;
-      checkDate.setDate(checkDate.getDate() - 1);
-      if (streak > 365) break; // Safety
-    }
-    return streak;
+      if (!weeklyLogs[mondayStr]) weeklyLogs[mondayStr] = {};
+      if (!weeklyLogs[mondayStr][log.date]) weeklyLogs[mondayStr][log.date] = [];
+      weeklyLogs[mondayStr][log.date].push(log);
+    });
+
+    const weeklyScores = Object.keys(weeklyLogs).map(mondayStr => {
+      const daysInWeek = weeklyLogs[mondayStr];
+      let score = 10;
+      
+      Object.keys(daysInWeek).forEach(dateStr => {
+        const dayLogs = daysInWeek[dateStr];
+        // QUALIFIED DAY RULE: Must have at least 2 logs to count toward weekly score
+        if (dayLogs.length >= 2) {
+          dayLogs.forEach(log => {
+            let logEffort = Number(log.weight_kg || 0);
+            if (log.exercise_detail?.exercise_type === 'calisthenics') logEffort += 2;
+            
+            // Match backend leaderboard.py: no time-based special multiplier
+            score += logEffort * (Number(log.sets) || 0) * (Number(log.reps) || 0);
+          });
+        }
+      });
+      return Math.floor(score);
+    });
+
+    return weeklyScores.length > 0 ? Math.max(...weeklyScores) : 0;
   }, [logs]);
 
   const activeDaysThisWeek = useMemo(() => {
     const today = new Date();
-    const day = today.getDay();
-    const diff = today.getDate() - day + (day === 0 ? -6 : 1);
-    const monday = new Date(today.setDate(diff));
+    const dayOfWeek = today.getDay();
+    const monday = new Date(today);
+    monday.setDate(today.getDate() - (dayOfWeek === 0 ? 6 : dayOfWeek - 1));
     monday.setHours(0,0,0,0);
-    
-    const weekDates = new Set();
-    logs.forEach(l => {
-      const d = new Date(l.date + 'T12:00:00');
-      if (d >= monday) weekDates.add(l.date);
+
+    const logsByDate = {};
+    logs.forEach(log => {
+      const d = new Date(log.date + 'T12:00:00');
+      if (d >= monday) {
+        if (!logsByDate[log.date]) logsByDate[log.date] = [];
+        logsByDate[log.date].push(log);
+      }
     });
-    return weekDates.size;
+    
+    // Count qualified days (>= 2 logs) to match leaderboard logic
+    return Object.values(logsByDate).filter(dayLogs => dayLogs.length >= 2).length;
   }, [logs]);
 
   const sensors = useSensors(
@@ -610,43 +636,73 @@ export default function Profile({ preferences, lang }) {
     <section className="stack profile-page animate-fade-in" style={{ paddingBottom: '8rem' }}>
       {message && <p className="notice">{message}</p>}
 
-      <header className="profile-header glass-card" style={{ marginBottom: '1rem', padding: '1.2rem' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-          <div className={`avatar-container large ${user.current_rank === 1 ? 'border-gold' : user.current_rank === 2 ? 'border-silver' : user.current_rank === 3 ? 'border-bronze' : user.has_link ? 'border-green' : ''}`}>
-            <div className="avatar">
-              {user.profile_pic_url ? <img src={user.profile_pic_url} alt="" /> : user.name?.charAt(0)}
+
+      <div className="stats-expander" style={{ marginBottom: '1rem' }}>
+        <button 
+          onClick={() => setShowWarriorStats(!showWarriorStats)}
+          style={{ 
+            width: '100%', 
+            padding: '0.6rem', 
+            background: 'var(--bg-soft)', 
+            border: '1px solid var(--line)', 
+            borderRadius: '12px',
+            color: 'var(--muted)',
+            fontSize: '0.65rem',
+            fontWeight: '900',
+            letterSpacing: '1px',
+            textTransform: 'uppercase',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: '0.5rem',
+            cursor: 'pointer'
+          }}
+        >
+          {showWarriorStats ? <ChevronDown size={14} style={{ transform: 'rotate(180deg)' }} /> : <ChevronDown size={14} />}
+          {showWarriorStats ? (lang === 'es' ? 'Ocultar Estadísticas' : 'Hide Stats') : (lang === 'es' ? 'Ver Estadísticas' : 'View Fighter Stats')}
+        </button>
+
+        {showWarriorStats && (
+          <div className="profile-stats-grid animate-fade-in" style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '0.8rem', marginTop: '0.8rem' }}>
+            <div className="glass-card stat-card" style={{ padding: '0.8rem', textAlign: 'center' }}>
+              <Activity size={20} style={{ color: '#10b981', marginBottom: '0.4rem', opacity: 0.8 }} />
+              <h3 style={{ margin: 0, fontSize: '1.2rem', fontWeight: '900' }}>{activeDaysThisWeek}</h3>
+              <p className="muted" style={{ margin: 0, fontSize: '0.6rem', fontWeight: '800', textTransform: 'uppercase' }}>
+                {lang === 'es' ? 'Activo' : 'Active'}
+              </p>
+            </div>
+            <div className="glass-card stat-card" style={{ padding: '0.8rem', textAlign: 'center' }}>
+              <Dumbbell size={20} style={{ color: '#f59e0b', marginBottom: '0.4rem', opacity: 0.8 }} />
+              <h3 style={{ margin: 0, fontSize: '1.2rem', fontWeight: '900' }}>{logs.length}</h3>
+              <p className="muted" style={{ margin: 0, fontSize: '0.6rem', fontWeight: '800', textTransform: 'uppercase' }}>
+                {lang === 'es' ? 'Total' : 'Total'}
+              </p>
+            </div>
+            <div className="glass-card stat-card" style={{ padding: '0.8rem', textAlign: 'center', border: '1px solid rgba(var(--brand-rgb), 0.2)' }}>
+              <div style={{ 
+                width: '26px', 
+                height: '26px', 
+                margin: '0 auto 0.4rem', 
+                border: '2.5px solid #8b5cf6', 
+                borderRadius: '50%', 
+                display: 'flex', 
+                alignItems: 'center', 
+                justifyContent: 'center',
+                fontSize: '15px',
+                fontWeight: '900',
+                color: '#8b5cf6',
+                fontFamily: "'Ma Shan Zheng', cursive",
+                opacity: 1
+              }}>
+                覇
+              </div>
+              <h3 style={{ margin: 0, fontSize: '1.2rem', fontWeight: '900' }}>{highestWeeklyPower.toLocaleString()}</h3>
+              <p className="muted" style={{ margin: 0, fontSize: '0.6rem', fontWeight: '800', textTransform: 'uppercase' }}>
+                {lang === 'es' ? 'Poder de Pelea Más Elevado' : 'Highest Power Level'}
+              </p>
             </div>
           </div>
-          <div style={{ flex: 1 }}>
-            <h1 style={{ margin: 0, fontSize: '1.5rem', fontWeight: '900' }}>{user.name}</h1>
-            <p className="muted" style={{ margin: '0.1rem 0 0.5rem', fontWeight: '600', fontSize: '0.85rem' }}>{user.email}</p>
-            <LinkInput initialValue={preferences?.recommended_link} />
-          </div>
-        </div>
-      </header>
-
-      <div className="profile-stats-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '0.8rem', marginBottom: '1rem' }}>
-        <div className="glass-card stat-card" style={{ padding: '0.8rem', textAlign: 'center', border: restStreak >= 2 ? '1px solid var(--brand)' : '1px solid var(--line)' }}>
-          <RefreshCw size={20} style={{ color: 'var(--brand)', marginBottom: '0.4rem', opacity: 0.8 }} />
-          <h3 style={{ margin: 0, fontSize: '1.2rem', fontWeight: '900' }}>{restStreak}</h3>
-          <p className="muted" style={{ margin: 0, fontSize: '0.6rem', fontWeight: '800', textTransform: 'uppercase' }}>
-            {lang === 'es' ? 'Descanso' : 'Rest'}
-          </p>
-        </div>
-        <div className="glass-card stat-card" style={{ padding: '0.8rem', textAlign: 'center' }}>
-          <Activity size={20} style={{ color: '#10b981', marginBottom: '0.4rem', opacity: 0.8 }} />
-          <h3 style={{ margin: 0, fontSize: '1.2rem', fontWeight: '900' }}>{activeDaysThisWeek}</h3>
-          <p className="muted" style={{ margin: 0, fontSize: '0.6rem', fontWeight: '800', textTransform: 'uppercase' }}>
-            {lang === 'es' ? 'Activo' : 'Active'}
-          </p>
-        </div>
-        <div className="glass-card stat-card" style={{ padding: '0.8rem', textAlign: 'center' }}>
-          <Dumbbell size={20} style={{ color: '#f59e0b', marginBottom: '0.4rem', opacity: 0.8 }} />
-          <h3 style={{ margin: 0, fontSize: '1.2rem', fontWeight: '900' }}>{logs.length}</h3>
-          <p className="muted" style={{ margin: 0, fontSize: '0.6rem', fontWeight: '800', textTransform: 'uppercase' }}>
-            {lang === 'es' ? 'Total' : 'Total'}
-          </p>
-        </div>
+        )}
       </div>
 
       <div className="profile-nav-grid" style={{ margin: '0 0 1rem' }}>
@@ -938,31 +994,78 @@ export default function Profile({ preferences, lang }) {
       {activeTab === 'bodymap' && (
         <article className="glass-card profile-section animate-fade-in" style={{ padding: '1.2rem' }}>
           <div style={{ textAlign: 'center', marginBottom: '1.2rem' }}>
-            <p className="eyebrow">{t(lang, 'bodyMap')}</p>
-            <h2 style={{ marginBottom: '0.5rem' }}>{t(lang, 'biometricVisualization')}</h2>
-            <div className="tab-pill-box" style={{ margin: '0.8rem auto 0', width: 'fit-content' }}>
-              <button className={`tab-pill ${showFrontBody ? 'active' : ''}`} onClick={() => setShowFrontBody(true)}>{lang === 'es' ? 'Frontal' : 'Front'}</button>
-              <button className={`tab-pill ${!showFrontBody ? 'active' : ''}`} onClick={() => setShowFrontBody(false)}>{lang === 'es' ? 'Posterior' : 'Back'}</button>
-            </div>
+            <p className="eyebrow">{t(lang, 'measures')}</p>
+            <h2 style={{ marginBottom: '0.5rem' }}>{t(lang, 'bodyMap')}</h2>
           </div>
 
-          <div style={{ position: 'relative' }}>
-            <BodyMap 
-              side={showFrontBody ? 'front' : 'back'}
-              selected={selectedDot} 
-              onSelect={(part) => {
-                setSelectedDot(part);
-                const latest = measurements
-                  .filter(m => m.body_part === part)
-                  .sort((a, b) => new Date(b.date) - new Date(a.date))[0];
-                setMeasurementForm(p => ({ 
-                  ...p, 
-                  body_part: part,
-                  value_cm: latest ? latest.value_cm : ''
-                }));
-              }}
-              measurements={measurements}
+          <div className="body-map-container" style={{ position: 'relative', width: '100%', maxWidth: '300px', margin: '0 auto' }}>
+            <img 
+              src={showFrontBody ? '/front_body.png' : '/back_body.png'} 
+              alt="Body Map" 
+              style={{ width: '100%', opacity: 0.8, filter: 'brightness(0.8) contrast(1.2)' }} 
             />
+
+            {/* Rotation Toggle Button */}
+            <button 
+              type="button"
+              onClick={() => setShowFrontBody(!showFrontBody)}
+              className="glass-card"
+              style={{ 
+                position: 'absolute', 
+                bottom: '10px', 
+                right: '10px', 
+                width: '44px', 
+                height: '44px', 
+                borderRadius: '12px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                cursor: 'pointer',
+                border: '1px solid var(--line)',
+                background: 'rgba(var(--brand-rgb), 0.1)',
+                color: 'var(--brand)',
+                zIndex: 20
+              }}
+            >
+              <RefreshCw size={20} />
+            </button>
+            
+            {(showFrontBody ? frontDots : backDots).map((dot) => {
+              const latest = measurements
+                .filter(m => m.body_part === dot.part)
+                .sort((a, b) => new Date(b.date) - new Date(a.date))[0];
+              const isActive = selectedDot === dot.part;
+              
+              return (
+                <button
+                  key={dot.part}
+                  type="button"
+                  onClick={() => {
+                    setSelectedDot(dot.part);
+                    setMeasurementForm(p => ({ 
+                      ...p, 
+                      body_part: dot.part,
+                      value_cm: latest ? latest.value_cm : ''
+                    }));
+                  }}
+                  style={{
+                    position: 'absolute',
+                    top: dot.top,
+                    left: dot.left,
+                    width: '12px',
+                    height: '12px',
+                    background: isActive ? 'var(--brand)' : 'white',
+                    border: '2px solid var(--bg)',
+                    borderRadius: '50%',
+                    transform: 'translate(-50%, -50%)',
+                    cursor: 'pointer',
+                    boxShadow: isActive ? '0 0 10px var(--brand)' : '0 2px 4px rgba(0,0,0,0.3)',
+                    zIndex: 10,
+                    transition: 'all 0.2s'
+                  }}
+                />
+              );
+            })}
           </div>
 
           <form onSubmit={createMeasurement} className="form-stack glass-card" style={{ marginTop: '1.5rem', padding: '1.5rem', border: '1px solid var(--line)' }}>

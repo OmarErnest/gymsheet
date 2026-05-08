@@ -1146,6 +1146,150 @@ select option { color: var(--text); }
   transform: rotate(90deg) scale(1.1);
 }
 
+/* Spreadsheet Responsive System */
+.spreadsheet-container {
+  padding: 0;
+  border-radius: 24px;
+  border: 1px solid var(--line);
+  animation: slideUp 0.4s ease-out;
+  overflow: hidden; /* No internal sidescroll */
+}
+
+.spreadsheet-table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  font-size: 0.85rem;
+  table-layout: auto;
+}
+
+.spreadsheet-th {
+  padding: 1.2rem 1rem;
+  text-align: left;
+  background: rgba(255, 255, 255, 0.03);
+  border-bottom: 2px solid var(--line);
+  color: var(--muted);
+  text-transform: uppercase;
+  font-size: 0.7rem;
+  letter-spacing: 1px;
+  font-weight: 900;
+}
+
+.spreadsheet-td {
+  padding: 1.2rem 1rem;
+  border-bottom: 1px solid var(--line);
+}
+
+.spreadsheet-row {
+  transition: background 0.3s;
+}
+
+.spreadsheet-row.done {
+  background: rgba(var(--brand-rgb), 0.08);
+}
+
+.spreadsheet-row.today {
+  background: rgba(var(--brand-rgb), 0.03);
+}
+
+.day-cell {
+  padding: 1.2rem 1rem;
+  vertical-align: top;
+  border-bottom: 1px solid var(--line);
+  width: 120px;
+  border-right: 1px solid var(--line);
+}
+
+.day-label-main {
+  font-weight: 1000;
+  font-size: 1rem;
+}
+
+.day-label-sub {
+  font-size: 0.65rem;
+  opacity: 0.5;
+  font-weight: 800;
+}
+
+.sets-reps-pill {
+  font-size: 0.75rem;
+  font-weight: 900;
+  padding: 4px 10px;
+  background: var(--card-strong);
+  color: var(--muted);
+  border-radius: 8px;
+  white-space: nowrap;
+}
+
+.sets-reps-pill.done {
+  background: var(--brand);
+  color: #052e16;
+}
+
+.weight-time-cell {
+  font-size: 0.8rem;
+  font-weight: 800;
+  opacity: 0.8;
+  white-space: nowrap;
+  text-align: right;
+}
+
+.exercise-name-cell {
+  font-weight: 700;
+}
+
+.flex-center-gap {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+/* Responsive Overrides */
+@media (max-width: 768px) {
+  .spreadsheet-table {
+    font-size: 0.75rem;
+  }
+  .spreadsheet-th, .spreadsheet-td, .day-cell {
+    padding: 0.8rem 0.6rem;
+  }
+  .day-cell {
+    width: 90px;
+  }
+  .day-label-main {
+    font-size: 0.85rem;
+  }
+  .day-label-sub {
+    font-size: 0.6rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .spreadsheet-table {
+    font-size: 0.65rem;
+  }
+  .spreadsheet-th, .spreadsheet-td, .day-cell {
+    padding: 0.6rem 0.4rem;
+  }
+  .day-cell {
+    width: 70px;
+  }
+  .day-label-main {
+    font-size: 0.75rem;
+  }
+  .sets-reps-pill {
+    padding: 3px 6px;
+    font-size: 0.65rem;
+  }
+  .flex-center-gap {
+    gap: 0.4rem;
+  }
+  .flex-center-gap svg {
+    width: 14px;
+    height: 14px;
+  }
+}
+
+
 .strength-filters {
   display: flex;
   gap: 0.8rem;

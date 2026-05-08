@@ -3,6 +3,7 @@ import { LogOut, Save, Eye, EyeOff, FileText, User as UserIcon, ChevronDown, Fil
 import { api } from '../api/client.js';
 import { useAuth } from '../state/AuthContext.jsx';
 import { t } from '../i18n.js';
+import LinkInput from '../components/LinkInput.jsx';
 
 const CHARACTER_ICONS = [
   'Android16.png', 'Babidi.png', 'Captain.png', 'Doctor.png', 'Hercule.png',
@@ -336,9 +337,12 @@ export default function Settings({ preferences, setPreferences, lang }) {
           <input type="checkbox" checked={!!form.hide_from_leaderboard} onChange={(e) => update('hide_from_leaderboard', e.target.checked)} />
         </label>
 
-        <label className="field"><span>{t(lang, 'recommendLink')}</span>
-          <input type="url" autoComplete="off" placeholder="https://..." value={form.recommended_link} onChange={(e) => update('recommended_link', e.target.value)} disabled={user?.is_test_user} />
-        </label>
+        <LinkInput 
+          label={t(lang, 'recommendLink')}
+          value={form.recommended_link}
+          onChange={(val) => update('recommended_link', val)}
+          lang={lang}
+        />
 
 
 
