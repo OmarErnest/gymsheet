@@ -764,34 +764,49 @@ export default function Profile({ preferences, lang }) {
         )}
       </div>
 
-      <div className="profile-tabs-container" style={{ display: 'grid', gap: 0, marginTop: 0 }}>
-        <div className="profile-nav-grid" style={{ margin: 0, paddingLeft: 0, paddingRight: 0 }}>
-          <button className={`nav-square ${activeTab === 'strength' ? 'active' : ''}`} onClick={() => setActiveTab('strength')}>
+      <div className="profile-tabs-wrapper" style={{ 
+        position: 'relative', 
+        marginBottom: '1rem',
+        WebkitMaskImage: 'linear-gradient(to right, transparent, black 8%, black 92%, transparent)',
+        maskImage: 'linear-gradient(to right, transparent, black 8%, black 92%, transparent)'
+      }}>
+        <div className="profile-nav-grid" style={{ 
+          margin: 0, 
+          padding: '0.8rem 0',
+          overflowX: 'auto',
+          display: 'flex',
+          gap: '0.8rem',
+          scrollbarWidth: 'none',
+          msOverflowStyle: 'none'
+        }}>
+          <button className={`nav-square ${activeTab === 'strength' ? 'active' : ''}`} onClick={() => setActiveTab('strength')} style={{ minWidth: '85px', height: '85px' }}>
             <Activity />
             <span>{t(lang, 'strength')}</span>
           </button>
-          <button className={`nav-square ${activeTab === 'goals' ? 'active' : ''}`} onClick={() => setActiveTab('goals')}>
+          <button className={`nav-square ${activeTab === 'goals' ? 'active' : ''}`} onClick={() => setActiveTab('goals')} style={{ minWidth: '85px', height: '85px' }}>
             <Target />
             <span>{t(lang, 'yourGoals')}</span>
           </button>
-          <button className={`nav-square ${activeTab === 'creategoal' ? 'active' : ''}`} onClick={() => setActiveTab('creategoal')}>
+          <button className={`nav-square ${activeTab === 'creategoal' ? 'active' : ''}`} onClick={() => setActiveTab('creategoal')} style={{ minWidth: '85px', height: '85px' }}>
             <Plus />
             <span>{t(lang, 'createGoal')}</span>
           </button>
-          <button className={`nav-square ${activeTab === 'bodymap' ? 'active' : ''}`} onClick={() => setActiveTab('bodymap')}>
+          <button className={`nav-square ${activeTab === 'bodymap' ? 'active' : ''}`} onClick={() => setActiveTab('bodymap')} style={{ minWidth: '85px', height: '85px' }}>
             <MapIcon />
             <span>{t(lang, 'bodyMap')}</span>
           </button>
-          <button className={`nav-square ${activeTab === 'addexercise' ? 'active' : ''}`} onClick={() => setActiveTab('addexercise')}>
+          <button className={`nav-square ${activeTab === 'addexercise' ? 'active' : ''}`} onClick={() => setActiveTab('addexercise')} style={{ minWidth: '85px', height: '85px' }}>
             <PlusCircle />
             <span>{t(lang, 'addEx')}</span>
           </button>
-          <button className={`nav-square ${activeTab === 'menu' ? 'active' : ''}`} onClick={() => setActiveTab('menu')}>
+          <button className={`nav-square ${activeTab === 'menu' ? 'active' : ''}`} onClick={() => setActiveTab('menu')} style={{ minWidth: '85px', height: '85px' }}>
             <Menu />
             <span>{lang === 'es' ? 'Menú' : 'Menu'}</span>
           </button>
         </div>
+      </div>
 
+      <div className="profile-tabs-container" style={{ display: 'grid', gap: 0, marginTop: 0 }}>
         {activeTab === 'strength' && (
           <article className="glass-card profile-section" style={{ padding: '0.8rem' }}>
           <div style={{ textAlign: 'center', marginBottom: '0.5rem' }}>
