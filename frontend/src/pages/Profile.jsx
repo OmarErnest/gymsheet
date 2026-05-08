@@ -637,7 +637,7 @@ export default function Profile({ preferences, lang }) {
       {message && <p className="notice">{message}</p>}
 
 
-      <div className="stats-expander" style={{ marginBottom: '1rem' }}>
+      <div className="stats-expander" style={{ marginBottom: '0.4rem' }}>
         <button 
           onClick={() => setShowWarriorStats(!showWarriorStats)}
           style={{ 
@@ -705,7 +705,7 @@ export default function Profile({ preferences, lang }) {
         )}
       </div>
 
-      <div className="profile-nav-grid" style={{ margin: '0 0 0.5rem' }}>
+      <div className="profile-nav-grid" style={{ margin: '0 0 0.15rem' }}>
         <button className={`nav-square ${activeTab === 'strength' ? 'active' : ''}`} onClick={() => setActiveTab('strength')}>
           <Activity />
           <span>{t(lang, 'strength')}</span>
