@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Area, AreaChart, ResponsiveContainer, Tooltip, XAxis, YAxis, PieChart, Pie, Cell, CartesianGrid, Radar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis } from 'recharts';
-import { Plus, Trash2, Edit2, RefreshCw, Activity, Map as MapIcon, PlusCircle, Target, List, BarChart3, Radar as RadarIcon, GripVertical, Timer, Weight, Dumbbell, ChevronDown, Zap, Trophy } from 'lucide-react';
+import { Plus, Trash2, Edit2, RefreshCw, Activity, Map as MapIcon, PlusCircle, Target, List, BarChart3, Radar as RadarIcon, GripVertical, Timer, Weight, Dumbbell, ChevronDown, Zap, Trophy, Menu } from 'lucide-react';
 import { api } from '../api/client.js';
 import LinkInput from '../components/LinkInput.jsx';
 import Skeleton from '../components/Skeleton.jsx';
@@ -733,6 +733,10 @@ export default function Profile({ preferences, lang }) {
           <PlusCircle />
           <span>{t(lang, 'addEx')}</span>
         </button>
+        <button className={`nav-square ${activeTab === 'menu' ? 'active' : ''}`} onClick={() => setActiveTab('menu')}>
+          <Menu />
+          <span>{lang === 'es' ? 'Menú' : 'Menu'}</span>
+        </button>
       </div>
 
       {activeTab === 'strength' && (
@@ -1094,6 +1098,19 @@ export default function Profile({ preferences, lang }) {
             </label>
             <button className="primary-btn" style={{ marginTop: '1rem' }}>{t(lang, 'saveMeasure')}</button>
           </form>
+        </article>
+      )}
+      {activeTab === 'menu' && (
+        <article className="glass-card profile-section animate-fade-in" style={{ padding: '4rem 2rem', textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+          <div style={{ opacity: 0.6 }}>
+            <Menu size={64} strokeWidth={1.5} style={{ marginBottom: '1.5rem', color: 'var(--brand)' }} />
+            <h2 style={{ fontSize: '1.8rem', fontWeight: '950', letterSpacing: '-0.02em', textTransform: 'uppercase' }}>
+              {lang === 'es' ? 'Menú de Combate' : 'Combat Menu'}
+            </h2>
+            <p className="muted" style={{ marginTop: '1.5rem', fontStyle: 'italic', fontSize: '1rem', fontWeight: '800' }}>
+              {lang === 'es' ? 'Función disponible próximamente...' : 'Feature coming soon...'}
+            </p>
+          </div>
         </article>
       )}
     </section>
