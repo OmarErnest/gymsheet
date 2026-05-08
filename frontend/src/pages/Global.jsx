@@ -102,43 +102,58 @@ export default function Global({ lang }) {
                   <hr style={{ border: 'none', borderTop: '1px dashed var(--line)', margin: '0.5rem 0' }} />
                 </div>
               )}
-              <article className={`rank-card ${row.id === user?.id ? 'self-highlight' : ''}`} style={row.is_test_user ? { opacity: 0.7 } : {}}>
-                <div className="rank-number" style={{ 
-                  fontSize: row.rank <= 10 ? '1.5rem' : '0.8rem', 
-                  fontWeight: '900',
-                  fontFamily: row.rank <= 10 ? "'Ma Shan Zheng', cursive" : 'inherit'
-                }}>
-                  {row.rank <= 10 ? ['一', '二', '三', '四', '五', '六', '七', '八', '九', '十'][row.rank - 1] : row.rank}
-                </div>
-                <div className={`avatar-container ${getBorderClass(row.rank, hasLink)}`} onClick={() => setPopupUser(row)}>
-                  <div className="avatar big">
-                    {row.profile_pic_url ? <img src={getIconUrl(row.profile_pic_url)} alt="" /> : row.name?.charAt(0)}
-                  </div>
-                  {hasLink && <div className="link-badge"><ExternalLink size={12} /></div>}
-                </div>
-                <div className="rank-main" style={{ textAlign: 'center', flex: 1, padding: '0 0.5rem' }}>
-                  <h3 className="pixel-text" style={{ 
-                    margin: 0, 
-                    fontSize: '0.85rem', 
-                    color: row.id === user?.id ? 'var(--brand)' : 'var(--text)',
-                    display: 'flex',
-                    flexDirection: 'column',
-                    alignItems: 'center',
-                    gap: '2px'
+              <article 
+                className={`rank-card ${row.id === user?.id ? 'self-highlight' : ''}`} 
+                style={{
+                  position: 'relative',
+                  overflow: 'hidden',
+                  ...(row.is_test_user ? { opacity: 0.7 } : {}),
+                  ...(row.profile_pic_url ? {
+                    backgroundImage: `linear-gradient(to right, rgba(7, 19, 13, 0.92) 20%, rgba(7, 19, 13, 0.7) 50%, rgba(7, 19, 13, 0.92) 80%), url(${getIconUrl(row.profile_pic_url)})`,
+                    backgroundSize: 'cover',
+                    backgroundPosition: 'center 20%',
+                    border: '1px solid var(--line)'
+                  } : {})
+                }}
+              >
+                <div style={{ position: 'relative', zIndex: 2, display: 'flex', alignItems: 'center', width: '100%' }}>
+                  <div className="rank-number" style={{ 
+                    fontSize: row.rank <= 10 ? '1.5rem' : '0.8rem', 
+                    fontWeight: '900',
+                    fontFamily: row.rank <= 10 ? "'Ma Shan Zheng', cursive" : 'inherit',
+                    minWidth: '40px'
                   }}>
-                    {row.name}
-                    <span style={{ fontSize: '0.6rem', opacity: 0.8, color: 'var(--muted)', fontWeight: 'normal' }}>
-                      {row.active_days} {t(lang, 'activeDays')}
-                    </span>
-                  </h3>
-                </div>
-
-                <div style={{ textAlign: 'right', minWidth: '80px' }}>
-                  <div className="brand" style={{ fontWeight: '950', fontSize: '1.1rem', letterSpacing: '-0.5px' }}>
-                    {Math.round(row.average_lift_kg_this_week || 0)}kg
+                    {row.rank <= 10 ? ['一', '二', '三', '四', '五', '六', '七', '八', '九', '十'][row.rank - 1] : row.rank}
                   </div>
-                  <div className="muted pixel-text" style={{ fontSize: '0.55rem', opacity: 0.8 }}>
-                    {t(lang, 'avgLift')}
+                  <div className={`avatar-container ${getBorderClass(row.rank, hasLink)}`} onClick={() => setPopupUser(row)} style={{ flexShrink: 0 }}>
+                    <div className="avatar big">
+                      {row.profile_pic_url ? <img src={getIconUrl(row.profile_pic_url)} alt="" /> : row.name?.charAt(0)}
+                    </div>
+                    {hasLink && <div className="link-badge"><ExternalLink size={12} /></div>}
+                  </div>
+                  <div className="rank-main" style={{ textAlign: 'center', flex: 1, padding: '0 0.5rem' }}>
+                    <h3 className="pixel-text" style={{ 
+                      margin: 0, 
+                      fontSize: '0.85rem', 
+                      color: row.id === user?.id ? 'var(--brand)' : 'var(--text)',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      alignItems: 'center',
+                      gap: '2px'
+                    }}>
+                      {row.name}
+                      <span style={{ fontSize: '0.6rem', opacity: 0.8, color: 'var(--muted)', fontWeight: 'normal' }}>
+                        {row.active_days} {t(lang, 'activeDays')}
+                      </span>
+                    </h3>
+                  </div>
+                  <div style={{ textAlign: 'right', minWidth: '80px', flexShrink: 0 }}>
+                    <div className="brand" style={{ fontWeight: '950', fontSize: '1.1rem', letterSpacing: '-0.5px' }}>
+                      {Math.round(row.average_lift_kg_this_week || 0)}kg
+                    </div>
+                    <div className="muted pixel-text" style={{ fontSize: '0.55rem', opacity: 0.8 }}>
+                      AVG LIFT
+                    </div>
                   </div>
                 </div>
               </article>

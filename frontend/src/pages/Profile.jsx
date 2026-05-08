@@ -502,10 +502,16 @@ export default function Profile({ preferences, lang }) {
       dataGroup[name].count += 1;
     });
 
-    return Object.entries(dataGroup).map(([name, stats]) => ({
+    const entries = Object.entries(dataGroup).map(([name, stats]) => ({
       name,
       value: Number((stats.totalWeight / stats.count).toFixed(1)) || 0
-    })).sort((a, b) => b.value - a.value).slice(0, 8); // Limit to top 8 for readability
+    })).sort((a, b) => b.value - a.value).slice(0, 8);
+
+    if (entries.length === 0) {
+      // Ghost data to show the chart even if empty
+      return ['Strength', 'Endurance', 'Flexibility', 'Balance', 'Speed'].map(n => ({ name: n, value: 0 }));
+    }
+    return entries;
   }, [filteredLogsList, lang, selectedCategories]);
 
   async function handleCreateExercise(e) {
@@ -899,7 +905,7 @@ export default function Profile({ preferences, lang }) {
             ) : <p className="muted" style={{ textAlign: 'center', paddingTop: '4rem' }}>{t(lang, 'noLogs')}</p>)}
             {graphMode === 'pie' && (
               <ResponsiveContainer width="100%" height="100%">
-                <RadarChart cx="50%" cy="50%" outerRadius="75%" data={pieData} margin={{ top: 10, right: 10, left: 10, bottom: 10 }}>
+                <RadarChart cx="50%" cy="50%" outerRadius="60%" data={pieData} margin={{ top: 30, right: 30, left: 30, bottom: 30 }}>
                   <PolarGrid stroke="var(--line)" />
                   <PolarAngleAxis 
                     dataKey="name" 
