@@ -26,12 +26,13 @@ def get_leaderboard_data():
             logs_by_date[log.date].append(log)
         qualified_days = [d for d, dlogs in logs_by_date.items() if len(dlogs) >= 2]
         active_days_count = len(qualified_days)
-        score = 10
+        score = 0
         for d in qualified_days:
             for log in logs_by_date[d]:
                 eff_w = float(log.weight_kg or 0)
                 if log.exercise.exercise_type == 'calisthenics':
-                    user_weight = float(user.preferences.weight_kg or 70)
+                    pref = getattr(user, 'preferences', None)
+                    user_weight = float(getattr(pref, 'weight_kg', 70) or 70)
                     eff_w += user_weight * 0.5
                 score += eff_w * (log.sets or 0) * (log.reps or 0)
         score = int(score)
@@ -44,12 +45,13 @@ def get_leaderboard_data():
         for log in last_weekly_logs:
             last_logs_by_date[log.date].append(log)
         last_qualified_days = [d for d, dlogs in last_logs_by_date.items() if len(dlogs) >= 2]
-        last_score = 10
+        last_score = 0
         for d in last_qualified_days:
             for log in last_logs_by_date[d]:
                 eff_w = float(log.weight_kg or 0)
                 if log.exercise.exercise_type == 'calisthenics':
-                    user_weight = float(user.preferences.weight_kg or 70)
+                    pref = getattr(user, 'preferences', None)
+                    user_weight = float(getattr(pref, 'weight_kg', 70) or 70)
                     eff_w += user_weight * 0.5
                 last_score += eff_w * (log.sets or 0) * (log.reps or 0)
         last_score = int(last_score)
@@ -58,7 +60,8 @@ def get_leaderboard_data():
         def get_eff(l):
             w = float(l.weight_kg or 0)
             if l.exercise.exercise_type == 'calisthenics':
-                user_weight = float(user.preferences.weight_kg or 70)
+                pref = getattr(user, 'preferences', None)
+                user_weight = float(getattr(pref, 'weight_kg', 70) or 70)
                 w += user_weight * 0.5
             return w
 

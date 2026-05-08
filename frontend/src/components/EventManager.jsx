@@ -44,8 +44,8 @@ export default function EventManager({ activeTab, user, lang }) {
       if (!self) return;
 
       const currentScore = self.score;
-      const prevScore = self.last_week_score || 10;
-      const growth = ((currentScore - prevScore) / prevScore) * 100;
+      const prevScore = self.last_week_score || 0;
+      const growth = prevScore > 0 ? ((currentScore - prevScore) / prevScore) * 100 : (currentScore > 0 ? 100 : 0);
 
       if (growth >= 8) {
         const weekKey = `scouter_seen_v2_${new Date().getFullYear()}_W${getWeekNumber(new Date())}`;

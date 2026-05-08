@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Area, AreaChart, ResponsiveContainer, Tooltip, XAxis, YAxis, PieChart, Pie, Cell, CartesianGrid, Radar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis } from 'recharts';
-import { Plus, Trash2, Edit2, RefreshCw, Activity, Map as MapIcon, PlusCircle, Target, List, BarChart3, Radar as RadarIcon, GripVertical, Timer, Weight, Dumbbell, ChevronDown, Zap, Trophy, Medal, Menu } from 'lucide-react';
+import { Plus, Trash2, Edit2, RefreshCw, Activity, Map as MapIcon, PlusCircle, Target, List, BarChart3, Radar as RadarIcon, GripVertical, Timer, Weight, Dumbbell, ChevronDown, Zap, Trophy, Medal, Menu, Settings } from 'lucide-react';
 import { api } from '../api/client.js';
 import LinkInput from '../components/LinkInput.jsx';
 import Skeleton from '../components/Skeleton.jsx';
@@ -266,7 +266,7 @@ export default function Profile({ preferences, lang }) {
 
     const weeklyScores = Object.keys(weeklyLogs).map(mondayStr => {
       const daysInWeek = weeklyLogs[mondayStr];
-      let score = 10;
+      let score = 0;
 
       Object.keys(daysInWeek).forEach(dateStr => {
         const dayLogs = daysInWeek[dateStr];
