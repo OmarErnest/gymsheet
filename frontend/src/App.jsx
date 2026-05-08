@@ -251,10 +251,10 @@ export default function App() {
 
             {/* Content Overlaid */}
             <div style={{ position: 'relative', zIndex: 1, height: '100%', display: 'flex', flexDirection: 'column', justifyContent: 'flex-end', padding: '2.2rem', minHeight: '450px' }}>
-              <h2 className="pixel-text" style={{ color: 'var(--brand)', marginBottom: '1rem', fontSize: '1.4rem', letterSpacing: '2px', textShadow: '2px 2px 0 #000' }}>{user.name?.toUpperCase()}</h2>
+              <h2 className="pixel-text" style={{ color: '#fff', marginBottom: '1rem', fontSize: '1.8rem', letterSpacing: '1px', textShadow: '2px 2px 0 #000, 2px -2px 0 #000, -2px 2px 0 #000, -2px -2px 0 #000, 4px 4px 0 var(--brand)' }}>{user.name?.toUpperCase()}</h2>
               
               <div style={{ background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(10px)', padding: '1.2rem', borderRadius: '16px', border: '1px solid var(--line)', marginBottom: '1.5rem' }}>
-                <p className="pixel-text muted" style={{ fontSize: '0.85rem', lineHeight: '1.6', fontStyle: 'italic', margin: 0, color: '#fff' }}>
+                <p className="pixel-text" style={{ fontSize: '0.9rem', lineHeight: '1.6', margin: 0, color: 'var(--brand-2)', textShadow: '1px 1px 0 #000' }}>
                   "{preferences.cheer_message || (lang === 'es' ? '¡CREE EN TI MISMO!' : 'Believe in yourself!')}"
                 </p>
               </div>
