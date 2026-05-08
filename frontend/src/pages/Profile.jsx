@@ -1052,16 +1052,17 @@ export default function Profile({ preferences, lang }) {
                     position: 'absolute',
                     top: dot.top,
                     left: dot.left,
-                    width: '12px',
-                    height: '12px',
-                    background: isActive ? 'var(--brand)' : 'white',
-                    border: '2px solid var(--bg)',
+                    width: '16px',
+                    height: '16px',
+                    background: isActive ? 'var(--brand)' : 'rgba(255,255,255,0.4)',
+                    border: isActive ? '2px solid white' : '1.5px solid rgba(255,255,255,0.8)',
                     borderRadius: '50%',
                     transform: 'translate(-50%, -50%)',
                     cursor: 'pointer',
-                    boxShadow: isActive ? '0 0 10px var(--brand)' : '0 2px 4px rgba(0,0,0,0.3)',
+                    boxShadow: isActive ? '0 0 15px var(--brand)' : '0 2px 4px rgba(0,0,0,0.3)',
                     zIndex: 10,
-                    transition: 'all 0.2s'
+                    transition: 'all 0.2s',
+                    backdropFilter: 'blur(2px)'
                   }}
                 />
               );

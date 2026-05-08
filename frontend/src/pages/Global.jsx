@@ -63,23 +63,26 @@ export default function Global({ lang }) {
           {!navigator.onLine && <p className="notice" style={{ marginTop: '0.5rem', fontSize: '0.8rem', padding: '0.3rem 0.6rem' }}>Showing offline/cached data</p>}
         </div>
 
-        {/* Supreme Seal */}
+        {/* Supreme Seal - 3-Fold Bigger & Cropped */}
         <div style={{ 
-          width: '48px', 
-          height: '48px', 
-          border: '3px solid #10b981', 
+          position: 'absolute',
+          right: '-30px',
+          bottom: '-40px',
+          width: '160px', 
+          height: '160px', 
+          border: '5px solid rgba(16, 185, 129, 0.2)', 
           borderRadius: '50%', 
           display: 'flex', 
           alignItems: 'center', 
           justifyContent: 'center',
-          fontSize: '24px',
+          fontSize: '90px',
           fontWeight: '900',
           fontFamily: "'Ma Shan Zheng', cursive",
-          color: '#10b981',
-          marginLeft: '1rem',
-          opacity: 0.8,
-          flexShrink: 0,
-          boxShadow: '0 0 15px rgba(16, 185, 129, 0.2)'
+          color: 'rgba(16, 185, 129, 0.15)',
+          opacity: 1,
+          transform: 'rotate(-15deg)',
+          pointerEvents: 'none',
+          zIndex: 0
         }}>
           覇
         </div>

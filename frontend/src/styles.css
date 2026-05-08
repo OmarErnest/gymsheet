@@ -542,7 +542,6 @@ input[type=number] { -moz-appearance: textfield; appearance: textfield; }
   margin-bottom: 1.5rem;
 }
 .nav-square {
-  aspect-ratio: 1;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -601,7 +600,7 @@ input[type=number] { -moz-appearance: textfield; appearance: textfield; }
   flex-direction: column;
   align-items: center;
   gap: 0.5rem;
-  padding: 1rem 0.5rem;
+  padding: 0.6rem 0.5rem;
   background: var(--bg-soft);
   border: 1px solid var(--line);
   border-radius: var(--radius-md);
