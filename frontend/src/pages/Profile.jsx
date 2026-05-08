@@ -491,7 +491,8 @@ export default function Profile({ preferences, lang }) {
       }
       let weight = Number(log.weight_kg || 0);
       if (log.exercise_detail?.exercise_type === 'calisthenics') {
-        weight += 2;
+        // Effective weight = added weight + ~70% bodyweight
+        weight += userWeight * 0.7;
       }
       if (log.exercise_detail?.is_time_based) {
         const parts = (log.duration || '0:0').split(':');
@@ -772,32 +773,46 @@ export default function Profile({ preferences, lang }) {
 
       <div className="profile-tabs-wrapper" style={{ 
         position: 'relative', 
-        marginBottom: '1rem',
-        WebkitMaskImage: 'linear-gradient(to right, transparent, black 8%, black 92%, transparent)',
-        maskImage: 'linear-gradient(to right, transparent, black 8%, black 92%, transparent)'
+        marginBottom: '1.2rem',
+        width: '100%',
+        overflow: 'hidden'
       }}>
+        {/* Right-side fade indicator for scroll */}
+        <div style={{
+          position: 'absolute',
+          top: 0,
+          right: 0,
+          bottom: 0,
+          width: '50px',
+          background: 'linear-gradient(to left, var(--bg), transparent)',
+          zIndex: 10,
+          pointerEvents: 'none',
+          opacity: 0.8
+        }} />
+
         <div className="profile-nav-grid" style={{ 
           margin: 0, 
-          padding: '0.8rem 0',
+          padding: '0.4rem 0.2rem',
           overflowX: 'auto',
           display: 'flex',
-          gap: '0.8rem',
+          gap: '10px',
           scrollbarWidth: 'none',
-          msOverflowStyle: 'none'
+          msOverflowStyle: 'none',
+          WebkitOverflowScrolling: 'touch'
         }}>
-          <button className={`nav-square ${activeTab === 'strength' ? 'active' : ''}`} onClick={() => setActiveTab('strength')} style={{ minWidth: '85px', height: '85px' }}>
+          <button className={`nav-square ${activeTab === 'strength' ? 'active' : ''}`} onClick={() => setActiveTab('strength')} style={{ minWidth: '95px', height: '110px' }}>
             <Activity />
             <span>{t(lang, 'strength')}</span>
           </button>
-          <button className={`nav-square ${activeTab === 'goals' ? 'active' : ''}`} onClick={() => setActiveTab('goals')} style={{ minWidth: '85px', height: '85px' }}>
+          <button className={`nav-square ${activeTab === 'goals' ? 'active' : ''}`} onClick={() => setActiveTab('goals')} style={{ minWidth: '95px', height: '110px' }}>
             <Target />
             <span>{t(lang, 'yourGoals')}</span>
           </button>
-          <button className={`nav-square ${activeTab === 'creategoal' ? 'active' : ''}`} onClick={() => setActiveTab('creategoal')} style={{ minWidth: '85px', height: '85px' }}>
+          <button className={`nav-square ${activeTab === 'creategoal' ? 'active' : ''}`} onClick={() => setActiveTab('creategoal')} style={{ minWidth: '95px', height: '110px' }}>
             <Plus />
             <span>{t(lang, 'createGoal')}</span>
           </button>
-          <button className={`nav-square ${activeTab === 'bodymap' ? 'active' : ''}`} onClick={() => setActiveTab('bodymap')} style={{ minWidth: '85px', height: '85px' }}>
+          <button className={`nav-square ${activeTab === 'bodymap' ? 'active' : ''}`} onClick={() => setActiveTab('bodymap')} style={{ minWidth: '95px', height: '110px' }}>
             <MapIcon />
             <span>{t(lang, 'bodyMap')}</span>
           </button>
@@ -942,7 +957,10 @@ export default function Profile({ preferences, lang }) {
                       </div>
                       <div>
                         <strong>{log.exercise_detail?.name}</strong>
-                        <p>{log.date} — {log.sets}x{String(log.reps).padStart(2, '0')} @ {log.weight_kg}kg</p>
+                        <p>
+                          {log.date} — {log.sets}x{String(log.reps).padStart(2, '0')}
+                          {!(log.exercise_detail?.exercise_type === 'calisthenics' && Number(log.weight_kg) === 0) && ` @ ${log.weight_kg}kg`}
+                        </p>
                       </div>
                     </div>
                   </div>

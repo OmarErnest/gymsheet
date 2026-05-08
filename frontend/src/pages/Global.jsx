@@ -109,14 +109,21 @@ export default function Global({ lang }) {
                   overflow: 'hidden',
                   ...(row.is_test_user ? { opacity: 0.7 } : {}),
                   ...(row.profile_pic_url ? {
-                    backgroundImage: `linear-gradient(to right, rgba(7, 19, 13, 0.95) 15%, rgba(7, 19, 13, 0.65) 50%, rgba(7, 19, 13, 0.95) 85%), url(${getIconUrl(row.profile_pic_url)})`,
+                    backgroundImage: `linear-gradient(to right, rgba(7, 19, 13, 0.95) 15%, rgba(7, 19, 13, 0.4) 50%, rgba(7, 19, 13, 0.95) 85%), url(${getIconUrl(row.profile_pic_url)})`,
                     backgroundSize: 'cover',
-                    backgroundPosition: '20% 5%',
+                    backgroundPosition: '95% 0%',
                     border: '1px solid var(--line)'
                   } : {})
                 }}
               >
-                <div style={{ position: 'relative', zIndex: 2, display: 'flex', alignItems: 'center', width: '100%' }}>
+                <div style={{ 
+                  position: 'relative', 
+                  zIndex: 2, 
+                  display: 'flex', 
+                  alignItems: 'center', 
+                  width: '100%', 
+                  textShadow: '0 1px 1px rgba(0,0,0,1), 0 0 8px rgba(0,0,0,0.8)' 
+                }}>
                   <div className="rank-number" style={{ 
                     fontSize: row.rank <= 10 ? '1.5rem' : '0.8rem', 
                     fontWeight: '900',
