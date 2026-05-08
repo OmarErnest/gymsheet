@@ -53,10 +53,10 @@ export default function Global({ lang }) {
         <div style={{ flex: 1 }}>
           <h2 className="pixel-text">{t(lang, 'leaderboard')}</h2>
           {data.champion_name && (
-            <p className="muted" style={{ fontSize: '0.8rem', marginTop: '0.2rem' }}>
+            <p className="muted pixel-text" style={{ fontSize: '0.62rem', marginTop: '0.6rem', lineHeight: '1.6', letterSpacing: '0px' }}>
               {lang === 'es' 
-                ? <><strong style={{ color: 'var(--brand)' }}>{data.champion_name}</strong> es, sin lugar a dudas, el peleador más fuerte de todos.</>
-                : <><strong style={{ color: 'var(--brand)' }}>{data.champion_name}</strong> is without question the strongest fighter of them all.</>
+                ? <><strong style={{ color: 'var(--brand)' }}>{data.champion_name}</strong> demostró ser el peleador más fuerte de todos.</>
+                : <><strong style={{ color: 'var(--brand)' }}>{data.champion_name}</strong> proved to be the strongest fighter of them all.</>
               }
             </p>
           )}

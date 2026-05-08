@@ -633,7 +633,7 @@ export default function Profile({ preferences, lang }) {
   );
 
   return (
-    <section className="stack profile-page animate-fade-in" style={{ paddingBottom: '8rem' }}>
+    <section className="stack profile-page animate-fade-in" style={{ paddingBottom: '6rem' }}>
       {message && <p className="notice">{message}</p>}
 
 
@@ -641,41 +641,48 @@ export default function Profile({ preferences, lang }) {
         <button 
           onClick={() => setShowWarriorStats(!showWarriorStats)}
           style={{ 
-            width: '100%', 
-            padding: '0.6rem', 
-            background: 'var(--bg-soft)', 
-            border: '1px solid var(--line)', 
-            borderRadius: '12px',
-            color: 'var(--muted)',
+            width: 'fit-content', 
+            margin: '0 auto',
+            padding: '0.4rem 1rem', 
+            background: 'none', 
+            border: 'none', 
+            color: showWarriorStats ? 'var(--brand)' : 'var(--muted)',
             fontSize: '0.65rem',
-            fontWeight: '900',
-            letterSpacing: '1px',
+            fontWeight: '1000',
+            letterSpacing: '1.5px',
             textTransform: 'uppercase',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            gap: '0.5rem',
-            cursor: 'pointer'
+            gap: '0.4rem',
+            transition: 'all 0.2s ease',
+            cursor: 'pointer',
+            opacity: 0.8
           }}
         >
-          {showWarriorStats ? <ChevronDown size={14} style={{ transform: 'rotate(180deg)' }} /> : <ChevronDown size={14} />}
           {showWarriorStats ? (lang === 'es' ? 'Ocultar Estadísticas' : 'Hide Stats') : (lang === 'es' ? 'Ver Estadísticas' : 'View Fighter Stats')}
+          {showWarriorStats ? <ChevronDown size={14} style={{ transform: 'rotate(180deg)' }} /> : <ChevronDown size={14} />}
         </button>
 
         {showWarriorStats && (
           <div className="profile-stats-grid animate-fade-in" style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '0.8rem', marginTop: '0.8rem' }}>
             <div className="glass-card stat-card" style={{ padding: '0.8rem', textAlign: 'center' }}>
-              <Activity size={20} style={{ color: '#10b981', marginBottom: '0.4rem', opacity: 0.8 }} />
+              <Zap size={20} style={{ color: '#10b981', marginBottom: '0.4rem', opacity: 0.8 }} />
               <h3 style={{ margin: 0, fontSize: '1.2rem', fontWeight: '900' }}>{activeDaysThisWeek}</h3>
               <p className="muted" style={{ margin: 0, fontSize: '0.6rem', fontWeight: '800', textTransform: 'uppercase' }}>
-                {lang === 'es' ? 'Activo' : 'Active'}
+                {lang === 'es' ? 'Días Activos' : 'Active Days'}
               </p>
             </div>
             <div className="glass-card stat-card" style={{ padding: '0.8rem', textAlign: 'center' }}>
-              <Dumbbell size={20} style={{ color: '#f59e0b', marginBottom: '0.4rem', opacity: 0.8 }} />
+              <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="#f59e0b" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ marginBottom: '0.4rem', opacity: 0.9 }}>
+                <path d="M18 11V6a2 2 0 0 0-2-2v0a2 2 0 0 0-2 2v0" />
+                <path d="M14 10V4a2 2 0 0 0-2-2v0a2 2 0 0 0-2 2v2" />
+                <path d="M10 10.5V6a2 2 0 0 0-2-2v0a2 2 0 0 0-2 2v8" />
+                <path d="M18 8a2 2 0 1 1 4 0v6a8 8 0 0 1-8 8h-2c-2.8 0-4.5-.86-5.99-2.34l-3.6-3.6a2 2 0 0 1 2.83-2.82L7 15" />
+              </svg>
               <h3 style={{ margin: 0, fontSize: '1.2rem', fontWeight: '900' }}>{logs.length}</h3>
               <p className="muted" style={{ margin: 0, fontSize: '0.6rem', fontWeight: '800', textTransform: 'uppercase' }}>
-                {lang === 'es' ? 'Total' : 'Total'}
+                {lang === 'es' ? 'Oponentes Totales' : 'Total Opponents'}
               </p>
             </div>
             <div className="glass-card stat-card" style={{ padding: '0.8rem', textAlign: 'center', border: '1px solid rgba(var(--brand-rgb), 0.2)' }}>
@@ -705,7 +712,7 @@ export default function Profile({ preferences, lang }) {
         )}
       </div>
 
-      <div className="profile-nav-grid" style={{ margin: '0 0 0.15rem' }}>
+      <div className="profile-nav-grid" style={{ margin: 0 }}>
         <button className={`nav-square ${activeTab === 'strength' ? 'active' : ''}`} onClick={() => setActiveTab('strength')}>
           <Activity />
           <span>{t(lang, 'strength')}</span>
@@ -731,8 +738,7 @@ export default function Profile({ preferences, lang }) {
       {activeTab === 'strength' && (
         <article className="glass-card profile-section" style={{ padding: '0.8rem' }}>
           <div style={{ textAlign: 'center', marginBottom: '0.5rem' }}>
-            <p className="eyebrow">{t(lang, 'reviewProgress')}</p>
-            <h2>{t(lang, 'strengthGraph')}</h2>
+            {/* Removed redundant headers to save space for the graph */}
             <div className="tab-pill-box" style={{ margin: '0.8rem auto 0', width: 'fit-content' }}>
               <button className={`tab-pill ${graphMode === 'pie' ? 'active' : ''}`} onClick={() => setGraphMode('pie')}><RadarIcon size={18} /></button>
               <button className={`tab-pill ${graphMode === 'bar' ? 'active' : ''}`} onClick={() => setGraphMode('bar')}><BarChart3 size={18} /></button>
