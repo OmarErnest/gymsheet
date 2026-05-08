@@ -47,7 +47,7 @@ const backDots = [
 
 function SortableGoalItem({ goal, lang, onEdit, onDelete }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: goal.id });
-  
+
   const style = {
     transform: CSS.Transform.toString(transform),
     transition,
@@ -57,9 +57,9 @@ function SortableGoalItem({ goal, lang, onEdit, onDelete }) {
   };
 
   return (
-    <div 
-      ref={setNodeRef} 
-      style={style} 
+    <div
+      ref={setNodeRef}
+      style={style}
       className="goal-block glass-card"
     >
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '1rem' }}>
@@ -85,9 +85,9 @@ function SortableGoalItem({ goal, lang, onEdit, onDelete }) {
 
 function MultiSelect({ label, options, selected, onToggle, onToggleAll, lang, allLabel, align = 'left' }) {
   const [isOpen, setIsOpen] = useState(false);
-  
+
   const allSelected = options.length > 0 && selected.length === options.length;
-  
+
   const displayLabel = useMemo(() => {
     if (selected.length === 0) return t(lang, 'none');
     if (allSelected) return allLabel || t(lang, 'all');
@@ -100,17 +100,17 @@ function MultiSelect({ label, options, selected, onToggle, onToggleAll, lang, al
 
   return (
     <div style={{ position: 'relative', flex: 1 }}>
-      <button 
+      <button
         type="button"
         onClick={() => setIsOpen(!isOpen)}
-        style={{ 
-          width: '100%', 
-          textAlign: 'left', 
-          display: 'flex', 
-          justifyContent: 'space-between', 
-          alignItems: 'center', 
-          height: '52px', 
-          fontSize: '0.95rem', 
+        style={{
+          width: '100%',
+          textAlign: 'left',
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          height: '52px',
+          fontSize: '0.95rem',
           padding: '0 1.2rem',
           borderRadius: '14px',
           border: '1px solid var(--line)',
@@ -124,35 +124,35 @@ function MultiSelect({ label, options, selected, onToggle, onToggleAll, lang, al
         <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{displayLabel}</span>
         <ChevronDown size={18} style={{ opacity: 0.5 }} />
       </button>
-      
+
       {isOpen && (
         <>
           <div style={{ position: 'fixed', inset: 0, zIndex: 90 }} onClick={() => setIsOpen(false)} />
-          <div className="glass-card" style={{ 
-            position: 'absolute', 
-            top: '100%', 
+          <div className="glass-card" style={{
+            position: 'absolute',
+            top: '100%',
             [align]: '0',
-            zIndex: 100, 
-            marginTop: '0.5rem', 
-            maxHeight: '300px', 
+            zIndex: 100,
+            marginTop: '0.5rem',
+            maxHeight: '300px',
             overflowY: 'auto',
-            padding: '0.5rem', 
-            border: '1px solid var(--line)', 
+            padding: '0.5rem',
+            border: '1px solid var(--line)',
             boxShadow: '0 12px 48px rgba(0,0,0,0.5)',
             background: 'var(--bg-strong)',
             minWidth: '220px',
-            width: 'calc(200% + 0.6rem)', 
+            width: 'calc(200% + 0.6rem)',
             maxWidth: '85vw'
           }}>
             <div style={{ display: 'grid', gap: '0.2rem' }}>
-              <label style={{ 
-                display: 'flex', alignItems: 'center', gap: '0.8rem', padding: '0.8rem 1rem', 
+              <label style={{
+                display: 'flex', alignItems: 'center', gap: '0.8rem', padding: '0.8rem 1rem',
                 borderRadius: '10px', cursor: 'pointer', background: 'transparent',
                 transition: 'all 0.2s'
               }}>
-                <input 
-                  type="checkbox" 
-                  checked={allSelected} 
+                <input
+                  type="checkbox"
+                  checked={allSelected}
                   onChange={() => onToggleAll(!allSelected)}
                   style={{ accentColor: 'var(--brand)', width: '18px', height: '18px' }}
                 />
@@ -163,14 +163,14 @@ function MultiSelect({ label, options, selected, onToggle, onToggleAll, lang, al
                 const id = String(opt.id || opt);
                 const isSel = selected.includes(id);
                 return (
-                  <label key={id} style={{ 
-                    display: 'flex', alignItems: 'center', gap: '0.8rem', padding: '0.8rem 1rem', 
+                  <label key={id} style={{
+                    display: 'flex', alignItems: 'center', gap: '0.8rem', padding: '0.8rem 1rem',
                     borderRadius: '10px', cursor: 'pointer', background: isSel ? 'rgba(var(--brand-rgb), 0.1)' : 'transparent',
                     transition: 'all 0.2s'
                   }}>
-                    <input 
-                      type="checkbox" 
-                      checked={isSel} 
+                    <input
+                      type="checkbox"
+                      checked={isSel}
                       onChange={() => onToggle(id)}
                       style={{ accentColor: 'var(--brand)', width: '18px', height: '18px' }}
                     />
@@ -202,7 +202,7 @@ export default function Profile({ preferences, lang }) {
     measurements: false,
     goals: false
   });
-  
+
   const [selectedCategories, setSelectedCategories] = useState(() => {
     const saved = localStorage.getItem('selectedCategories');
     return saved ? JSON.parse(saved) : categories.filter(c => c !== 'other' && c !== 'calisthenics');
@@ -218,7 +218,7 @@ export default function Profile({ preferences, lang }) {
   const [activeTab, setActiveTab] = useState('strength');
   const [graphMode, setGraphMode] = useState(() => {
     return localStorage.getItem('graphMode') || 'pie';
-  }); 
+  });
   const [showFrontBody, setShowFrontBody] = useState(true);
   const [selectedDot, setSelectedDot] = useState(null);
   const [showWarriorStats, setShowWarriorStats] = useState(false);
@@ -244,19 +244,19 @@ export default function Profile({ preferences, lang }) {
 
   const highestWeeklyPower = useMemo(() => {
     if (!logs || logs.length === 0) return 0;
-    
+
     const weeklyLogs = {};
 
     // Group logs by week and date
     logs.forEach(log => {
       const [year, month, day] = log.date.split('-').map(Number);
       const d = new Date(year, month - 1, day, 12, 0, 0);
-      
+
       const dayOfWeek = d.getDay();
       const diff = d.getDate() - (dayOfWeek === 0 ? 6 : dayOfWeek - 1);
       const monday = new Date(d);
       monday.setDate(diff);
-      monday.setHours(0,0,0,0);
+      monday.setHours(0, 0, 0, 0);
       const mondayStr = monday.toISOString().split('T')[0];
 
       if (!weeklyLogs[mondayStr]) weeklyLogs[mondayStr] = {};
@@ -267,7 +267,7 @@ export default function Profile({ preferences, lang }) {
     const weeklyScores = Object.keys(weeklyLogs).map(mondayStr => {
       const daysInWeek = weeklyLogs[mondayStr];
       let score = 10;
-      
+
       Object.keys(daysInWeek).forEach(dateStr => {
         const dayLogs = daysInWeek[dateStr];
         // QUALIFIED DAY RULE: Must have at least 2 logs to count toward weekly score
@@ -275,7 +275,7 @@ export default function Profile({ preferences, lang }) {
           dayLogs.forEach(log => {
             let logEffort = Number(log.weight_kg || 0);
             if (log.exercise_detail?.exercise_type === 'calisthenics') logEffort += 2;
-            
+
             // Match backend leaderboard.py: no time-based special multiplier
             score += logEffort * (Number(log.sets) || 0) * (Number(log.reps) || 0);
           });
@@ -292,7 +292,7 @@ export default function Profile({ preferences, lang }) {
     const dayOfWeek = today.getDay();
     const monday = new Date(today);
     monday.setDate(today.getDate() - (dayOfWeek === 0 ? 6 : dayOfWeek - 1));
-    monday.setHours(0,0,0,0);
+    monday.setHours(0, 0, 0, 0);
 
     const logsByDate = {};
     logs.forEach(log => {
@@ -302,7 +302,7 @@ export default function Profile({ preferences, lang }) {
         logsByDate[log.date].push(log);
       }
     });
-    
+
     // Count qualified days (>= 2 logs) to match leaderboard logic
     return Object.values(logsByDate).filter(dayLogs => dayLogs.length >= 2).length;
   }, [logs]);
@@ -318,7 +318,7 @@ export default function Profile({ preferences, lang }) {
       const list = exRes.results || exRes;
       setExercises(list.sort((a, b) => t(lang, a.name).localeCompare(t(lang, b.name))));
       setLoadedData(prev => ({ ...prev, exercises: true }));
-    } catch (err) {}
+    } catch (err) { }
   }
 
   async function fetchLogs() {
@@ -361,7 +361,7 @@ export default function Profile({ preferences, lang }) {
           } else if (activeTab === 'addexercise') {
             await fetchExercises();
           }
-        } catch (err) {}
+        } catch (err) { }
         setLoading(false);
       }
     }
@@ -382,16 +382,16 @@ export default function Profile({ preferences, lang }) {
   }, [selectedCategories, selectedExercises, selectedPeriod, graphMode]);
 
   const filteredExercises = useMemo(() => {
-    return selectedCategories.length > 0 
-      ? exercises.filter((ex) => selectedCategories.includes(ex.category)) 
+    return selectedCategories.length > 0
+      ? exercises.filter((ex) => selectedCategories.includes(ex.category))
       : exercises;
   }, [selectedCategories, exercises]);
 
   const toggleCategory = (cat) => {
-    setSelectedCategories(prev => 
+    setSelectedCategories(prev =>
       prev.includes(cat) ? prev.filter(c => c !== cat) : [...prev, cat]
     );
-    setSelectedExercises([]); 
+    setSelectedExercises([]);
   };
 
   const toggleAllCategories = (selectAll) => {
@@ -401,7 +401,7 @@ export default function Profile({ preferences, lang }) {
 
   const toggleExercise = (exId) => {
     const idStr = String(exId);
-    setSelectedExercises(prev => 
+    setSelectedExercises(prev =>
       prev.includes(idStr) ? prev.filter(e => e !== idStr) : [...prev, idStr]
     );
   };
@@ -442,7 +442,7 @@ export default function Profile({ preferences, lang }) {
       }
       if (log.exercise_detail?.is_time_based) {
         const parts = (log.duration || '0:0').split(':');
-        const mins = parts.length === 2 ? (parseInt(parts[0]) + parseInt(parts[1])/60) : (parseFloat(parts[0]) || 0);
+        const mins = parts.length === 2 ? (parseInt(parts[0]) + parseInt(parts[1]) / 60) : (parseFloat(parts[0]) || 0);
         weight = mins * (userWeight / 2) + (log.exercise_detail?.exercise_type === 'calisthenics' ? 2 : 0);
       }
       grouped[d].weight += weight;
@@ -479,24 +479,23 @@ export default function Profile({ preferences, lang }) {
 
   const pieData = useMemo(() => {
     const dataGroup = {}; // name -> { totalWeight, count }
-    
+
     const userWeight = parseFloat(preferences?.weight_kg) || 70;
     filteredLogsList.forEach(log => {
-      const name = (selectedCategories.length === 1) 
-        ? t(lang, log.exercise_detail?.name) 
+      const name = (selectedCategories.length === 1)
+        ? t(lang, log.exercise_detail?.name)
         : t(lang, log.exercise_detail?.category || 'other');
-      
+
       if (!dataGroup[name]) {
         dataGroup[name] = { totalWeight: 0, count: 0 };
       }
       let weight = Number(log.weight_kg || 0);
       if (log.exercise_detail?.exercise_type === 'calisthenics') {
-        // Effective weight = added weight + ~70% bodyweight
         weight += userWeight * 0.7;
       }
       if (log.exercise_detail?.is_time_based) {
         const parts = (log.duration || '0:0').split(':');
-        const mins = parts.length === 2 ? (parseInt(parts[0]) + parseInt(parts[1])/60) : (parseFloat(parts[0]) || 0);
+        const mins = parts.length === 2 ? (parseInt(parts[0]) + parseInt(parts[1]) / 60) : (parseFloat(parts[0]) || 0);
         weight = mins * (userWeight / 2) + (log.exercise_detail?.exercise_type === 'calisthenics' ? 2 : 0);
       }
       dataGroup[name].totalWeight += weight;
@@ -522,7 +521,7 @@ export default function Profile({ preferences, lang }) {
       return;
     }
     setMessage('');
-    
+
     const isUpdate = !!exerciseForm.id;
     const method = isUpdate ? 'PATCH' : 'POST';
     const endpoint = isUpdate ? `/exercises/${exerciseForm.id}/` : '/exercises/';
@@ -697,14 +696,14 @@ export default function Profile({ preferences, lang }) {
 
 
       <div className="stats-expander" style={{ marginBottom: '0.4rem' }}>
-        <button 
+        <button
           onClick={() => setShowWarriorStats(!showWarriorStats)}
-          style={{ 
-            width: 'fit-content', 
+          style={{
+            width: 'fit-content',
             margin: '0 auto',
-            padding: '0.4rem 1rem', 
-            background: 'none', 
-            border: 'none', 
+            padding: '0.4rem 1rem',
+            background: 'none',
+            border: 'none',
             color: showWarriorStats ? 'var(--brand)' : 'var(--muted)',
             fontSize: '0.65rem',
             fontWeight: '1000',
@@ -733,26 +732,26 @@ export default function Profile({ preferences, lang }) {
               </p>
             </div>
             <div className="glass-card stat-card" style={{ padding: '0.8rem', textAlign: 'center' }}>
-                <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="#f59e0b" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" style={{ marginBottom: '0.4rem', opacity: 1 }}>
-                  <path d="M6 11V6a2 2 0 0 1 4 0v5" />
-                  <path d="M10 11V4a2 2 0 0 1 4 0v7" />
-                  <path d="M14 11V6a2 2 0 0 1 4 0v5" />
-                  <path d="M18 11V9a2 2 0 0 1 4 0v6a7 7 0 0 1-7 7H9a7 7 0 0 1-7-7v-4a2 2 0 0 1 4 0v6" />
-                </svg>
+              <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="#f59e0b" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" style={{ marginBottom: '0.4rem', opacity: 1 }}>
+                <path d="M6 11V6a2 2 0 0 1 4 0v5" />
+                <path d="M10 11V4a2 2 0 0 1 4 0v7" />
+                <path d="M14 11V6a2 2 0 0 1 4 0v5" />
+                <path d="M18 11V9a2 2 0 0 1 4 0v6a7 7 0 0 1-7 7H9a7 7 0 0 1-7-7v-4a2 2 0 0 1 4 0v6" />
+              </svg>
               <h3 className="pixel-text" style={{ margin: 0, fontSize: '1rem', fontWeight: '900', color: '#f59e0b' }}>{logs.length}</h3>
               <p className="muted pixel-text" style={{ margin: 0, fontSize: '0.5rem', fontWeight: '800', textTransform: 'uppercase' }}>
                 {lang === 'es' ? 'Oponentes' : 'Opponents'}
               </p>
             </div>
             <div className="glass-card stat-card" style={{ padding: '0.8rem', textAlign: 'center', border: '1px solid rgba(var(--brand-rgb), 0.2)' }}>
-              <div style={{ 
-                width: '26px', 
-                height: '26px', 
-                margin: '0 auto 0.4rem', 
-                border: '2.5px solid #8b5cf6', 
-                borderRadius: '50%', 
-                display: 'flex', 
-                alignItems: 'center', 
+              <div style={{
+                width: '26px',
+                height: '26px',
+                margin: '0 auto 0.4rem',
+                border: '2.5px solid #8b5cf6',
+                borderRadius: '50%',
+                display: 'flex',
+                alignItems: 'center',
                 justifyContent: 'center',
                 fontSize: '15px',
                 fontWeight: '900',
@@ -771,512 +770,483 @@ export default function Profile({ preferences, lang }) {
         )}
       </div>
 
-      <div className="profile-tabs-wrapper" style={{ 
-        position: 'relative', 
-        marginBottom: '1.2rem',
-        width: '100%',
-        overflow: 'hidden'
-      }}>
-        {/* Right-side fade indicator for scroll */}
-        <div style={{
-          position: 'absolute',
-          top: 0,
-          right: 0,
-          bottom: 0,
-          width: '50px',
-          background: 'linear-gradient(to left, var(--bg), transparent)',
-          zIndex: 10,
-          pointerEvents: 'none',
-          opacity: 0.8
-        }} />
-
-        <div className="profile-nav-grid" style={{ 
-          margin: 0, 
-          padding: '0.4rem 0.2rem',
-          overflowX: 'auto',
-          display: 'flex',
-          gap: '10px',
-          scrollbarWidth: 'none',
-          msOverflowStyle: 'none',
-          WebkitOverflowScrolling: 'touch'
-        }}>
-          <button className={`nav-square ${activeTab === 'strength' ? 'active' : ''}`} onClick={() => setActiveTab('strength')} style={{ minWidth: '95px', height: '110px' }}>
+      <div className="profile-tabs-container" style={{ display: 'grid', gap: 0, marginTop: 0 }}>
+        <div className="profile-nav-grid" style={{ margin: 0, paddingLeft: 0, paddingRight: 0 }}>
+          <button className={`nav-square ${activeTab === 'strength' ? 'active' : ''}`} onClick={() => setActiveTab('strength')}>
             <Activity />
             <span>{t(lang, 'strength')}</span>
           </button>
-          <button className={`nav-square ${activeTab === 'goals' ? 'active' : ''}`} onClick={() => setActiveTab('goals')} style={{ minWidth: '95px', height: '110px' }}>
+          <button className={`nav-square ${activeTab === 'goals' ? 'active' : ''}`} onClick={() => setActiveTab('goals')}>
             <Target />
             <span>{t(lang, 'yourGoals')}</span>
           </button>
-          <button className={`nav-square ${activeTab === 'creategoal' ? 'active' : ''}`} onClick={() => setActiveTab('creategoal')} style={{ minWidth: '95px', height: '110px' }}>
+          <button className={`nav-square ${activeTab === 'creategoal' ? 'active' : ''}`} onClick={() => setActiveTab('creategoal')}>
             <Plus />
             <span>{t(lang, 'createGoal')}</span>
           </button>
-          <button className={`nav-square ${activeTab === 'bodymap' ? 'active' : ''}`} onClick={() => setActiveTab('bodymap')} style={{ minWidth: '95px', height: '110px' }}>
+          <button className={`nav-square ${activeTab === 'bodymap' ? 'active' : ''}`} onClick={() => setActiveTab('bodymap')}>
             <MapIcon />
             <span>{t(lang, 'bodyMap')}</span>
           </button>
-          <button className={`nav-square ${activeTab === 'addexercise' ? 'active' : ''}`} onClick={() => setActiveTab('addexercise')} style={{ minWidth: '85px', height: '85px' }}>
+          <button className={`nav-square ${activeTab === 'addexercise' ? 'active' : ''}`} onClick={() => setActiveTab('addexercise')}>
             <PlusCircle />
             <span>{t(lang, 'addEx')}</span>
           </button>
-          <button className={`nav-square ${activeTab === 'menu' ? 'active' : ''}`} onClick={() => setActiveTab('menu')} style={{ minWidth: '85px', height: '85px' }}>
+          <button className={`nav-square ${activeTab === 'menu' ? 'active' : ''}`} onClick={() => setActiveTab('menu')}>
             <Menu />
             <span>{lang === 'es' ? 'Menú' : 'Menu'}</span>
           </button>
         </div>
-      </div>
 
-      <div className="profile-tabs-container" style={{ display: 'grid', gap: 0, marginTop: 0 }}>
         {activeTab === 'strength' && (
           <article className="glass-card profile-section" style={{ padding: '0.8rem' }}>
-          <div style={{ textAlign: 'center', marginBottom: '0.5rem' }}>
-            {/* Removed redundant headers to save space for the graph */}
-            <div className="tab-pill-box" style={{ margin: '0.8rem auto 0', width: 'fit-content' }}>
-              <button className={`tab-pill ${graphMode === 'pie' ? 'active' : ''}`} onClick={() => setGraphMode('pie')}><RadarIcon size={18} /></button>
-              <button className={`tab-pill ${graphMode === 'bar' ? 'active' : ''}`} onClick={() => setGraphMode('bar')}><BarChart3 size={18} /></button>
-              <button className={`tab-pill ${graphMode === 'list' ? 'active' : ''}`} onClick={() => setGraphMode('list')}><List size={18} /></button>
-            </div>
-          </div>
-          <div className="strength-filters" style={{ display: 'flex', flexDirection: 'column', gap: '0.8rem' }}>
-            <div style={{ display: 'flex', gap: '0.4rem', margin: '0 -0.4rem' }}>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.3rem', flex: 1, minWidth: 0, padding: '0 0.4rem' }}>
-                <span style={{ fontSize: '0.6rem', fontWeight: '1000', color: 'var(--muted)', marginLeft: '0.5rem', letterSpacing: '1px' }}>GROUPS</span>
-                <MultiSelect 
-                  label="Groups" 
-                  align="left"
-                  allLabel={t(lang, 'allGroups')}
-                  options={categories} 
-                  selected={selectedCategories} 
-                  onToggle={toggleCategory} 
-                  onToggleAll={toggleAllCategories}
-                  lang={lang} 
-                />
-              </div>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.3rem', flex: 1, minWidth: 0, padding: '0 0.4rem' }}>
-                <span style={{ fontSize: '0.6rem', fontWeight: '1000', color: 'var(--muted)', marginLeft: '0.5rem', letterSpacing: '1px' }}>EXERCISES</span>
-                <MultiSelect 
-                  label="Exercises" 
-                  align="right"
-                  allLabel={t(lang, 'allExercises')}
-                  options={filteredExercises} 
-                  selected={selectedExercises} 
-                  onToggle={toggleExercise} 
-                  onToggleAll={toggleAllExercises}
-                  lang={lang} 
-                />
+            <div style={{ textAlign: 'center', marginBottom: '0.5rem' }}>
+              {/* Removed redundant headers to save space for the graph */}
+              <div className="tab-pill-box" style={{ margin: '0.8rem auto 0', width: 'fit-content' }}>
+                <button className={`tab-pill ${graphMode === 'pie' ? 'active' : ''}`} onClick={() => setGraphMode('pie')}><RadarIcon size={18} /></button>
+                <button className={`tab-pill ${graphMode === 'bar' ? 'active' : ''}`} onClick={() => setGraphMode('bar')}><BarChart3 size={18} /></button>
+                <button className={`tab-pill ${graphMode === 'list' ? 'active' : ''}`} onClick={() => setGraphMode('list')}><List size={18} /></button>
               </div>
             </div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.3rem' }}>
-              <span style={{ fontSize: '0.6rem', fontWeight: '1000', color: 'var(--muted)', marginLeft: '0.5rem', letterSpacing: '1px' }}>PERIOD</span>
-              <select style={{ height: '52px', fontSize: '0.95rem', borderRadius: '16px', padding: '0 1rem', background: 'var(--bg-soft)', border: '1px solid var(--line)', color: 'var(--text)', fontWeight: '700', width: '100%' }} value={selectedPeriod} onChange={(e) => setSelectedPeriod(e.target.value)}>
-                <option value="all">{t(lang, 'allTime')}</option>
-                <option value="year">{t(lang, 'lastYear')}</option>
-                <option value="90">90 {t(lang, 'days')}</option>
-                <option value="30">30 {t(lang, 'days')}</option>
-                <option value="7">{t(lang, 'last7Days')}</option>
-              </select>
+            <div className="strength-filters" style={{ display: 'flex', flexDirection: 'column', gap: '0.8rem' }}>
+              <div style={{ display: 'flex', gap: '0.4rem', margin: '0 -0.4rem' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.3rem', flex: 1, minWidth: 0, padding: '0 0.4rem' }}>
+                  <span style={{ fontSize: '0.6rem', fontWeight: '1000', color: 'var(--muted)', marginLeft: '0.5rem', letterSpacing: '1px' }}>GROUPS</span>
+                  <MultiSelect
+                    label="Groups"
+                    align="left"
+                    allLabel={t(lang, 'allGroups')}
+                    options={categories}
+                    selected={selectedCategories}
+                    onToggle={toggleCategory}
+                    onToggleAll={toggleAllCategories}
+                    lang={lang}
+                  />
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.3rem', flex: 1, minWidth: 0, padding: '0 0.4rem' }}>
+                  <span style={{ fontSize: '0.6rem', fontWeight: '1000', color: 'var(--muted)', marginLeft: '0.5rem', letterSpacing: '1px' }}>EXERCISES</span>
+                  <MultiSelect
+                    label="Exercises"
+                    align="right"
+                    allLabel={t(lang, 'allExercises')}
+                    options={filteredExercises}
+                    selected={selectedExercises}
+                    onToggle={toggleExercise}
+                    onToggleAll={toggleAllExercises}
+                    lang={lang}
+                  />
+                </div>
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.3rem' }}>
+                <span style={{ fontSize: '0.6rem', fontWeight: '1000', color: 'var(--muted)', marginLeft: '0.5rem', letterSpacing: '1px' }}>PERIOD</span>
+                <select style={{ height: '52px', fontSize: '0.95rem', borderRadius: '16px', padding: '0 1rem', background: 'var(--bg-soft)', border: '1px solid var(--line)', color: 'var(--text)', fontWeight: '700', width: '100%' }} value={selectedPeriod} onChange={(e) => setSelectedPeriod(e.target.value)}>
+                  <option value="all">{t(lang, 'allTime')}</option>
+                  <option value="year">{t(lang, 'lastYear')}</option>
+                  <option value="90">90 {t(lang, 'days')}</option>
+                  <option value="30">30 {t(lang, 'days')}</option>
+                  <option value="7">{t(lang, 'last7Days')}</option>
+                </select>
+              </div>
             </div>
-          </div>
-          <div className="chart-box" style={{ height: '360px', marginTop: '1rem', background: 'transparent', border: 'none' }}>
-            {graphMode === 'bar' && (chartData.length ? (
-              <ResponsiveContainer width="100%" height="100%">
-                <AreaChart data={chartData} margin={{ top: 10, right: 10, left: -15, bottom: 0 }}>
-                  <defs>
-                    <linearGradient id="colorWeight" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="var(--brand)" stopOpacity={0.4}/>
-                      <stop offset="95%" stopColor="var(--brand)" stopOpacity={0}/>
-                    </linearGradient>
-                  </defs>
-                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--line)" />
-                  <XAxis 
-                    dataKey="date" 
-                    axisLine={false} 
-                    tickLine={false} 
-                    tick={{ fill: 'var(--muted)', fontSize: 10 }}
-                    minTickGap={20}
-                  />
-                  <YAxis 
-                    axisLine={false} 
-                    tickLine={false} 
-                    tick={{ fill: 'var(--muted)', fontSize: 10 }}
-                    width={35}
-                  />
-                  <Tooltip 
-                    contentStyle={{ background: 'var(--bg-soft)', borderRadius: '12px', border: '1px solid var(--line)', color: 'var(--text)' }}
-                    itemStyle={{ color: 'var(--brand)', fontWeight: 'bold' }}
-                  />
-                  <Area 
-                    type="monotone" 
-                    dataKey="weight" 
-                    stroke="var(--brand)" 
-                    strokeWidth={3}
-                    fillOpacity={1} 
-                    fill="url(#colorWeight)" 
-                    animationDuration={1000}
-                  />
-                </AreaChart>
-              </ResponsiveContainer>
-            ) : <p className="muted" style={{ textAlign: 'center', paddingTop: '4rem' }}>{t(lang, 'noLogs')}</p>)}
-            {graphMode === 'pie' && (
-              <ResponsiveContainer width="100%" height="100%">
-                <RadarChart cx="50%" cy="50%" outerRadius="60%" data={pieData} margin={{ top: 30, right: 30, left: 30, bottom: 30 }}>
-                  <PolarGrid stroke="var(--line)" />
-                  <PolarAngleAxis 
-                    dataKey="name" 
-                    tick={{ fill: 'var(--text)', fontSize: 10, fontWeight: '700' }} 
-                  />
-                  <PolarRadiusAxis 
-                    angle={30} 
-                    domain={[0, 'auto']} 
-                    tick={false} 
-                    axisLine={false} 
-                  />
-                  <Radar
-                    name="Volume"
-                    dataKey="value"
-                    stroke="var(--brand)"
-                    fill="var(--brand)"
-                    fillOpacity={0.5}
-                    animationDuration={1500}
-                  />
-                  <Tooltip 
-                    contentStyle={{ background: 'var(--bg-soft)', borderRadius: '12px', border: '1px solid var(--line)', color: 'var(--text)' }}
-                  />
-                </RadarChart>
-              </ResponsiveContainer>
-            )}
-            {graphMode === 'list' && (
-              <div className="exercise-list" style={{ overflowY: 'auto', maxHeight: '100%' }}>
-                {filteredLogsList.map((log) => (
-                  <div key={log.id} className="exercise-row">
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.8rem' }}>
-                      <div className="text-brand">
-                        {log.exercise_detail?.exercise_type === 'calisthenics' ? <Activity size={18} /> : 
-                         <Dumbbell size={18} />}
-                      </div>
-                      <div>
-                        <strong>{log.exercise_detail?.name}</strong>
-                        <p>
-                          {log.date} — {log.sets}x{String(log.reps).padStart(2, '0')}
-                          {!(log.exercise_detail?.exercise_type === 'calisthenics' && Number(log.weight_kg) === 0) && ` @ ${log.weight_kg}kg`}
-                        </p>
+            <div className="chart-box" style={{ height: '360px', marginTop: '1rem', background: 'transparent', border: 'none' }}>
+              {graphMode === 'bar' && (chartData.length ? (
+                <ResponsiveContainer width="100%" height="100%">
+                  <AreaChart data={chartData} margin={{ top: 10, right: 10, left: -15, bottom: 0 }}>
+                    <defs>
+                      <linearGradient id="colorWeight" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor="var(--brand)" stopOpacity={0.4} />
+                        <stop offset="95%" stopColor="var(--brand)" stopOpacity={0} />
+                      </linearGradient>
+                    </defs>
+                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--line)" />
+                    <XAxis
+                      dataKey="date"
+                      axisLine={false}
+                      tickLine={false}
+                      tick={{ fill: 'var(--muted)', fontSize: 10 }}
+                      minTickGap={20}
+                    />
+                    <YAxis
+                      axisLine={false}
+                      tickLine={false}
+                      tick={{ fill: 'var(--muted)', fontSize: 10 }}
+                      width={35}
+                    />
+                    <Tooltip
+                      contentStyle={{ background: 'var(--bg-soft)', borderRadius: '12px', border: '1px solid var(--line)', color: 'var(--text)' }}
+                      itemStyle={{ color: 'var(--brand)', fontWeight: 'bold' }}
+                    />
+                    <Area
+                      type="monotone"
+                      dataKey="weight"
+                      stroke="var(--brand)"
+                      strokeWidth={3}
+                      fillOpacity={1}
+                      fill="url(#colorWeight)"
+                      animationDuration={1000}
+                    />
+                  </AreaChart>
+                </ResponsiveContainer>
+              ) : <p className="muted" style={{ textAlign: 'center', paddingTop: '4rem' }}>{t(lang, 'noLogs')}</p>)}
+              {graphMode === 'pie' && (
+                <ResponsiveContainer width="100%" height="100%">
+                  <RadarChart cx="50%" cy="50%" outerRadius="65%" data={pieData} margin={{ top: 10, right: 10, left: 10, bottom: 10 }}>
+                    <PolarGrid stroke="var(--line)" />
+                    <PolarAngleAxis
+                      dataKey="name"
+                      tick={{ fill: 'var(--text)', fontSize: 10, fontWeight: '700' }}
+                    />
+                    <PolarRadiusAxis
+                      angle={30}
+                      domain={[0, 'auto']}
+                      tick={false}
+                      axisLine={false}
+                    />
+                    <Radar
+                      name="Volume"
+                      dataKey="value"
+                      stroke="var(--brand)"
+                      fill="var(--brand)"
+                      fillOpacity={0.5}
+                      animationDuration={1500}
+                    />
+                    <Tooltip
+                      contentStyle={{ background: 'var(--bg-soft)', borderRadius: '12px', border: '1px solid var(--line)', color: 'var(--text)' }}
+                    />
+                  </RadarChart>
+                </ResponsiveContainer>
+              )}
+              {graphMode === 'list' && (
+                <div className="exercise-list" style={{ overflowY: 'auto', maxHeight: '100%' }}>
+                  {filteredLogsList.map((log) => (
+                    <div key={log.id} className="exercise-row">
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.8rem' }}>
+                        <div className="text-brand">
+                          {log.exercise_detail?.exercise_type === 'calisthenics' ? <Activity size={18} /> :
+                            <Dumbbell size={18} />}
+                        </div>
+                        <div>
+                          <strong>{log.exercise_detail?.name}</strong>
+                          <p>
+                            {log.date} — {log.sets}x{String(log.reps).padStart(2, '0')}
+                            {!(log.exercise_detail?.exercise_type === 'calisthenics' && Number(log.weight_kg) === 0) && ` @ ${log.weight_kg}kg`}
+                          </p>
+                        </div>
                       </div>
                     </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-        </article>
-      )}
-
-      {activeTab === 'goals' && (
-        <article className="glass-card profile-section">
-          <p className="eyebrow">{t(lang, 'yourGoals')}</p>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <h2>{t(lang, 'existingGoals')}</h2>
-            <small className="muted">Drag to reorder</small>
-          </div>
-          <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
-            <SortableContext items={goals.map(g => g.id)} strategy={verticalListSortingStrategy}>
-              <div className="stack" style={{ gap: '1rem', marginTop: '1rem' }}>
-                {(() => {
-                  let lastDayLabel = '';
-                  return goals.map((g) => {
-                    const currentDayLabel = getGoalDayName(g).split(',')[0]; // Use first day for grouping
-                    const showSeparator = currentDayLabel !== lastDayLabel;
-                    lastDayLabel = currentDayLabel;
-                    
-                    return (
-                      <div key={g.id}>
-                        {showSeparator && (
-                          <div className="day-separator" style={{ display: 'flex', alignItems: 'center', gap: '1rem', margin: '1.5rem 0 0.8rem', opacity: 0.6 }}>
-                            <span style={{ fontSize: '0.7rem', fontWeight: '900', textTransform: 'uppercase', color: 'var(--muted)', letterSpacing: '1px', whiteSpace: 'nowrap' }}>{currentDayLabel}</span>
-                            <div style={{ flex: 1, height: '1px', background: 'var(--line)' }} />
-                          </div>
-                        )}
-                        <SortableGoalItem goal={g} lang={lang} onEdit={(goal) => { setGoalForm({ ...goal, goal_exercises: goal.goal_exercises.map(ge => ({ categoryFilter: ge.exercise_detail?.category || '', exercise: ge.exercise, sets: ge.sets, reps: ge.reps })) }); setActiveTab('creategoal'); }} onDelete={deleteGoal} />
-                      </div>
-                    );
-                  });
-                })()}
-              </div>
-            </SortableContext>
-          </DndContext>
-        </article>
-      )}
-
-      {activeTab === 'addexercise' && (
-        <article className="glass-card profile-section">
-          <p className="eyebrow">{t(lang, 'createExercise')}</p>
-          <h2>{t(lang, 'addExercise')}</h2>
-          <form onSubmit={handleCreateExercise} className="form-stack">
-            <label className="field"><span>{t(lang, 'name')}</span><input value={exerciseForm.name} onChange={(e) => setExerciseForm({ ...exerciseForm, name: e.target.value })} required /></label>
-            <div className="segmented ghost" style={{ marginTop: '0.5rem' }}>
-              <button type="button" className={!exerciseForm.is_time_based ? 'active' : ''} onClick={() => setExerciseForm({ ...exerciseForm, is_time_based: false })}><Weight size={16} /> {t(lang, 'weight')}</button>
-              <button type="button" className={exerciseForm.is_time_based ? 'active' : ''} onClick={() => setExerciseForm({ ...exerciseForm, is_time_based: true })}><Timer size={16} /> {t(lang, 'time')}</button>
-            </div>
-            <div className="segmented ghost" style={{ marginTop: '0.5rem' }}>
-              <button type="button" className={exerciseForm.exercise_type === 'machine' ? 'active' : ''} onClick={() => setExerciseForm({ ...exerciseForm, exercise_type: 'machine' })}><Dumbbell size={16} /> {t(lang, 'machine')}</button>
-              <button type="button" className={exerciseForm.exercise_type === 'calisthenics' ? 'active' : ''} onClick={() => setExerciseForm({ ...exerciseForm, exercise_type: 'calisthenics' })}><Activity size={16} /> {t(lang, 'calisthenics')}</button>
-            </div>
-            <LinkInput label={t(lang, 'youtubeLink')} value={exerciseForm.youtube_url} onChange={(youtube_url) => setExerciseForm({ ...exerciseForm, youtube_url })} lang={lang} />
-            <label className="field"><span>{t(lang, 'category')}</span><select required value={exerciseForm.category} onChange={(e) => setExerciseForm({ ...exerciseForm, category: e.target.value })}><option value="" disabled>Select Category</option>{categories.map((category) => <option key={category} value={category}>{t(lang, category)}</option>)}</select></label>
-            
-            <button className="primary-btn" type="submit" style={{ width: '100%', marginTop: '0.5rem' }}>
-              {editingExercise ? (lang === 'es' ? 'ACTUALIZAR EJERCICIO' : 'UPDATE EXERCISE') : t(lang, 'createExerciseButton')}
-            </button>
-            {editingExercise && (
-              <button 
-                type="button" 
-                className="small-btn" 
-                onClick={() => {
-                  setEditingExercise(null);
-                  setExerciseForm({ id: null, name: '', youtube_url: '', category: '', exercise_type: 'machine', is_public: false, is_time_based: false });
-                }}
-                style={{ width: '100%', background: 'transparent', border: '1px solid var(--line)', color: 'var(--muted)' }}
-              >
-                {lang === 'es' ? 'CANCELAR EDICIÓN' : 'CANCEL EDIT'}
-              </button>
-            )}
-          </form>
-
-          {/* Manage Private Exercises List */}
-          <article className="glass-card" style={{ marginTop: '1.5rem' }}>
-            <h3 className="eyebrow" style={{ color: 'var(--brand)', marginBottom: '1rem' }}>
-              {lang === 'es' ? 'MIS EJERCICIOS PRIVADOS' : 'MY PRIVATE EXERCISES'}
-            </h3>
-            <div style={{ display: 'grid', gap: '0.8rem' }}>
-              {exercises.filter(ex => ex.created_by === user.id).length === 0 ? (
-                <p className="muted" style={{ fontSize: '0.85rem', textAlign: 'center', padding: '1rem' }}>
-                  {lang === 'es' ? 'No has creado ejercicios privados todavía.' : 'You haven\'t created any private exercises yet.'}
-                </p>
-              ) : (
-                exercises.filter(ex => ex.created_by === user.id).map(ex => (
-                  <div key={ex.id} className="glass-card" style={{ padding: '0.8rem', background: 'rgba(255,255,255,0.02)', border: '1px solid var(--line)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <div>
-                      <div style={{ fontWeight: '800', fontSize: '0.9rem' }}>{ex.name}</div>
-                      <div className="muted" style={{ fontSize: '0.7rem' }}>{t(lang, ex.category)} • {ex.is_time_based ? t(lang, 'time') : t(lang, 'weight')}</div>
-                    </div>
-                    <div style={{ display: 'flex', gap: '0.5rem' }}>
-                      <button 
-                        onClick={() => handleEditExercise(ex)}
-                        style={{ background: 'none', border: 'none', color: 'var(--brand)', cursor: 'pointer', padding: '4px' }}
-                        title="Edit"
-                      >
-                        <Edit2 size={18} />
-                      </button>
-                      <button 
-                        onClick={() => handleDeleteExercise(ex.id)}
-                        style={{ background: 'none', border: 'none', color: 'var(--danger)', cursor: 'pointer', padding: '4px' }}
-                        title="Delete"
-                      >
-                        <Trash2 size={18} />
-                      </button>
-                    </div>
-                  </div>
-                ))
+                  ))}
+                </div>
               )}
             </div>
           </article>
-        </article>
-      )}
+        )}
 
-      {activeTab === 'creategoal' && (
-        <article className="glass-card profile-section">
-          <p className="eyebrow">{t(lang, 'createGoal')}</p>
-          <h2>{goalForm.id ? "Edit Goal" : t(lang, 'buildRoutine')}</h2>
-          <form onSubmit={saveGoal} className="form-stack">
-            <label className="field"><span>{t(lang, 'goalTitle')}</span><input value={goalForm.title} onChange={(e) => setGoalForm({ ...goalForm, title: e.target.value })} placeholder="Leg day, Push day..." required /></label>
-            <label className="field"><span>{t(lang, 'startDate')}</span><input type="date" value={goalForm.start_date} onChange={(e) => setGoalForm({ ...goalForm, start_date: e.target.value })} required /></label>
-            <label className="field"><span>{t(lang, 'repeat')}</span><select value={goalForm.repeat_type} onChange={(e) => setGoalForm({ ...goalForm, repeat_type: e.target.value })}><option value="once">{t(lang, 'oneDayOnly')}</option><option value="weekly">{t(lang, 'weekly')}</option></select></label>
-            {goalForm.repeat_type === 'weekly' && <div className="weekday-row">{weekdays.map(([label, value]) => <button className={goalForm.weekdays.includes(value) ? 'chip active' : 'chip'} type="button" key={value} onClick={() => toggleWeekday(value)}>{label}</button>)}</div>}
-            <div className="goal-builder" style={{ marginTop: '1.5rem' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
-                <strong style={{ fontSize: '0.9rem', opacity: 0.7 }}>Exercises ({goalForm.goal_exercises.length}/10)</strong>
+        {activeTab === 'goals' && (
+          <article className="glass-card profile-section">
+            <p className="eyebrow">{t(lang, 'yourGoals')}</p>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <h2>{t(lang, 'existingGoals')}</h2>
+              <small className="muted">Drag to reorder</small>
+            </div>
+            <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+              <SortableContext items={goals.map(g => g.id)} strategy={verticalListSortingStrategy}>
+                <div className="stack" style={{ gap: '1rem', marginTop: '1rem' }}>
+                  {(() => {
+                    let lastDayLabel = '';
+                    return goals.map((g) => {
+                      const currentDayLabel = getGoalDayName(g).split(',')[0]; // Use first day for grouping
+                      const showSeparator = currentDayLabel !== lastDayLabel;
+                      lastDayLabel = currentDayLabel;
+
+                      return (
+                        <div key={g.id}>
+                          {showSeparator && (
+                            <div className="day-separator" style={{ display: 'flex', alignItems: 'center', gap: '1rem', margin: '1.5rem 0 0.8rem', opacity: 0.6 }}>
+                              <span style={{ fontSize: '0.7rem', fontWeight: '900', textTransform: 'uppercase', color: 'var(--muted)', letterSpacing: '1px', whiteSpace: 'nowrap' }}>{currentDayLabel}</span>
+                              <div style={{ flex: 1, height: '1px', background: 'var(--line)' }} />
+                            </div>
+                          )}
+                          <SortableGoalItem goal={g} lang={lang} onEdit={(goal) => { setGoalForm({ ...goal, goal_exercises: goal.goal_exercises.map(ge => ({ categoryFilter: ge.exercise_detail?.category || '', exercise: ge.exercise, sets: ge.sets, reps: ge.reps })) }); setActiveTab('creategoal'); }} onDelete={deleteGoal} />
+                        </div>
+                      );
+                    });
+                  })()}
+                </div>
+              </SortableContext>
+            </DndContext>
+          </article>
+        )}
+
+        {activeTab === 'addexercise' && (
+          <article className="glass-card profile-section">
+            <p className="eyebrow">{t(lang, 'createExercise')}</p>
+            <h2>{t(lang, 'addExercise')}</h2>
+            <form onSubmit={handleCreateExercise} className="form-stack">
+              <label className="field"><span>{t(lang, 'name')}</span><input value={exerciseForm.name} onChange={(e) => setExerciseForm({ ...exerciseForm, name: e.target.value })} required /></label>
+              <div className="segmented ghost" style={{ marginTop: '0.5rem' }}>
+                <button type="button" className={!exerciseForm.is_time_based ? 'active' : ''} onClick={() => setExerciseForm({ ...exerciseForm, is_time_based: false })}><Weight size={16} /> {t(lang, 'weight')}</button>
+                <button type="button" className={exerciseForm.is_time_based ? 'active' : ''} onClick={() => setExerciseForm({ ...exerciseForm, is_time_based: true })}><Timer size={16} /> {t(lang, 'time')}</button>
               </div>
-              
-              {/* Add Button moved to bottom */}
+              <div className="segmented ghost" style={{ marginTop: '0.5rem' }}>
+                <button type="button" className={exerciseForm.exercise_type === 'machine' ? 'active' : ''} onClick={() => setExerciseForm({ ...exerciseForm, exercise_type: 'machine' })}><Dumbbell size={16} /> {t(lang, 'machine')}</button>
+                <button type="button" className={exerciseForm.exercise_type === 'calisthenics' ? 'active' : ''} onClick={() => setExerciseForm({ ...exerciseForm, exercise_type: 'calisthenics' })}><Activity size={16} /> {t(lang, 'calisthenics')}</button>
+              </div>
+              <LinkInput label={t(lang, 'youtubeLink')} value={exerciseForm.youtube_url} onChange={(youtube_url) => setExerciseForm({ ...exerciseForm, youtube_url })} lang={lang} />
+              <label className="field"><span>{t(lang, 'category')}</span><select required value={exerciseForm.category} onChange={(e) => setExerciseForm({ ...exerciseForm, category: e.target.value })}><option value="" disabled>Select Category</option>{categories.map((category) => <option key={category} value={category}>{t(lang, category)}</option>)}</select></label>
 
-              {goalForm.goal_exercises.map((item, index) => {
-                const availableExercises = item.categoryFilter ? exercises.filter(ex => ex.category === item.categoryFilter) : exercises;
-                return (
-                  <div className="goal-exercise-row glass-card" key={index} style={{ padding: '1rem', marginBottom: '1rem' }}>
-                    <div className="goal-exercise-selectors">
-                      <select value={item.categoryFilter} onChange={(e) => updateGoalExercise(index, 'categoryFilter', e.target.value)}><option value="">All</option>{categories.map((c) => <option key={c} value={c}>{t(lang, c)}</option>)}</select>
-                      <select required value={item.exercise} onChange={(e) => updateGoalExercise(index, 'exercise', e.target.value)} style={{ textOverflow: 'ellipsis' }}><option value="" disabled>Pick Exercise</option>{availableExercises.map((ex) => <option key={ex.id} value={ex.id}>{ex.name}</option>)}</select>
-                    </div>
-                    <div className="goal-exercise-inputs">
-                      <input type="number" placeholder={t(lang, 'sets')} value={item.sets} onFocus={(e) => e.target.select()} onChange={(e) => updateGoalExercise(index, 'sets', e.target.value)} className="input-bubble" style={{ width: '100%', textAlign: 'center' }} max="8" />
-                      <input type="number" placeholder={t(lang, 'reps')} value={item.reps} onFocus={(e) => e.target.select()} onChange={(e) => updateGoalExercise(index, 'reps', e.target.value)} className="input-bubble" style={{ width: '100%', textAlign: 'center' }} max="99" />
-                      <button className="small-btn danger-btn" type="button" onClick={() => removeGoalExercise(index)} style={{ minWidth: '46px' }}><Trash2 size={16} /></button>
-                    </div>
-                  </div>
-                );
-              })}
-              
-              {goalForm.goal_exercises.length < 10 && (
-                <button 
-                  className="dotted-btn" 
-                  type="button" 
-                  onClick={addGoalExercise} 
-                  style={{ 
-                    width: '100%', 
-                    marginTop: '0.5rem',
-                    marginBottom: '1.5rem', 
-                    padding: '1.2rem', 
-                    border: '2px dashed var(--line)', 
-                    borderRadius: '16px', 
-                    background: 'rgba(255,255,255,0.02)',
-                    color: 'var(--brand)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    gap: '0.8rem',
-                    cursor: 'pointer',
-                    transition: 'all 0.2s'
+              <button className="primary-btn" type="submit" style={{ width: '100%', marginTop: '0.5rem' }}>
+                {editingExercise ? (lang === 'es' ? 'ACTUALIZAR EJERCICIO' : 'UPDATE EXERCISE') : t(lang, 'createExerciseButton')}
+              </button>
+              {editingExercise && (
+                <button
+                  type="button"
+                  className="small-btn"
+                  onClick={() => {
+                    setEditingExercise(null);
+                    setExerciseForm({ id: null, name: '', youtube_url: '', category: '', exercise_type: 'machine', is_public: false, is_time_based: false });
                   }}
+                  style={{ width: '100%', background: 'transparent', border: '1px solid var(--line)', color: 'var(--muted)' }}
                 >
-                  <Plus size={20} />
-                  <span style={{ fontWeight: '900', fontSize: '1rem', letterSpacing: '0.5px' }}>{t(lang, 'addExercise')}</span>
+                  {lang === 'es' ? 'CANCELAR EDICIÓN' : 'CANCEL EDIT'}
                 </button>
               )}
+            </form>
+
+            {/* Manage Private Exercises List */}
+            <article className="glass-card" style={{ marginTop: '1.5rem' }}>
+              <h3 className="eyebrow" style={{ color: 'var(--brand)', marginBottom: '1rem' }}>
+                {lang === 'es' ? 'MIS EJERCICIOS PRIVADOS' : 'MY PRIVATE EXERCISES'}
+              </h3>
+              <div style={{ display: 'grid', gap: '0.8rem' }}>
+                {exercises.filter(ex => ex.created_by === user.id).length === 0 ? (
+                  <p className="muted" style={{ fontSize: '0.85rem', textAlign: 'center', padding: '1rem' }}>
+                    {lang === 'es' ? 'No has creado ejercicios privados todavía.' : 'You haven\'t created any private exercises yet.'}
+                  </p>
+                ) : (
+                  exercises.filter(ex => ex.created_by === user.id).map(ex => (
+                    <div key={ex.id} className="glass-card" style={{ padding: '0.8rem', background: 'rgba(255,255,255,0.02)', border: '1px solid var(--line)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <div>
+                        <div style={{ fontWeight: '800', fontSize: '0.9rem' }}>{ex.name}</div>
+                        <div className="muted" style={{ fontSize: '0.7rem' }}>{t(lang, ex.category)} • {ex.is_time_based ? t(lang, 'time') : t(lang, 'weight')}</div>
+                      </div>
+                      <div style={{ display: 'flex', gap: '0.5rem' }}>
+                        <button
+                          onClick={() => handleEditExercise(ex)}
+                          style={{ background: 'none', border: 'none', color: 'var(--brand)', cursor: 'pointer', padding: '4px' }}
+                          title="Edit"
+                        >
+                          <Settings size={18} />
+                        </button>
+                        <button
+                          onClick={() => handleDeleteExercise(ex.id)}
+                          style={{ background: 'none', border: 'none', color: 'var(--danger)', cursor: 'pointer', padding: '4px' }}
+                          title="Delete"
+                        >
+                          <Trash2 size={18} />
+                        </button>
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+            </article>
+          </article>
+        )}
+
+        {activeTab === 'creategoal' && (
+          <article className="glass-card profile-section">
+            <p className="eyebrow">{t(lang, 'createGoal')}</p>
+            <h2>{goalForm.id ? "Edit Goal" : t(lang, 'buildRoutine')}</h2>
+            <form onSubmit={saveGoal} className="form-stack">
+              <label className="field"><span>{t(lang, 'goalTitle')}</span><input value={goalForm.title} onChange={(e) => setGoalForm({ ...goalForm, title: e.target.value })} placeholder="Leg day, Push day..." required /></label>
+              <label className="field"><span>{t(lang, 'startDate')}</span><input type="date" value={goalForm.start_date} onChange={(e) => setGoalForm({ ...goalForm, start_date: e.target.value })} required /></label>
+              <label className="field"><span>{t(lang, 'repeat')}</span><select value={goalForm.repeat_type} onChange={(e) => setGoalForm({ ...goalForm, repeat_type: e.target.value })}><option value="once">{t(lang, 'oneDayOnly')}</option><option value="weekly">{t(lang, 'weekly')}</option></select></label>
+              {goalForm.repeat_type === 'weekly' && <div className="weekday-row">{weekdays.map(([label, value]) => <button className={goalForm.weekdays.includes(value) ? 'chip active' : 'chip'} type="button" key={value} onClick={() => toggleWeekday(value)}>{label}</button>)}</div>}
+              <div className="goal-builder" style={{ marginTop: '1.5rem' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
+                  <strong style={{ fontSize: '0.9rem', opacity: 0.7 }}>Exercises ({goalForm.goal_exercises.length}/10)</strong>
+                </div>
+
+                {/* Add Button moved to bottom */}
+
+                {goalForm.goal_exercises.map((item, index) => {
+                  const availableExercises = item.categoryFilter ? exercises.filter(ex => ex.category === item.categoryFilter) : exercises;
+                  return (
+                    <div className="goal-exercise-row glass-card" key={index} style={{ padding: '1rem', marginBottom: '1rem' }}>
+                      <div className="goal-exercise-selectors">
+                        <select value={item.categoryFilter} onChange={(e) => updateGoalExercise(index, 'categoryFilter', e.target.value)}><option value="">All</option>{categories.map((c) => <option key={c} value={c}>{t(lang, c)}</option>)}</select>
+                        <select required value={item.exercise} onChange={(e) => updateGoalExercise(index, 'exercise', e.target.value)} style={{ textOverflow: 'ellipsis' }}><option value="" disabled>Pick Exercise</option>{availableExercises.map((ex) => <option key={ex.id} value={ex.id}>{ex.name}</option>)}</select>
+                      </div>
+                      <div className="goal-exercise-inputs">
+                        <input type="number" placeholder={t(lang, 'sets')} value={item.sets} onFocus={(e) => e.target.select()} onChange={(e) => updateGoalExercise(index, 'sets', e.target.value)} className="input-bubble" style={{ width: '100%', textAlign: 'center' }} max="8" />
+                        <input type="number" placeholder={t(lang, 'reps')} value={item.reps} onFocus={(e) => e.target.select()} onChange={(e) => updateGoalExercise(index, 'reps', e.target.value)} className="input-bubble" style={{ width: '100%', textAlign: 'center' }} max="99" />
+                        <button className="small-btn danger-btn" type="button" onClick={() => removeGoalExercise(index)} style={{ minWidth: '46px' }}><Trash2 size={16} /></button>
+                      </div>
+                    </div>
+                  );
+                })}
+
+                {goalForm.goal_exercises.length < 10 && (
+                  <button
+                    className="dotted-btn"
+                    type="button"
+                    onClick={addGoalExercise}
+                    style={{
+                      width: '100%',
+                      marginTop: '0.5rem',
+                      marginBottom: '1.5rem',
+                      padding: '1.2rem',
+                      border: '2px dashed var(--line)',
+                      borderRadius: '16px',
+                      background: 'rgba(255,255,255,0.02)',
+                      color: 'var(--brand)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: '0.8rem',
+                      cursor: 'pointer',
+                      transition: 'all 0.2s'
+                    }}
+                  >
+                    <Plus size={20} />
+                    <span style={{ fontWeight: '900', fontSize: '1rem', letterSpacing: '0.5px' }}>{t(lang, 'addExercise')}</span>
+                  </button>
+                )}
+              </div>
+              <button className="primary-btn">{goalForm.id ? "Update" : "Create"}</button>
+            </form>
+          </article>
+        )}
+
+        {activeTab === 'bodymap' && (
+          <article className="glass-card profile-section animate-fade-in" style={{ padding: '1.2rem' }}>
+            <div style={{ textAlign: 'center', marginBottom: '1.2rem' }}>
+              <p className="eyebrow">{t(lang, 'measures')}</p>
+              <h2 style={{ marginBottom: '0.5rem' }}>{t(lang, 'bodyMap')}</h2>
             </div>
-            <button className="primary-btn">{goalForm.id ? "Update" : "Create"}</button>
-          </form>
-        </article>
-      )}
 
-      {activeTab === 'bodymap' && (
-        <article className="glass-card profile-section animate-fade-in" style={{ padding: '1.2rem' }}>
-          <div style={{ textAlign: 'center', marginBottom: '1.2rem' }}>
-            <p className="eyebrow">{t(lang, 'measures')}</p>
-            <h2 style={{ marginBottom: '0.5rem' }}>{t(lang, 'bodyMap')}</h2>
-          </div>
+            <div className="body-map-container" style={{ position: 'relative', width: '100%', maxWidth: '300px', margin: '0 auto' }}>
+              <img
+                src={showFrontBody ? '/front_body.png' : '/back_body.png'}
+                alt="Body Map"
+                style={{ width: '100%', opacity: 0.8, filter: 'brightness(0.8) contrast(1.2)' }}
+              />
 
-          <div className="body-map-container" style={{ position: 'relative', width: '100%', maxWidth: '300px', margin: '0 auto' }}>
-            <img 
-              src={showFrontBody ? '/front_body.png' : '/back_body.png'} 
-              alt="Body Map" 
-              style={{ width: '100%', opacity: 0.8, filter: 'brightness(0.8) contrast(1.2)' }} 
-            />
+              {/* Rotation Toggle Button */}
+              <button
+                type="button"
+                onClick={() => setShowFrontBody(!showFrontBody)}
+                className="glass-card"
+                style={{
+                  position: 'absolute',
+                  bottom: '10px',
+                  right: '10px',
+                  width: '44px',
+                  height: '44px',
+                  borderRadius: '12px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  cursor: 'pointer',
+                  border: '1px solid var(--line)',
+                  background: 'rgba(var(--brand-rgb), 0.1)',
+                  color: 'var(--brand)',
+                  zIndex: 20
+                }}
+              >
+                <RefreshCw size={20} />
+              </button>
 
-            {/* Rotation Toggle Button */}
-            <button 
-              type="button"
-              onClick={() => setShowFrontBody(!showFrontBody)}
-              className="glass-card"
-              style={{ 
-                position: 'absolute', 
-                bottom: '10px', 
-                right: '10px', 
-                width: '44px', 
-                height: '44px', 
-                borderRadius: '12px',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                cursor: 'pointer',
-                border: '1px solid var(--line)',
-                background: 'rgba(var(--brand-rgb), 0.1)',
-                color: 'var(--brand)',
-                zIndex: 20
-              }}
-            >
-              <RefreshCw size={20} />
-            </button>
-            
-            {(showFrontBody ? frontDots : backDots).map((dot) => {
-              const latest = (measurements || [])
-                .filter(m => m && m.body_part === dot.part)
-                .sort((a, b) => {
-                  const da = a.date ? new Date(a.date) : 0;
-                  const db = b.date ? new Date(b.date) : 0;
-                  return db - da;
-                })[0];
-              const isActive = selectedDot === dot.part;
-              
-              return (
-                <button
-                  key={dot.part}
-                  type="button"
-                  onClick={() => {
-                    setSelectedDot(dot.part);
-                    setMeasurementForm(p => ({ 
-                      ...p, 
-                      body_part: dot.part,
-                      value_cm: latest ? latest.value_cm : ''
-                    }));
-                  }}
-                  style={{
-                    position: 'absolute',
-                    top: dot.top,
-                    left: dot.left,
-                    width: '16px',
-                    height: '16px',
-                    background: isActive ? 'var(--brand)' : 'rgba(255,255,255,0.4)',
-                    border: isActive ? '2px solid white' : '1.5px solid rgba(255,255,255,0.8)',
-                    borderRadius: '50%',
-                    transform: 'translate(-50%, -50%)',
-                    cursor: 'pointer',
-                    boxShadow: isActive ? '0 0 15px var(--brand)' : '0 2px 4px rgba(0,0,0,0.3)',
-                    zIndex: 10,
-                    transition: 'all 0.2s',
-                    backdropFilter: 'blur(2px)'
-                  }}
-                />
-              );
-            })}
-          </div>
+              {(showFrontBody ? frontDots : backDots).map((dot) => {
+                const latest = (measurements || [])
+                  .filter(m => m && m.body_part === dot.part)
+                  .sort((a, b) => {
+                    const da = a.date ? new Date(a.date) : 0;
+                    const db = b.date ? new Date(b.date) : 0;
+                    return db - da;
+                  })[0];
+                const isActive = selectedDot === dot.part;
 
-          <form onSubmit={addMeasurement} className="form-stack glass-card" style={{ marginTop: '1.5rem', padding: '1.5rem', border: '1px solid var(--line)' }}>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
-              <label className="field">
-                <span>{t(lang, 'bodyPart')}</span>
-                <select value={measurementForm.body_part} onChange={(e) => setMeasurementForm({ ...measurementForm, body_part: e.target.value })} style={{ textTransform: 'capitalize' }}>
-                  {bodyParts.map(p => <option key={p} value={p}>{t(lang, p)}</option>)}
-                </select>
-              </label>
-              <label className="field">
-                <span>{t(lang, 'valueCm')}</span>
-                <input type="number" step="0.1" placeholder="cm" value={measurementForm.value_cm} onFocus={(e) => e.target.select()} onChange={(e) => setMeasurementForm({ ...measurementForm, value_cm: e.target.value })} required />
-              </label>
+                return (
+                  <button
+                    key={dot.part}
+                    type="button"
+                    onClick={() => {
+                      setSelectedDot(dot.part);
+                      setMeasurementForm(p => ({
+                        ...p,
+                        body_part: dot.part,
+                        value_cm: latest ? latest.value_cm : ''
+                      }));
+                    }}
+                    style={{
+                      position: 'absolute',
+                      top: dot.top,
+                      left: dot.left,
+                      width: '16px',
+                      height: '16px',
+                      background: isActive ? 'var(--brand)' : 'rgba(255,255,255,0.4)',
+                      border: isActive ? '2px solid white' : '1.5px solid rgba(255,255,255,0.8)',
+                      borderRadius: '50%',
+                      transform: 'translate(-50%, -50%)',
+                      cursor: 'pointer',
+                      boxShadow: isActive ? '0 0 15px var(--brand)' : '0 2px 4px rgba(0,0,0,0.3)',
+                      zIndex: 10,
+                      transition: 'all 0.2s',
+                      backdropFilter: 'blur(2px)'
+                    }}
+                  />
+                );
+              })}
             </div>
-            <label className="field" style={{ marginTop: '0.5rem' }}>
-              <span>{t(lang, 'date')}</span>
-              <input type="date" value={measurementForm.date} onChange={(e) => setMeasurementForm({ ...measurementForm, date: e.target.value })} required />
-            </label>
-            <button className="primary-btn" style={{ marginTop: '1rem' }}>{t(lang, 'saveMeasure')}</button>
-          </form>
-        </article>
-      )}
-      {activeTab === 'menu' && (
-        <article className="profile-section animate-fade-in" style={{ 
-          padding: '4rem 2rem', 
-          textAlign: 'left', 
-          position: 'relative', 
-          overflow: 'hidden', 
-          minHeight: '400px',
-          background: '#0a0a0a', 
-          border: '2px solid #333',
-          borderRadius: '8px',
-          fontFamily: 'monospace'
-        }}>
-          {/* CRT Scanning Line */}
-          <div className="crt-scanline" style={{ position: 'absolute', inset: 0, background: 'linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.2) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.03), rgba(0, 255, 0, 0.01), rgba(0, 0, 255, 0.03))', backgroundSize: '100% 4px, 3px 100%', pointerEvents: 'none', zIndex: 5 }} />
-          <div className="crt-beam" style={{ position: 'absolute', top: '-10%', left: 0, right: 0, height: '120px', background: 'linear-gradient(to bottom, transparent, rgba(var(--brand-rgb), 0.1), transparent)', animation: 'scan 4s linear infinite', pointerEvents: 'none', zIndex: 6 }} />
-          
-          <div style={{ position: 'relative', zIndex: 10, animation: 'flicker 0.15s infinite' }}>
-            <p className="pixel-text" style={{ fontSize: '1.1rem', color: 'var(--brand)', letterSpacing: '1px', lineHeight: '2', margin: 0, textShadow: '0 0 8px var(--brand)' }}>
-              Z:\&gt; INITIALIZING SCOUTER PROTOCOL...<br/>
-              Z:\&gt; SCANNING FOR BIO-SIGNATURES...<br/>
-              Z:\&gt; DATA RESTRICTED: KI FREQUENCY UNKNOWN.<br/>
-              Z:\&gt; <span style={{ animation: 'blink 1s step-end infinite' }}>_</span>
-            </p>
-          </div>
-          
-          <style>{`
+
+            <form onSubmit={addMeasurement} className="form-stack glass-card" style={{ marginTop: '1.5rem', padding: '1.5rem', border: '1px solid var(--line)' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                <label className="field">
+                  <span>{t(lang, 'bodyPart')}</span>
+                  <select value={measurementForm.body_part} onChange={(e) => setMeasurementForm({ ...measurementForm, body_part: e.target.value })} style={{ textTransform: 'capitalize' }}>
+                    {bodyParts.map(p => <option key={p} value={p}>{t(lang, p)}</option>)}
+                  </select>
+                </label>
+                <label className="field">
+                  <span>{t(lang, 'valueCm')}</span>
+                  <input type="number" step="0.1" placeholder="cm" value={measurementForm.value_cm} onFocus={(e) => e.target.select()} onChange={(e) => setMeasurementForm({ ...measurementForm, value_cm: e.target.value })} required />
+                </label>
+              </div>
+              <label className="field" style={{ marginTop: '0.5rem' }}>
+                <span>{t(lang, 'date')}</span>
+                <input type="date" value={measurementForm.date} onChange={(e) => setMeasurementForm({ ...measurementForm, date: e.target.value })} required />
+              </label>
+              <button className="primary-btn" style={{ marginTop: '1rem' }}>{t(lang, 'saveMeasure')}</button>
+            </form>
+          </article>
+        )}
+        {activeTab === 'menu' && (
+          <article className="profile-section animate-fade-in" style={{
+            padding: '4rem 2rem',
+            textAlign: 'left',
+            position: 'relative',
+            overflow: 'hidden',
+            minHeight: '400px',
+            background: '#0a0a0a',
+            border: '2px solid #333',
+            borderRadius: '8px',
+            fontFamily: 'monospace'
+          }}>
+            {/* CRT Scanning Line */}
+            <div className="crt-scanline" style={{ position: 'absolute', inset: 0, background: 'linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.2) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.03), rgba(0, 255, 0, 0.01), rgba(0, 0, 255, 0.03))', backgroundSize: '100% 4px, 3px 100%', pointerEvents: 'none', zIndex: 5 }} />
+            <div className="crt-beam" style={{ position: 'absolute', top: '-10%', left: 0, right: 0, height: '120px', background: 'linear-gradient(to bottom, transparent, rgba(var(--brand-rgb), 0.1), transparent)', animation: 'scan 4s linear infinite', pointerEvents: 'none', zIndex: 6 }} />
+
+            <div style={{ position: 'relative', zIndex: 10, animation: 'flicker 0.15s infinite' }}>
+              <p className="pixel-text" style={{ fontSize: '1.1rem', color: 'var(--brand)', letterSpacing: '1px', lineHeight: '2', margin: 0, textShadow: '0 0 8px var(--brand)' }}>
+                Z:\&gt; INITIALIZING SCOUTER PROTOCOL...<br />
+                Z:\&gt; SCANNING FOR BIO-SIGNATURES...<br />
+                Z:\&gt; DATA RESTRICTED: KI FREQUENCY UNKNOWN.<br />
+                Z:\&gt; <span style={{ animation: 'blink 1s step-end infinite' }}>_</span>
+              </p>
+            </div>
+
+            <style>{`
             @keyframes scan {
               0% { top: -10%; opacity: 0; }
               10% { opacity: 1; }
@@ -1301,8 +1271,8 @@ export default function Profile({ preferences, lang }) {
               50% { opacity: 0; }
             }
           `}</style>
-        </article>
-      )}
+          </article>
+        )}
       </div>
     </section>
   );

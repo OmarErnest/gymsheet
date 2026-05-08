@@ -109,9 +109,9 @@ export default function Global({ lang }) {
                   overflow: 'hidden',
                   ...(row.is_test_user ? { opacity: 0.7 } : {}),
                   ...(row.profile_pic_url ? {
-                    backgroundImage: `linear-gradient(to right, rgba(7, 19, 13, 0.95) 15%, rgba(7, 19, 13, 0.4) 50%, rgba(7, 19, 13, 0.95) 85%), url(${getIconUrl(row.profile_pic_url)})`,
+                    backgroundImage: `linear-gradient(to right, rgba(7, 19, 13, 0.92) 20%, rgba(7, 19, 13, 0.7) 50%, rgba(7, 19, 13, 0.92) 80%), url(${getIconUrl(row.profile_pic_url)})`,
                     backgroundSize: 'cover',
-                    backgroundPosition: '95% 0%',
+                    backgroundPosition: 'center 20%',
                     border: '1px solid var(--line)'
                   } : {})
                 }}
@@ -122,43 +122,52 @@ export default function Global({ lang }) {
                   display: 'flex', 
                   alignItems: 'center', 
                   width: '100%', 
-                  textShadow: '0 1px 1px rgba(0,0,0,1), 0 0 8px rgba(0,0,0,0.8)' 
+                  textShadow: '0 1px 2px rgba(0,0,0,1), 0 0 12px rgba(0,0,0,1)',
+                  justifyContent: 'space-between'
                 }}>
-                  <div className="rank-number" style={{ 
-                    fontSize: row.rank <= 10 ? '1.5rem' : '0.8rem', 
-                    fontWeight: '900',
-                    fontFamily: row.rank <= 10 ? "'Ma Shan Zheng', cursive" : 'inherit',
-                    minWidth: '40px'
-                  }}>
-                    {row.rank <= 10 ? ['一', '二', '三', '四', '五', '六', '七', '八', '九', '十'][row.rank - 1] : row.rank}
-                  </div>
-                  <div className={`avatar-container ${getBorderClass(row.rank, hasLink)}`} onClick={() => setPopupUser(row)} style={{ flexShrink: 0 }}>
-                    <div className="avatar big">
-                      {row.profile_pic_url ? <img src={getIconUrl(row.profile_pic_url)} alt="" /> : row.name?.charAt(0)}
+                  {/* LEFT: RANK & AVATAR (Left Aligned) */}
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', flex: '0 0 85px' }}>
+                    <div className="rank-number" style={{ 
+                      fontSize: row.rank <= 10 ? '1.4rem' : '0.8rem', 
+                      fontWeight: '900',
+                      fontFamily: row.rank <= 10 ? "'Ma Shan Zheng', cursive" : 'inherit',
+                      color: '#fff',
+                      minWidth: '25px'
+                    }}>
+                      {row.rank <= 10 ? ['一', '二', '三', '四', '五', '六', '七', '八', '九', '十'][row.rank - 1] : row.rank}
                     </div>
-                    {hasLink && <div className="link-badge"><ExternalLink size={12} /></div>}
+                    <div className={`avatar-container ${getBorderClass(row.rank, hasLink)}`} onClick={() => setPopupUser(row)} style={{ flexShrink: 0, width: '38px', height: '38px' }}>
+                      <div className="avatar" style={{ width: '100%', height: '100%' }}>
+                        {row.profile_pic_url ? <img src={getIconUrl(row.profile_pic_url)} alt="" /> : row.name?.charAt(0)}
+                      </div>
+                      {hasLink && <div className="link-badge"><ExternalLink size={10} /></div>}
+                    </div>
                   </div>
-                  <div className="rank-main" style={{ textAlign: 'center', flex: 1, padding: '0 0.5rem' }}>
+
+                  {/* CENTER: NAME & POWER LEVEL (Centered) */}
+                  <div style={{ textAlign: 'center', flex: 1, minWidth: 0 }}>
                     <h3 className="pixel-text" style={{ 
                       margin: 0, 
                       fontSize: '0.9rem', 
-                      color: row.id === user?.id ? 'var(--brand)' : 'var(--text)',
+                      color: '#fff',
                       display: 'flex',
                       flexDirection: 'column',
                       alignItems: 'center',
-                      gap: '2px'
+                      gap: '4px'
                     }}>
-                      {row.name}
-                      <span style={{ fontSize: '0.65rem', opacity: 0.9, color: 'var(--brand)', fontWeight: '800', letterSpacing: '0.5px' }}>
-                        POWER: {Math.round(row.score || 0).toLocaleString()}
+                      <span style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '100%' }}>{row.name}</span>
+                      <span style={{ fontSize: '0.7rem', color: 'var(--brand)', fontWeight: '1000', letterSpacing: '0.5px', whiteSpace: 'nowrap' }}>
+                        POWER LEVEL: {Math.round(row.score || 0).toLocaleString()}
                       </span>
                     </h3>
                   </div>
-                  <div style={{ textAlign: 'right', minWidth: '80px', flexShrink: 0 }}>
-                    <div className="brand" style={{ fontWeight: '950', fontSize: '1.1rem', letterSpacing: '-0.5px' }}>
+
+                  {/* RIGHT: AVG LIFT (Right Aligned) */}
+                  <div style={{ textAlign: 'right', flex: '0 0 85px' }}>
+                    <div className="brand" style={{ fontWeight: '1000', fontSize: '1.2rem', letterSpacing: '-0.5px', color: 'var(--brand)', lineHeight: 1 }}>
                       {Math.round(row.average_lift_kg_this_week || 0)}kg
                     </div>
-                    <div className="muted pixel-text" style={{ fontSize: '0.55rem', opacity: 0.8 }}>
+                    <div className="pixel-text" style={{ fontSize: '0.55rem', fontWeight: '1000', color: '#fff', marginTop: '2px' }}>
                       AVG LIFT
                     </div>
                   </div>
