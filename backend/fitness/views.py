@@ -14,6 +14,12 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.exceptions import ValidationError
 
+from .models import (
+    BodyMeasurement, DailyProgress, Exercise, ExerciseLog, GoalPlan, 
+    CSVRequest, Notification, ExerciseCSVUpload, LogCSVUpload, GlobalNotice,
+    BroadcastNotification, AdminMessage, MaintenanceNotice, WeeklyShift,
+    Badge, UserBadge
+)
 from .serializers import (
     BodyMeasurementSerializer,
     DailyProgressSerializer,
@@ -28,12 +34,10 @@ from .serializers import (
     BroadcastNotificationSerializer,
     AdminMessageSerializer,
     MaintenanceNoticeSerializer,
+    BadgeSerializer,
+    UserBadgeSerializer
 )
-from .models import (
-    BodyMeasurement, DailyProgress, Exercise, ExerciseLog, GoalPlan, 
-    CSVRequest, Notification, ExerciseCSVUpload, LogCSVUpload, GlobalNotice,
-    BroadcastNotification, AdminMessage, MaintenanceNotice, WeeklyShift
-)
+from .badges import check_all_relevant_badges
 
 
 def parse_date_param(raw, fallback):
@@ -115,7 +119,35 @@ class GoalPlanViewSet(viewsets.ModelViewSet):
 
     def perform_update(self, serializer):
         self.check_constraints(serializer, instance=self.get_object())
-        serializer.save()
+        old_instance = self.get_object()
+        old_exercises = set(old_instance.goal_exercises.values_list('exercise_id', flat=True))
+        
+        instance = serializer.save()
+        new_exercises = set(instance.goal_exercises.values_list('exercise_id', flat=True))
+        
+        removed_exercises = old_exercises - new_exercises
+        if removed_exercises:
+            from django.utils import timezone
+            from .models import ExerciseLog
+            today = timezone.localdate()
+            ExerciseLog.objects.filter(
+                user=self.request.user,
+                exercise_id__in=removed_exercises,
+                date__gte=today
+            ).delete()
+
+    def perform_destroy(self, instance):
+        exercises = set(instance.goal_exercises.values_list('exercise_id', flat=True))
+        if exercises:
+            from django.utils import timezone
+            from .models import ExerciseLog
+            today = timezone.localdate()
+            ExerciseLog.objects.filter(
+                user=self.request.user,
+                exercise_id__in=exercises,
+                date__gte=today
+            ).delete()
+        instance.delete()
 
 
 class DailyProgressViewSet(viewsets.ModelViewSet):
@@ -181,13 +213,19 @@ class ExerciseLogViewSet(viewsets.ModelViewSet):
                         pass
                 
                 created_logs = []
+                last_date = None
                 for item in creates:
                     serializer = self.get_serializer(data=item)
                     serializer.is_valid(raise_exception=True)
                     serializer.save(user=request.user)
                     created_logs.append(serializer.data)
+                    last_date = item.get('date')
+                
+                # Badge checks
+                newly_earned = check_all_relevant_badges(request.user, 'log', date=last_date)
+                new_badges_data = UserBadgeSerializer(newly_earned, many=True).data if newly_earned else []
                     
-            return Response({'status': 'ok', 'created': len(created_logs)})
+            return Response({'status': 'ok', 'created': len(created_logs), 'new_badges': new_badges_data})
         except Exception as e:
             return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
@@ -225,14 +263,42 @@ class WeeklyShiftView(APIView):
         # Use a copy to avoid mutation issues before re-assignment
         offsets = list(shift_obj.shifts.get('offsets', [0]*7))
 
-        # We shift all goals that are CURRENTLY landing on or after the clicked day
-        for i in range(7):
-            current_pos = i + offsets[i]
-            if current_pos >= day_index:
-                new_offset = offsets[i] + direction
-                # Stay within the week [0, 6]
-                if 0 <= (i + new_offset) <= 6:
-                    offsets[i] = new_offset
+        # Get plans to determine occupancy
+        plans = GoalPlan.objects.filter(user=request.user)
+        
+        # Determine which original days (0-6) have goals for this specific week
+        original_days_with_goals = set()
+        for plan in plans:
+            for d_idx in range(7):
+                if plan.matches_date(week_start + timedelta(days=d_idx)):
+                    original_days_with_goals.add(d_idx)
+        
+        # Map current positions to original day indices
+        # current_pos -> [original_day_idx, ...]
+        pos_map = {}
+        for d_idx in original_days_with_goals:
+            pos = d_idx + offsets[d_idx]
+            if pos not in pos_map:
+                pos_map[pos] = []
+            pos_map[pos].append(d_idx)
+
+        # Chain reaction: shift goals starting from day_index until an empty day or edge of week is reached
+        shifted_orig_days = []
+        curr = day_index
+        while 0 <= curr <= 6 and curr in pos_map:
+            for d_idx in pos_map[curr]:
+                shifted_orig_days.append(d_idx)
+            
+            if direction > 0:
+                curr += 1
+            else:
+                curr -= 1
+        
+        # Apply the direction to all identified original days in the chain
+        for d_idx in shifted_orig_days:
+            new_offset = offsets[d_idx] + direction
+            if 0 <= (d_idx + new_offset) <= 6:
+                offsets[d_idx] = new_offset
         
         shift_obj.shifts['offsets'] = offsets
         shift_obj.save()
@@ -392,11 +458,16 @@ class LeaderboardView(APIView):
         last_week_end = week_end - timedelta(days=7)
         champion = get_champion_for_week(last_week_start, last_week_end)
 
+        # Badge check for champion
+        newly_earned = check_all_relevant_badges(request.user, 'leaderboard')
+        new_badges_data = UserBadgeSerializer(newly_earned, many=True).data if newly_earned else []
+
         return Response({
             'champion_id': champion.id if champion else None,
             'champion_name': champion.name if champion else None,
             'champion_link': getattr(champion.preferences, 'recommended_link', '') if champion else '',
-            'leaderboard': data
+            'leaderboard': data,
+            'new_badges': new_badges_data
         })
 
 
@@ -587,7 +658,6 @@ class AdminMessageViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
-        # Admins see all, users see their own
         if self.request.user.is_staff:
             return AdminMessage.objects.all().order_by('-created_at')
         return AdminMessage.objects.filter(user=self.request.user).order_by('-created_at')
@@ -599,6 +669,31 @@ class AdminMessageViewSet(viewsets.ModelViewSet):
             from rest_framework.exceptions import ValidationError
             raise ValidationError("You have too many unread messages pending. Please wait for an admin to reply.")
         serializer.save(user=self.request.user)
+
+    def create(self, request, *args, **kwargs):
+        response = super().create(request, *args, **kwargs)
+        # Badge check
+        newly_earned = check_all_relevant_badges(request.user, 'message')
+        if newly_earned:
+            response.data['new_badges'] = UserBadgeSerializer(newly_earned, many=True).data
+        return response
+
+class BadgeViewSet(viewsets.ReadOnlyModelViewSet):
+    permission_classes = [IsAuthenticated]
+    
+    def get_queryset(self):
+        return Badge.objects.all().order_by('id')
+
+    def get_serializer_class(self):
+        if self.action == 'my':
+            return UserBadgeSerializer
+        return BadgeSerializer
+
+    @action(detail=False, methods=['get'])
+    def my(self, request):
+        earned = UserBadge.objects.filter(user=request.user).select_related('badge')
+        serializer = UserBadgeSerializer(earned, many=True)
+        return Response(serializer.data)
 
 
 class MaintenanceNoticeViewSet(viewsets.ModelViewSet):

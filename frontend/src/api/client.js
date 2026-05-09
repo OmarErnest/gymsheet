@@ -107,6 +107,9 @@ export async function api(path, options = {}) {
       }
       if (response.ok) {
         localStorage.setItem(CACHE_KEY_PREFIX + path, JSON.stringify(data));
+        if (data && data.new_badges && data.new_badges.length > 0) {
+          window.dispatchEvent(new CustomEvent('badges-earned', { detail: data.new_badges }));
+        }
         return data;
       }
       if (response.status === 401) {
@@ -148,6 +151,9 @@ export async function api(path, options = {}) {
         return { _error: 'Session expired' };
       }
       throw new Error(extractError(data));
+    }
+    if (data && data.new_badges && data.new_badges.length > 0) {
+      window.dispatchEvent(new CustomEvent('badges-earned', { detail: data.new_badges }));
     }
     return data;
   } catch (err) {

@@ -363,3 +363,26 @@ class WeeklyShift(models.Model):
 
     def __str__(self):
         return f"Shift for {self.user} - week {self.week_start}"
+
+
+class Badge(models.Model):
+    slug = models.SlugField(unique=True)
+    name = models.CharField(max_length=100)
+    description = models.TextField()
+    icon_name = models.CharField(max_length=100) # Filename in public/icons/badges/
+    dbz_message = models.TextField()
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return self.name
+
+class UserBadge(models.Model):
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='badges')
+    badge = models.ForeignKey(Badge, on_delete=models.CASCADE)
+    earned_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = ('user', 'badge')
+
+    def __str__(self):
+        return f"{self.user} - {self.badge.name}"

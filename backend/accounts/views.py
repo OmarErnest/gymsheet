@@ -13,6 +13,8 @@ from .serializers import (
     UserPublicSerializer,
 )
 import uuid
+from fitness.badges import check_all_relevant_badges
+from fitness.serializers import UserBadgeSerializer
 
 
 def token_payload(user):
@@ -143,7 +145,14 @@ class MeView(APIView):
         serializer = UserPublicSerializer(request.user, data=request.data, partial=True)
         serializer.is_valid(raise_exception=True)
         serializer.save()
-        return Response(serializer.data)
+        
+        # Badge check for profile picture
+        newly_earned = check_all_relevant_badges(request.user, 'profile')
+        data = serializer.data
+        if newly_earned:
+            data['new_badges'] = UserBadgeSerializer(newly_earned, many=True).data
+            
+        return Response(data)
 
 
 class PreferencesView(APIView):

@@ -14,6 +14,7 @@ import Admin from './pages/Admin.jsx';
 import EventManager from './components/EventManager.jsx';
 import SearchModal from './components/SearchModal.jsx';
 import { Search } from 'lucide-react';
+import BadgeModal from './components/BadgeModal.jsx';
 
 export default function App() {
   const { user, booting, logout } = useAuth();
@@ -24,6 +25,7 @@ export default function App() {
   const lang = preferences.language || 'en';
   const [showProfilePopup, setShowProfilePopup] = useState(false);
   const [showSearch, setShowSearch] = useState(false);
+  const [badgeQueue, setBadgeQueue] = useState([]);
 
   useEffect(() => {
     // Initial sync
@@ -100,6 +102,18 @@ export default function App() {
   }, []);
 
   useEffect(() => {
+    const handleBadges = (e) => {
+      setBadgeQueue(prev => [...prev, ...e.detail]);
+    };
+    window.addEventListener('badges-earned', handleBadges);
+    return () => window.removeEventListener('badges-earned', handleBadges);
+  }, []);
+
+  const closeBadgeModal = () => {
+    setBadgeQueue(prev => prev.slice(1));
+  };
+
+  useEffect(() => {
     if (activeTab !== 'home') {
       window.scrollTo({ top: 0, behavior: 'instant' });
     }
@@ -136,17 +150,39 @@ export default function App() {
   if (!disclaimerAccepted) {
     return (
       <div className="modal-overlay">
-        <div className="glass-card modal-content" style={{ padding: '2rem', textAlign: 'center' }}>
-          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '1rem', marginBottom: '1.5rem' }}>
-            <div className="login-logo" style={{ background: 'var(--brand)', boxShadow: 'none' }}>
-              <img src="/icon.png" alt="" />
+        <div className="glass-card modal-content" style={{ 
+          padding: '2rem', 
+          textAlign: 'center', 
+          maxHeight: '80vh', 
+          display: 'flex', 
+          flexDirection: 'column',
+          gap: '1.5rem'
+        }}>
+          <div style={{ flexShrink: 0 }}>
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '1rem', marginBottom: '0.5rem' }}>
+              <div className="login-logo" style={{ background: 'var(--brand)', boxShadow: 'none' }}>
+                <img src="/icon.png" alt="" />
+              </div>
+              <h2 style={{ margin: 0 }}>{t(lang, 'legalDisclaimer')}</h2>
             </div>
-            <h2 style={{ margin: 0 }}>{t(lang, 'legalDisclaimer')}</h2>
           </div>
-          <p style={{ lineHeight: '1.7', color: 'var(--text)', marginBottom: '2rem' }}>
-            {t(lang, 'legalDisclaimerText')}
-          </p>
-          <div className="form-stack">
+
+          <div style={{ 
+            overflowY: 'auto', 
+            padding: '0 0.5rem', 
+            textAlign: 'left',
+            flexGrow: 1,
+            borderTop: '1px solid var(--line)',
+            borderBottom: '1px solid var(--line)',
+            paddingTop: '1rem',
+            paddingBottom: '1rem'
+          }}>
+            <p style={{ lineHeight: '1.7', color: 'var(--text)', margin: 0 }}>
+              {t(lang, 'legalDisclaimerText')}
+            </p>
+          </div>
+
+          <div className="form-stack" style={{ flexShrink: 0 }}>
             <button className="primary-btn" onClick={handleAccept}>
               {t(lang, 'iUnderstand')}
             </button>
@@ -271,6 +307,13 @@ export default function App() {
 
       <EventManager activeTab={activeTab} user={user} lang={lang} />
       {showSearch && <SearchModal onClose={() => setShowSearch(false)} lang={lang} />}
+      {badgeQueue.length > 0 && (
+        <BadgeModal 
+          badge={badgeQueue[0]} 
+          onClose={closeBadgeModal} 
+          isNew={true} 
+        />
+      )}
       <BottomNav active={activeTab} onChange={setActiveTab} labels={labels} isStaff={user?.is_staff} />
     </div>
   );

@@ -23,6 +23,7 @@ from fitness.views import (
     AdminMessageViewSet,
     MaintenanceNoticeViewSet,
     WeeklyShiftView,
+    BadgeViewSet,
 )
 
 router = DefaultRouter()
@@ -39,6 +40,7 @@ router.register(r'global-notices', GlobalNoticeViewSet, basename='global-notice'
 router.register(r'broadcast-notifications', BroadcastNotificationViewSet, basename='broadcast-notification')
 router.register(r'admin-messages', AdminMessageViewSet, basename='admin-message')
 router.register(r'maintenance-notices', MaintenanceNoticeViewSet, basename='maintenance-notice')
+router.register(r'badges', BadgeViewSet, basename='badge')
 
 urlpatterns = [
     path('admin/', admin.site.urls),

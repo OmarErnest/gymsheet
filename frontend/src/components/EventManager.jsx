@@ -84,7 +84,7 @@ export default function EventManager({ activeTab, user, lang }) {
           localStorage.setItem(weekKey, 'true');
         }
       }
-    } catch (err) {}
+    } catch (err) { }
   }, [user, triggerEvent]);
 
   const checkWeeklyEvents = useCallback(async () => {
@@ -94,14 +94,14 @@ export default function EventManager({ activeTab, user, lang }) {
       start.setDate(now.getDate() - (now.getDay() === 0 ? 6 : now.getDay() - 1));
       const end = new Date(start);
       end.setDate(start.getDate() + 6);
-      
-      const currentDaysRes = await api(`/home/days/?start=${start.toISOString().slice(0,10)}&end=${end.toISOString().slice(0,10)}`);
+
+      const currentDaysRes = await api(`/home/days/?start=${start.toISOString().slice(0, 10)}&end=${end.toISOString().slice(0, 10)}`);
       const currentDays = currentDaysRes.results || currentDaysRes;
       const allCompleted = currentDays.every(d => d.goals.length === 0 || d.progress?.completed);
       const hasGoals = currentDays.some(d => d.goals.length > 0);
 
       if (hasGoals && allCompleted) {
-        const weekKey = `sleep_seen_${start.toISOString().slice(0,10)}`;
+        const weekKey = `sleep_seen_${start.toISOString().slice(0, 10)}`;
         if (!localStorage.getItem(weekKey)) {
           triggerEvent({
             image: '/icons/events/Sleep.png',
@@ -118,13 +118,13 @@ export default function EventManager({ activeTab, user, lang }) {
       const prevEnd = new Date(prevStart);
       prevEnd.setDate(prevStart.getDate() + 6);
 
-      const prevDaysRes = await api(`/home/days/?start=${prevStart.toISOString().slice(0,10)}&end=${prevEnd.toISOString().slice(0,10)}`);
+      const prevDaysRes = await api(`/home/days/?start=${prevStart.toISOString().slice(0, 10)}&end=${prevEnd.toISOString().slice(0, 10)}`);
       const prevDays = prevDaysRes.results || prevDaysRes;
       const prevAllCompleted = prevDays.every(d => d.goals.length === 0 || d.progress?.completed);
       const prevHasGoals = prevDays.some(d => d.goals.length > 0);
 
       if (prevHasGoals && prevAllCompleted) {
-        const prevWeekKey = `perfect_seen_${prevStart.toISOString().slice(0,10)}`;
+        const prevWeekKey = `perfect_seen_${prevStart.toISOString().slice(0, 10)}`;
         if (!localStorage.getItem(prevWeekKey)) {
           triggerEvent({
             image: '/icons/events/Perfect.png',
@@ -135,7 +135,7 @@ export default function EventManager({ activeTab, user, lang }) {
           localStorage.setItem(prevWeekKey, 'true');
         }
       }
-    } catch (err) {}
+    } catch (err) { }
   }, [triggerEvent]);
 
   useEffect(() => {
@@ -179,7 +179,7 @@ export default function EventManager({ activeTab, user, lang }) {
             }
           }
         }).catch(err => console.error("Maintenance check failed:", err));
-      } catch (err) {}
+      } catch (err) { }
     };
 
     checkNotices();
@@ -192,7 +192,7 @@ export default function EventManager({ activeTab, user, lang }) {
 
   useEffect(() => {
     if (!user) return;
-    
+
     const handleHydrate = () => {
       triggerEvent({
         image: '/icons/events/Hydrate.png',
@@ -208,12 +208,12 @@ export default function EventManager({ activeTab, user, lang }) {
 
   useEffect(() => {
     if (!user) return;
-    
+
     const handleRest = () => {
       triggerEvent({
         image: '/icons/events/Rest.png',
-        title: t(lang, 'restTitle'),
-        message: t(lang, 'restMessage'),
+        title: t(lang, 'Take it easy, pal.'),
+        message: t(lang, 'We are all out of senzu beans. Take a nap or something...'),
         type: 'rest'
       });
     };
@@ -223,8 +223,8 @@ export default function EventManager({ activeTab, user, lang }) {
   }, [user, triggerEvent, lang]);
 
   return (
-    <EventModal 
-      isOpen={modal.open} 
+    <EventModal
+      isOpen={modal.open}
       onClose={() => setModal(prev => ({ ...prev, open: false }))}
       image={modal.image}
       title={modal.title}

@@ -200,8 +200,11 @@ export default function Profile({ preferences, lang }) {
     exercises: false,
     logs: false,
     measurements: false,
-    goals: false
+    goals: false,
+    badges: false
   });
+
+  const [userBadges, setUserBadges] = useState([]);
 
   const [selectedCategories, setSelectedCategories] = useState(() => {
     const saved = localStorage.getItem('selectedCategories');
@@ -268,13 +271,15 @@ export default function Profile({ preferences, lang }) {
       const daysInWeek = weeklyLogs[mondayStr];
       let score = 0;
 
+      const userWeight = parseFloat(preferences?.weight_kg) || 70;
+
       Object.keys(daysInWeek).forEach(dateStr => {
         const dayLogs = daysInWeek[dateStr];
         // QUALIFIED DAY RULE: Must have at least 2 logs to count toward weekly score
         if (dayLogs.length >= 2) {
           dayLogs.forEach(log => {
             let logEffort = Number(log.weight_kg || 0);
-            if (log.exercise_detail?.exercise_type === 'calisthenics') logEffort += 2;
+            if (log.exercise_detail?.exercise_type === 'calisthenics') logEffort += (userWeight * 0.5);
 
             // Match backend leaderboard.py: no time-based special multiplier
             score += logEffort * (Number(log.sets) || 0) * (Number(log.reps) || 0);
@@ -342,14 +347,24 @@ export default function Profile({ preferences, lang }) {
     setLoadedData(prev => ({ ...prev, goals: true }));
   }
 
+  async function fetchBadges() {
+    if (loadedData.badges) return;
+    try {
+      const data = await api('/badges/my/');
+      setUserBadges(data.results || data);
+      setLoadedData(prev => ({ ...prev, badges: true }));
+    } catch (err) { }
+  }
+
   useEffect(() => {
     async function loadTab() {
       const needsExercises = (activeTab === 'strength' || activeTab === 'goals' || activeTab === 'creategoal' || activeTab === 'addexercise') && !loadedData.exercises;
-      const needsLogs = (activeTab === 'strength') && !loadedData.logs;
+      const needsLogs = (activeTab === 'strength' || showWarriorStats) && !loadedData.logs;
       const needsGoals = (activeTab === 'goals' || activeTab === 'creategoal') && !loadedData.goals;
       const needsMeasurements = (activeTab === 'bodymap') && !loadedData.measurements;
+      const needsBadges = showWarriorStats && !loadedData.badges;
 
-      if (needsExercises || needsLogs || needsGoals || needsMeasurements) {
+      if (needsExercises || needsLogs || needsGoals || needsMeasurements || needsBadges) {
         setLoading(true);
         try {
           if (activeTab === 'strength') {
@@ -361,12 +376,16 @@ export default function Profile({ preferences, lang }) {
           } else if (activeTab === 'addexercise') {
             await fetchExercises();
           }
+          
+          if (showWarriorStats) {
+            await Promise.all([fetchLogs(), fetchBadges()]);
+          }
         } catch (err) { }
         setLoading(false);
       }
     }
     loadTab();
-  }, [activeTab]);
+  }, [activeTab, showWarriorStats]);
 
   useEffect(() => {
     const handleSubTab = (e) => setActiveTab(e.detail);
@@ -804,6 +823,76 @@ export default function Profile({ preferences, lang }) {
               <p className="muted pixel-text" style={{ margin: 0, fontSize: '0.5rem', fontWeight: '800', textTransform: 'uppercase' }}>
                 {lang === 'es' ? 'Poder Máximo' : 'Max Power'}
               </p>
+            </div>
+          </div>
+        )}
+
+        {showWarriorStats && (
+          <div className="fighter-badges-section animate-fade-in" style={{ marginTop: '0.8rem' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', marginBottom: '0.5rem', marginLeft: '0.4rem' }}>
+              <Trophy size={14} style={{ color: 'var(--brand)' }} />
+              <span className="pixel-text" style={{ fontSize: '0.6rem', fontWeight: '900', color: 'var(--brand)', letterSpacing: '1px' }}>FIGHTER BADGES</span>
+            </div>
+            
+            <div className="glass-card" style={{ 
+              padding: '0.8rem', 
+              background: 'rgba(var(--brand-rgb), 0.05)',
+              borderRadius: '20px',
+              border: '1px solid rgba(var(--brand-rgb), 0.1)'
+            }}>
+              <div className="badge-scroll-row" style={{ 
+                display: 'flex', 
+                gap: '0.8rem', 
+                overflowX: 'auto',
+                padding: '0.4rem 0.2rem',
+                scrollbarWidth: 'none',
+                WebkitOverflowScrolling: 'touch'
+              }}>
+                <style>{`.badge-scroll-row::-webkit-scrollbar { display: none; }`}</style>
+                
+                {userBadges.length === 0 ? (
+                  <div style={{ width: '100%', textAlign: 'center', padding: '1rem' }}>
+                    <p className="muted pixel-text" style={{ fontSize: '0.5rem', margin: 0 }}>
+                      {lang === 'es' ? 'Aún no has ganado ninguna medalla...' : 'No badges earned yet...'}
+                    </p>
+                  </div>
+                ) : (
+                  userBadges.map((ub) => (
+                    <button
+                      key={ub.id}
+                      type="button"
+                      onClick={() => {
+                        window.dispatchEvent(new CustomEvent('badges-earned', { detail: [ub] }));
+                      }}
+                      style={{
+                        padding: '0',
+                        background: 'transparent',
+                        border: '2px solid transparent',
+                        borderRadius: '50%',
+                        minWidth: '56px',
+                        height: '56px',
+                        flexShrink: 0,
+                        cursor: 'pointer',
+                        transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        overflow: 'hidden',
+                        boxShadow: '0 4px 10px rgba(0,0,0,0.2)'
+                      }}
+                      onMouseEnter={(e) => { e.currentTarget.style.transform = 'scale(1.05)'; e.currentTarget.style.borderColor = 'var(--brand)'; }}
+                      onMouseLeave={(e) => { e.currentTarget.style.transform = 'scale(1)'; e.currentTarget.style.borderColor = 'transparent'; }}
+                    >
+                      <img 
+                        src={`/icons/badges/${ub.badge_detail.icon_name}`} 
+                        alt={ub.badge_detail.name} 
+                        style={{ width: '85%', height: '85%', objectFit: 'contain', borderRadius: '50%' }}
+                        onError={(e) => { e.target.src = '/icons/badges/default.png'; }}
+                      />
+                    </button>
+                  ))
+                )}
+              </div>
             </div>
           </div>
         )}

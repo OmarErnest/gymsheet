@@ -5,8 +5,21 @@ from rest_framework import serializers
 from .models import (
     BodyMeasurement, DailyProgress, Exercise, ExerciseLog, GoalExercise, 
     GoalPlan, CSVRequest, Notification, ExerciseCSVUpload, LogCSVUpload, 
-    GlobalNotice, BroadcastNotification, AdminMessage, MaintenanceNotice
+    GlobalNotice, BroadcastNotification, AdminMessage, MaintenanceNotice,
+    Badge, UserBadge
 )
+
+class BadgeSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Badge
+        fields = '__all__'
+
+class UserBadgeSerializer(serializers.ModelSerializer):
+    badge_detail = BadgeSerializer(source='badge', read_only=True)
+    class Meta:
+        model = UserBadge
+        fields = ('id', 'badge', 'badge_detail', 'earned_at')
+        read_only_fields = ('id', 'earned_at')
 
 class AdminMessageSerializer(serializers.ModelSerializer):
     user_email = serializers.EmailField(source='user.email', read_only=True)

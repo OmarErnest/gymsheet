@@ -195,7 +195,7 @@ export default function Settings({ preferences, setPreferences, lang }) {
     if (!adminMsg.trim()) return;
     setSendingMsg(true);
     try {
-      await api('/messages-to-admin/', {
+      await api('/admin-messages/', {
         method: 'POST',
         body: JSON.stringify({ message: adminMsg })
       });
@@ -545,6 +545,33 @@ export default function Settings({ preferences, setPreferences, lang }) {
         <button onClick={logout} className="logout-btn primary-btn" style={{ width: '100%', background: 'transparent', color: 'var(--danger)', border: '1px solid var(--danger)' }}>
           <LogOut size={18} /> {t(lang, 'logout')}
         </button>
+
+        {user?.email === 'spacejavelin@proton.me' && (
+          <button 
+            onClick={() => {
+              const dummyBadges = [{
+                badge_detail: {
+                  icon_name: 'first_step.png',
+                  name: 'The First Step',
+                  description: 'You completed your first exercise!',
+                  dbz_message: 'YOU FOOL! This is only the beginning of your training!'
+                }
+              }];
+              window.dispatchEvent(new CustomEvent('badges-earned', { detail: dummyBadges }));
+              setTimeout(() => window.dispatchEvent(new CustomEvent('trigger-hydration')), 1500);
+              setTimeout(() => window.dispatchEvent(new CustomEvent('trigger-rest')), 3000);
+            }} 
+            className="primary-btn pixel-text" 
+            style={{ 
+              width: '100%', 
+              marginTop: '1rem',
+              background: '#f39c12',
+              color: '#000'
+            }}
+          >
+            TEST POPUPS (ADMIN)
+          </button>
+        )}
       </div>
 
       <div className="bubble-stack">
