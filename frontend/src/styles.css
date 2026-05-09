@@ -1330,3 +1330,8 @@ select option { color: var(--text); }
   70% { box-shadow: 0 0 0 10px rgba(var(--glow-rgb), 0); }
   100% { box-shadow: 0 0 0 0 rgba(var(--glow-rgb), 0); }
 }
+
+.sanitize-input::placeholder {
+  color: var(--muted);
+  opacity: 0.35;
+}

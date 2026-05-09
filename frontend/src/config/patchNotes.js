@@ -14,9 +14,22 @@
  *   'improve' → ⚡ Improvement / polish
  */
 
-export const CURRENT_VERSION = 'v-03a.039';
+export const CURRENT_VERSION = 'v-03a.40';
 
 export const PATCH_NOTES = [
+  {
+    version: 'v-03a.40',
+    date: '2026-05-09',
+    title: 'Command Palette & Social Update',
+    changes: [
+      { type: 'feature', text: 'Command Palette: Search now finds buttons and actions (Home, Profile, Settings) alongside your workouts.' },
+      { type: 'feature', text: 'Social Badges: Leaderboard profiles now show earned badges in a sleek, scrollable row.' },
+      { type: 'improve', text: 'Recommendation Glow: New links now pulse with color until viewed, making it easier to track updates.' },
+      { type: 'improve', text: 'Fair Scoring: PR logs are now isolated from weekly Power Level to prevent outlier score inflation.' },
+      { type: 'fix',     text: 'Fixed BottomNav overflow for staff users with a new compact mobile layout.' },
+      { type: 'fix',     text: 'Resolved Badge icon attribute errors in the leaderboard backend.' },
+    ],
+  },
   {
     version: 'v-03a.039',
     date: '2026-05-09',

@@ -621,6 +621,7 @@ export default function Settings({ preferences, setPreferences, lang }) {
               </span>
               <input
                 type="text"
+                className="sanitize-input"
                 value={sanitizePhrase}
                 onChange={(e) => setSanitizePhrase(e.target.value)}
                 placeholder="I wish to sanitize my account today"
