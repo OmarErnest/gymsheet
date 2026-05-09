@@ -493,7 +493,7 @@ export default function Settings({ preferences, setPreferences, lang }) {
               style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', cursor: 'pointer' }}
               title="View Patch Notes"
             >
-              <strong className="brand" style={{ fontWeight: '900' }}>v-03a.039</strong>
+              <strong className="brand" style={{ fontWeight: '900' }}>v-03a.040</strong>
               <small className="muted" style={{ fontWeight: '800', opacity: 0.8 }}>05.09.26</small>
             </span>
           </div>

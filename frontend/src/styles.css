@@ -1335,3 +1335,7 @@ select option { color: var(--text); }
   color: var(--muted);
   opacity: 0.35;
 }
+@keyframes bounce-right {
+  0%, 100% { transform: translateY(-50%) translateX(0); }
+  50% { transform: translateY(-50%) translateX(5px); }
+}
