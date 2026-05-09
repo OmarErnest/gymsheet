@@ -40,7 +40,7 @@ export default function Settings({ preferences, setPreferences, lang }) {
   const [showHideHelp, setShowHideHelp] = useState(false);
 
   // Sanitize account
-  const SANITIZE_PHRASE = 'i wish to sanitize my account today';
+  const SANITIZE_PHRASE = 'I wish to sanitize my account today';
   const [sanitizePhrase, setSanitizePhrase] = useState('');
   const [sanitizeRequest, setSanitizeRequest] = useState(null);
   const [sanitizing, setSanitizing] = useState(false);
@@ -488,7 +488,7 @@ export default function Settings({ preferences, setPreferences, lang }) {
         <div style={{ display: 'grid', gap: '1rem' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', opacity: 0.8 }}>
             <span>{t(lang, 'version')}</span>
-            <span 
+            <span
               onClick={() => window.dispatchEvent(new CustomEvent('show-patch-notes'))}
               style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', cursor: 'pointer' }}
               title="View Patch Notes"
@@ -616,14 +616,14 @@ export default function Settings({ preferences, setPreferences, lang }) {
             <label className="field">
               <span style={{ color: '#ef4444', fontWeight: '700', fontSize: '0.78rem' }}>
                 {lang === 'es'
-                  ? 'Escribe exactamente: "i wish to sanitize my account today"'
-                  : 'Type exactly: "i wish to sanitize my account today"'}
+                  ? 'Escribe exactamente: "I wish to sanitize my account today"'
+                  : 'Type exactly: "I wish to sanitize my account today"'}
               </span>
               <input
                 type="text"
                 value={sanitizePhrase}
                 onChange={(e) => setSanitizePhrase(e.target.value)}
-                placeholder="i wish to sanitize my account today"
+                placeholder="I wish to sanitize my account today"
                 autoComplete="off"
                 style={{
                   borderColor: sanitizePhrase.length > 0
