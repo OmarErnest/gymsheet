@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { LogOut, Save, Eye, EyeOff, FileText, User as UserIcon, ChevronDown, FileDown, HelpCircle, Mail, X, RefreshCw, MessageSquare, Send, AlertTriangle } from 'lucide-react';
+import { LogOut, Save, Eye, EyeOff, FileText, User as UserIcon, ChevronDown, ChevronRight, FileDown, HelpCircle, Mail, X, RefreshCw, MessageSquare, Send, AlertTriangle } from 'lucide-react';
 import { api } from '../api/client.js';
 import { useAuth } from '../state/AuthContext.jsx';
 import { t } from '../i18n.js';
@@ -44,6 +44,7 @@ export default function Settings({ preferences, setPreferences, lang }) {
   const [sanitizePhrase, setSanitizePhrase] = useState('');
   const [sanitizeRequest, setSanitizeRequest] = useState(null);
   const [sanitizing, setSanitizing] = useState(false);
+  const [showScrollTop, setShowScrollTop] = useState(false);
 
   useEffect(() => {
     setForm((prev) => ({
@@ -127,6 +128,18 @@ export default function Settings({ preferences, setPreferences, lang }) {
       if (list.length > 0) setSanitizeRequest(list[0]);
     }).catch(() => { });
   }, [user]);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      setShowScrollTop(window.scrollY > 400);
+    };
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
+  const scrollToTop = () => {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
 
   useEffect(() => {
     if (csvRequest?.is_approved) {
@@ -701,6 +714,23 @@ export default function Settings({ preferences, setPreferences, lang }) {
       </div>
 
       <div className="bubble-stack">
+        {showScrollTop && (
+          <button
+            className="bubble-btn"
+            onClick={scrollToTop}
+            style={{ 
+              background: 'var(--bg-card)', 
+              color: 'var(--muted)', 
+              backdropFilter: 'blur(10px)',
+              border: '1px solid var(--line)',
+              width: '44px',
+              height: '44px'
+            }}
+            title="Back to Top"
+          >
+            <ChevronRight size={20} style={{ transform: 'rotate(-90deg)' }} />
+          </button>
+        )}
         <button
           className="bubble-btn"
           onClick={save}

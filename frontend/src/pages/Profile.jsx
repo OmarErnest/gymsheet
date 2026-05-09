@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Area, AreaChart, ResponsiveContainer, Tooltip, XAxis, YAxis, PieChart, Pie, Cell, CartesianGrid, Radar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis } from 'recharts';
-import { Plus, Trash2, Edit2, RefreshCw, Activity, Map as MapIcon, PlusCircle, Target, List, BarChart3, Radar as RadarIcon, GripVertical, Timer, Weight, Dumbbell, ChevronDown, Zap, Trophy, Medal, Menu, Settings } from 'lucide-react';
+import { Plus, Trash2, Edit2, RefreshCw, Activity, Map as MapIcon, PlusCircle, Target, List, BarChart3, Radar as RadarIcon, GripVertical, Timer, Weight, Dumbbell, ChevronDown, Zap, Trophy, Medal, Menu, Settings, Flame } from 'lucide-react';
 import { api } from '../api/client.js';
 import LinkInput from '../components/LinkInput.jsx';
 import Skeleton from '../components/Skeleton.jsx';
@@ -904,6 +904,14 @@ export default function Profile({ preferences, lang }) {
             <Activity />
             <span>{t(lang, 'strength')}</span>
           </button>
+          <button className={`nav-square ${activeTab === 'warmup' ? 'active' : ''}`} onClick={() => setActiveTab('warmup')}>
+            <Flame />
+            <span>{lang === 'es' ? 'Warm Up' : 'Warm Up'}</span>
+          </button>
+          <button className={`nav-square ${activeTab === 'bodymap' ? 'active' : ''}`} onClick={() => setActiveTab('bodymap')}>
+            <MapIcon />
+            <span>{t(lang, 'bodyMap')}</span>
+          </button>
           <button className={`nav-square ${activeTab === 'goals' ? 'active' : ''}`} onClick={() => setActiveTab('goals')}>
             <Target />
             <span>{t(lang, 'yourGoals')}</span>
@@ -911,10 +919,6 @@ export default function Profile({ preferences, lang }) {
           <button className={`nav-square ${activeTab === 'creategoal' ? 'active' : ''}`} onClick={() => setActiveTab('creategoal')}>
             <Plus />
             <span>{t(lang, 'createGoal')}</span>
-          </button>
-          <button className={`nav-square ${activeTab === 'bodymap' ? 'active' : ''}`} onClick={() => setActiveTab('bodymap')}>
-            <MapIcon />
-            <span>{t(lang, 'bodyMap')}</span>
           </button>
           <button className={`nav-square ${activeTab === 'addexercise' ? 'active' : ''}`} onClick={() => setActiveTab('addexercise')}>
             <PlusCircle />
@@ -1431,6 +1435,32 @@ export default function Profile({ preferences, lang }) {
               50% { opacity: 0; }
             }
           `}</style>
+        </article>
+        )}
+        {activeTab === 'warmup' && (
+          <article className="profile-section animate-fade-in" style={{
+            padding: '4rem 2rem',
+            textAlign: 'left',
+            position: 'relative',
+            overflow: 'hidden',
+            minHeight: '400px',
+            background: '#0a0a0a',
+            border: '2px solid #333',
+            borderRadius: '8px',
+            fontFamily: 'monospace'
+          }}>
+            {/* CRT Scanning Line */}
+            <div className="crt-scanline" style={{ position: 'absolute', inset: 0, background: 'linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.2) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.03), rgba(0, 255, 0, 0.01), rgba(0, 0, 255, 0.03))', backgroundSize: '100% 4px, 3px 100%', pointerEvents: 'none', zIndex: 5 }} />
+            <div className="crt-beam" style={{ position: 'absolute', top: '-10%', left: 0, right: 0, height: '120px', background: 'linear-gradient(to bottom, transparent, rgba(var(--brand-rgb), 0.1), transparent)', animation: 'scan 4s linear infinite', pointerEvents: 'none', zIndex: 6 }} />
+
+            <div style={{ position: 'relative', zIndex: 10, animation: 'flicker 0.15s infinite' }}>
+              <p className="pixel-text" style={{ fontSize: '1.1rem', color: 'var(--brand)', letterSpacing: '1px', lineHeight: '2', margin: 0, textShadow: '0 0 8px var(--brand)' }}>
+                Z:\&gt; CALIBRATING GRAVITY CHAMBER...<br />
+                Z:\&gt; LOADING PRE-COMBAT DRILLS...<br />
+                Z:\&gt; ERROR: WARM UP MODULE OFFLINE.<br />
+                Z:\&gt; <span style={{ animation: 'blink 1s step-end infinite' }}>_</span>
+              </p>
+            </div>
           </article>
         )}
       </div>
