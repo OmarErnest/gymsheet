@@ -6,7 +6,7 @@ from .models import (
     BodyMeasurement, DailyProgress, Exercise, ExerciseLog, GoalExercise, 
     GoalPlan, CSVRequest, Notification, ExerciseCSVUpload, LogCSVUpload, 
     GlobalNotice, BroadcastNotification, AdminMessage, MaintenanceNotice,
-    Badge, UserBadge
+    Badge, UserBadge, SanitizeRequest
 )
 
 class BadgeSerializer(serializers.ModelSerializer):
@@ -213,3 +213,13 @@ class MaintenanceNoticeSerializer(serializers.ModelSerializer):
     class Meta:
         model = MaintenanceNotice
         fields = '__all__'
+
+
+class SanitizeRequestSerializer(serializers.ModelSerializer):
+    user_email = serializers.EmailField(source='user.email', read_only=True)
+    user_name = serializers.CharField(source='user.name', read_only=True)
+
+    class Meta:
+        model = SanitizeRequest
+        fields = ('id', 'user', 'user_email', 'user_name', 'status', 'created_at', 'resolved_at', 'admin_notes')
+        read_only_fields = ('id', 'user', 'user_email', 'user_name', 'status', 'created_at', 'resolved_at')

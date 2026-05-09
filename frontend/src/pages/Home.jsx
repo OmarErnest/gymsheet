@@ -386,9 +386,9 @@ export default function Home({ lang }) {
               : (logVal?.weight_kg !== undefined && logVal?.weight_kg !== '');
 
             if (!hasValue && !item._isExtra) {
-              if (logVal?.log_id && !deletes.includes(logVal.log_id)) {
-                deletes.push(logVal.log_id);
-              }
+              // User left the field empty — do NOT delete the existing log.
+              // Only explicit trash-icon actions (toDelete) should remove logs.
+              // Just skip — no create, no update, no delete.
               continue;
             }
 

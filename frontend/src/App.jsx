@@ -15,9 +15,12 @@ import EventManager from './components/EventManager.jsx';
 import SearchModal from './components/SearchModal.jsx';
 import { Search } from 'lucide-react';
 import BadgeModal from './components/BadgeModal.jsx';
+import WakeUpScreen from './components/WakeUpScreen.jsx';
+import PatchNotesModal from './components/PatchNotesModal.jsx';
+import { CURRENT_VERSION } from './config/patchNotes.js';
 
 export default function App() {
-  const { user, booting, logout } = useAuth();
+  const { user, booting, serverAsleep, logout } = useAuth();
   const [activeTab, setActiveTab] = useState('home');
   const [preferences, setPreferences] = useState({ theme: 'light', language: 'en', goals_paused: false });
   const [disclaimerAccepted, setDisclaimerAccepted] = useState(localStorage.getItem(`disclaimer_${user?.id}`) === 'true');
@@ -26,6 +29,7 @@ export default function App() {
   const [showProfilePopup, setShowProfilePopup] = useState(false);
   const [showSearch, setShowSearch] = useState(false);
   const [badgeQueue, setBadgeQueue] = useState([]);
+  const [showPatchNotes, setShowPatchNotes] = useState(false);
 
   useEffect(() => {
     // Initial sync
@@ -50,8 +54,19 @@ export default function App() {
   useEffect(() => {
     if (user) {
       setDisclaimerAccepted(localStorage.getItem(`disclaimer_${user.id}`) === 'true');
+      
+      // Check for patch notes
+      const lastSeen = localStorage.getItem(`last_version_${user.id}`);
+      if (lastSeen !== CURRENT_VERSION) {
+        setShowPatchNotes(true);
+      }
     }
   }, [user]);
+
+  const handleClosePatchNotes = () => {
+    localStorage.setItem(`last_version_${user.id}`, CURRENT_VERSION);
+    setShowPatchNotes(false);
+  };
 
   useEffect(() => {
     if (!user) return;
@@ -138,6 +153,10 @@ export default function App() {
     }
     return user.profile_pic_url;
   };
+
+  if (serverAsleep) return (
+    <WakeUpScreen onReady={() => {}} />
+  );
 
   if (booting) return (
     <div className="loading-screen">
@@ -313,6 +332,9 @@ export default function App() {
           onClose={closeBadgeModal} 
           isNew={true} 
         />
+      )}
+      {showPatchNotes && (
+        <PatchNotesModal onClose={handleClosePatchNotes} />
       )}
       <BottomNav active={activeTab} onChange={setActiveTab} labels={labels} isStaff={user?.is_staff} />
     </div>

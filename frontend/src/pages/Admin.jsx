@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Shield, Send, Bell, MessageSquare, Check, Users, Zap, RefreshCw } from 'lucide-react';
+import { Shield, Send, Bell, MessageSquare, Check, Users, Zap, RefreshCw, AlertTriangle, Trash2 } from 'lucide-react';
 import { api } from '../api/client.js';
 import { t } from '../i18n.js';
 
@@ -19,10 +19,13 @@ export default function Admin({ lang }) {
   const [status, setStatus] = useState('');
   const [passwordForm, setPasswordForm] = useState({ newPassword: '', confirmPassword: '' });
   const [passwordStatus, setPasswordStatus] = useState('');
+  const [sanitizeRequests, setSanitizeRequests] = useState([]);
+  const [sanitizeNotes, setSanitizeNotes] = useState({});
 
   useEffect(() => {
     loadData();
     loadUsers();
+    loadSanitizeRequests();
   }, []);
 
   async function loadData() {
@@ -41,6 +44,34 @@ export default function Admin({ lang }) {
       const res = await api('/users/');
       setUsers(res.results || res);
     } catch (err) {}
+  }
+
+  async function loadSanitizeRequests() {
+    try {
+      const res = await api('/sanitize-requests/');
+      setSanitizeRequests((res.results || res).filter(r => r.status === 'pending'));
+    } catch (err) {}
+  }
+
+  async function approveSanitize(id) {
+    const notes = sanitizeNotes[id] || 'Approved by admin.';
+    if (!window.confirm(`Approve and WIPE all data for this user? Notes: "${notes}"`)) return;
+    try {
+      await api(`/sanitize-requests/${id}/approve/`, { method: 'POST', body: JSON.stringify({ notes }) });
+      await loadSanitizeRequests();
+    } catch (err) {
+      alert('Error: ' + err.message);
+    }
+  }
+
+  async function rejectSanitize(id) {
+    const notes = sanitizeNotes[id] || 'Rejected by admin.';
+    try {
+      await api(`/sanitize-requests/${id}/reject/`, { method: 'POST', body: JSON.stringify({ notes }) });
+      await loadSanitizeRequests();
+    } catch (err) {
+      alert('Error: ' + err.message);
+    }
   }
 
   async function sendNotification(e) {
@@ -297,6 +328,72 @@ export default function Admin({ lang }) {
             </div>
           ))}
         </div>
+      </article>
+
+      {/* Sanitize Requests */}
+      <article className="glass-card" style={{ borderLeft: '4px solid #ef4444' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1rem' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#ef4444' }}>
+            <AlertTriangle size={18} />
+            <h3 className="eyebrow" style={{ color: 'inherit', margin: 0 }}>SANITIZE REQUESTS</h3>
+          </div>
+          <button className="small-btn" onClick={loadSanitizeRequests} title="Refresh">
+            <RefreshCw size={14} />
+          </button>
+        </div>
+
+        {sanitizeRequests.length === 0 ? (
+          <p className="muted" style={{ textAlign: 'center', padding: '1rem', fontSize: '0.85rem' }}>
+            No pending sanitize requests.
+          </p>
+        ) : (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+            {sanitizeRequests.map(sr => (
+              <div key={sr.id} style={{
+                padding: '1rem',
+                borderRadius: '12px',
+                background: 'rgba(239,68,68,0.06)',
+                border: '1px solid rgba(239,68,68,0.2)',
+                display: 'grid',
+                gap: '0.6rem'
+              }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                  <div>
+                    <p style={{ fontWeight: '900', margin: 0 }}>{sr.user_name || sr.user_email}</p>
+                    <small className="muted">{sr.user_email}</small>
+                  </div>
+                  <small className="muted">{new Date(sr.created_at).toLocaleDateString()}</small>
+                </div>
+                <label className="field" style={{ margin: 0 }}>
+                  <span style={{ fontSize: '0.72rem' }}>Admin notes (optional)</span>
+                  <input
+                    type="text"
+                    placeholder="Reason..."
+                    value={sanitizeNotes[sr.id] || ''}
+                    onChange={e => setSanitizeNotes(prev => ({ ...prev, [sr.id]: e.target.value }))}
+                    style={{ fontSize: '0.82rem' }}
+                  />
+                </label>
+                <div style={{ display: 'flex', gap: '0.5rem' }}>
+                  <button
+                    className="primary-btn"
+                    style={{ flex: 1, background: 'rgba(239,68,68,0.1)', color: '#ef4444', border: '1px solid rgba(239,68,68,0.3)', fontSize: '0.8rem' }}
+                    onClick={() => approveSanitize(sr.id)}
+                  >
+                    <Trash2 size={14} /> Approve & Wipe
+                  </button>
+                  <button
+                    className="small-btn"
+                    style={{ flex: 1, fontSize: '0.8rem' }}
+                    onClick={() => rejectSanitize(sr.id)}
+                  >
+                    <Check size={14} /> Reject
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
       </article>
     </section>
   );

@@ -386,3 +386,31 @@ class UserBadge(models.Model):
 
     def __str__(self):
         return f"{self.user} - {self.badge.name}"
+
+
+class SanitizeRequest(models.Model):
+    class Status(models.TextChoices):
+        PENDING = 'pending', 'Pending'
+        APPROVED = 'approved', 'Approved'
+        REJECTED = 'rejected', 'Rejected'
+
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='sanitize_requests')
+    status = models.CharField(max_length=12, choices=Status.choices, default=Status.PENDING)
+    created_at = models.DateTimeField(auto_now_add=True)
+    resolved_at = models.DateTimeField(null=True, blank=True)
+    admin_notes = models.TextField(blank=True)
+
+    class Meta:
+        ordering = ('-created_at',)
+
+    def __str__(self):
+        return f"Sanitize request from {self.user.email} — {self.status}"
+
+    def execute_wipe(self):
+        """Wipe all user exercise data. Called when admin approves."""
+        ExerciseLog.objects.filter(user=self.user).delete()
+        GoalPlan.objects.filter(user=self.user).delete()
+        BodyMeasurement.objects.filter(user=self.user).delete()
+        WeeklyShift.objects.filter(user=self.user).delete()
+        DailyProgress.objects.filter(user=self.user).delete()
+        UserBadge.objects.filter(user=self.user).delete()

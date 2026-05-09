@@ -18,7 +18,7 @@ from .models import (
     BodyMeasurement, DailyProgress, Exercise, ExerciseLog, GoalPlan, 
     CSVRequest, Notification, ExerciseCSVUpload, LogCSVUpload, GlobalNotice,
     BroadcastNotification, AdminMessage, MaintenanceNotice, WeeklyShift,
-    Badge, UserBadge
+    Badge, UserBadge, SanitizeRequest
 )
 from .serializers import (
     BodyMeasurementSerializer,
@@ -35,7 +35,8 @@ from .serializers import (
     AdminMessageSerializer,
     MaintenanceNoticeSerializer,
     BadgeSerializer,
-    UserBadgeSerializer
+    UserBadgeSerializer,
+    SanitizeRequestSerializer,
 )
 from .badges import check_all_relevant_badges
 
@@ -708,3 +709,63 @@ class MaintenanceNoticeViewSet(viewsets.ModelViewSet):
             from rest_framework.exceptions import PermissionDenied
             raise PermissionDenied("Only staff can create maintenance notices.")
         serializer.save()
+
+
+class SanitizeRequestViewSet(viewsets.ModelViewSet):
+    """
+    Users can POST to request account sanitization.
+    Admin can list all and approve/reject.
+    Approved requests wipe all user exercise data.
+    """
+    serializer_class = SanitizeRequestSerializer
+    permission_classes = [IsAuthenticated]
+    http_method_names = ['get', 'post', 'head', 'options']
+
+    def get_queryset(self):
+        if self.request.user.is_staff:
+            return SanitizeRequest.objects.select_related('user').order_by('-created_at')
+        return SanitizeRequest.objects.filter(user=self.request.user).order_by('-created_at')
+
+    def perform_create(self, serializer):
+        # Prevent spamming — max 1 pending request per user
+        existing = SanitizeRequest.objects.filter(
+            user=self.request.user,
+            status=SanitizeRequest.Status.PENDING
+        )
+        if existing.exists():
+            from rest_framework.exceptions import ValidationError
+            raise ValidationError("You already have a pending sanitize request.")
+        serializer.save(user=self.request.user)
+
+    @action(detail=True, methods=['POST'])
+    def approve(self, request, pk=None):
+        if not request.user.is_staff:
+            return Response({'detail': 'Admin only.'}, status=status.HTTP_403_FORBIDDEN)
+        try:
+            sr = SanitizeRequest.objects.get(pk=pk, status=SanitizeRequest.Status.PENDING)
+        except SanitizeRequest.DoesNotExist:
+            return Response({'detail': 'Not found or already resolved.'}, status=status.HTTP_404_NOT_FOUND)
+
+        from django.utils import timezone as tz
+        sr.execute_wipe()
+        sr.status = SanitizeRequest.Status.APPROVED
+        sr.resolved_at = tz.now()
+        sr.admin_notes = request.data.get('notes', 'Approved by admin.')
+        sr.save()
+        return Response({'detail': f"Account data for {sr.user.email} has been wiped."})
+
+    @action(detail=True, methods=['POST'])
+    def reject(self, request, pk=None):
+        if not request.user.is_staff:
+            return Response({'detail': 'Admin only.'}, status=status.HTTP_403_FORBIDDEN)
+        try:
+            sr = SanitizeRequest.objects.get(pk=pk, status=SanitizeRequest.Status.PENDING)
+        except SanitizeRequest.DoesNotExist:
+            return Response({'detail': 'Not found or already resolved.'}, status=status.HTTP_404_NOT_FOUND)
+
+        from django.utils import timezone as tz
+        sr.status = SanitizeRequest.Status.REJECTED
+        sr.resolved_at = tz.now()
+        sr.admin_notes = request.data.get('notes', 'Rejected by admin.')
+        sr.save()
+        return Response({'detail': 'Request rejected.'})

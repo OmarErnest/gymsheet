@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { LogOut, Save, Eye, EyeOff, FileText, User as UserIcon, ChevronDown, FileDown, HelpCircle, Mail, X, RefreshCw, MessageSquare, Send } from 'lucide-react';
+import { LogOut, Save, Eye, EyeOff, FileText, User as UserIcon, ChevronDown, FileDown, HelpCircle, Mail, X, RefreshCw, MessageSquare, Send, AlertTriangle } from 'lucide-react';
 import { api } from '../api/client.js';
 import { useAuth } from '../state/AuthContext.jsx';
 import { t } from '../i18n.js';
@@ -38,6 +38,12 @@ export default function Settings({ preferences, setPreferences, lang }) {
   const [showIcons, setShowIcons] = useState(false);
   const [showPauseHelp, setShowPauseHelp] = useState(false);
   const [showHideHelp, setShowHideHelp] = useState(false);
+
+  // Sanitize account
+  const SANITIZE_PHRASE = 'i wish to sanitize my account today';
+  const [sanitizePhrase, setSanitizePhrase] = useState('');
+  const [sanitizeRequest, setSanitizeRequest] = useState(null);
+  const [sanitizing, setSanitizing] = useState(false);
 
   useEffect(() => {
     setForm((prev) => ({
@@ -115,6 +121,11 @@ export default function Settings({ preferences, setPreferences, lang }) {
     }).catch(() => { });
 
     api('/auth/taken-icons/').then(setTakenIcons).catch(() => { });
+
+    api('/sanitize-requests/').then(data => {
+      const list = data.results || data;
+      if (list.length > 0) setSanitizeRequest(list[0]);
+    }).catch(() => {});
   }, [user]);
 
   useEffect(() => {
@@ -539,6 +550,114 @@ export default function Settings({ preferences, setPreferences, lang }) {
             <span style={{ marginLeft: '0.5rem' }}>{lang === 'es' ? 'ENVIAR MENSAJE' : 'SEND MESSAGE'}</span>
           </button>
         </form>
+      </article>
+
+      {/* Danger Zone */}
+      <article className="glass-card form-stack" style={{ borderLeft: '4px solid #ef4444' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#ef4444', marginBottom: '0.3rem' }}>
+          <AlertTriangle size={18} />
+          <h3 className="eyebrow" style={{ color: 'inherit', margin: 0 }}>
+            {lang === 'es' ? 'ZONA DE PELIGRO' : 'DANGER ZONE'}
+          </h3>
+        </div>
+
+        <p style={{ fontSize: '0.82rem', lineHeight: '1.6', opacity: 0.75, marginBottom: '1rem' }}>
+          {lang === 'es'
+            ? 'Solicitar la sanitización eliminará permanentemente todos tus registros de ejercicio, metas, medidas corporales e insignias. Esta acción requiere aprobación del administrador.'
+            : 'Requesting sanitization will permanently delete all your exercise logs, goals, body measurements, and badges. This action requires admin approval.'}
+        </p>
+
+        {sanitizeRequest ? (
+          <div style={{
+            padding: '1rem',
+            borderRadius: '12px',
+            background: sanitizeRequest.status === 'approved'
+              ? 'rgba(34,197,94,0.08)'
+              : sanitizeRequest.status === 'rejected'
+              ? 'rgba(239,68,68,0.08)'
+              : 'rgba(250,204,21,0.08)',
+            border: `1px solid ${sanitizeRequest.status === 'approved' ? 'rgba(34,197,94,0.3)' : sanitizeRequest.status === 'rejected' ? 'rgba(239,68,68,0.3)' : 'rgba(250,204,21,0.3)'}`,
+            fontSize: '0.85rem'
+          }}>
+            <strong style={{ textTransform: 'uppercase', fontSize: '0.75rem', letterSpacing: '0.05em' }}>
+              {lang === 'es' ? 'Estado de solicitud' : 'Request status'}:&nbsp;
+            </strong>
+            <span style={{
+              fontWeight: '900',
+              color: sanitizeRequest.status === 'approved' ? '#22c55e' : sanitizeRequest.status === 'rejected' ? '#ef4444' : '#facc15'
+            }}>
+              {sanitizeRequest.status.toUpperCase()}
+            </span>
+            {sanitizeRequest.admin_notes && (
+              <p style={{ marginTop: '0.4rem', opacity: 0.7, fontSize: '0.78rem' }}>{sanitizeRequest.admin_notes}</p>
+            )}
+            {sanitizeRequest.status === 'rejected' && (
+              <button
+                className="small-btn"
+                style={{ marginTop: '0.6rem', color: '#ef4444', borderColor: 'rgba(239,68,68,0.4)' }}
+                onClick={() => setSanitizeRequest(null)}
+              >
+                {lang === 'es' ? 'Nueva solicitud' : 'New request'}
+              </button>
+            )}
+          </div>
+        ) : (
+          <div style={{ display: 'grid', gap: '0.8rem' }}>
+            <label className="field">
+              <span style={{ color: '#ef4444', fontWeight: '700', fontSize: '0.78rem' }}>
+                {lang === 'es'
+                  ? 'Escribe exactamente: "i wish to sanitize my account today"'
+                  : 'Type exactly: "i wish to sanitize my account today"'}
+              </span>
+              <input
+                type="text"
+                value={sanitizePhrase}
+                onChange={(e) => setSanitizePhrase(e.target.value)}
+                placeholder="i wish to sanitize my account today"
+                autoComplete="off"
+                style={{
+                  borderColor: sanitizePhrase.length > 0
+                    ? (sanitizePhrase === SANITIZE_PHRASE ? '#22c55e' : '#ef4444')
+                    : 'var(--line)',
+                  transition: 'border-color 0.2s'
+                }}
+              />
+            </label>
+            <button
+              className="primary-btn"
+              disabled={sanitizePhrase !== SANITIZE_PHRASE || sanitizing}
+              style={{
+                background: 'transparent',
+                color: '#ef4444',
+                border: '1px solid #ef4444',
+                opacity: sanitizePhrase !== SANITIZE_PHRASE ? 0.4 : 1,
+                transition: 'opacity 0.2s'
+              }}
+              onClick={async () => {
+                setSanitizing(true);
+                try {
+                  const res = await api('/sanitize-requests/', {
+                    method: 'POST',
+                    body: JSON.stringify({}),
+                  });
+                  setSanitizeRequest(res);
+                  setSanitizePhrase('');
+                } catch (e) {
+                  alert(e?.message || 'Error submitting request.');
+                } finally {
+                  setSanitizing(false);
+                }
+              }}
+            >
+              {sanitizing
+                ? <RefreshCw size={16} className="spin" />
+                : <AlertTriangle size={16} />}
+              <span style={{ marginLeft: '0.5rem' }}>
+                {lang === 'es' ? 'SOLICITAR SANITIZACIÓN' : 'REQUEST SANITIZATION'}
+              </span>
+            </button>
+          </div>
+        )}
       </article>
 
       <div style={{ padding: '1rem 0 3rem' }}>

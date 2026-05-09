@@ -1,22 +1,37 @@
 import { useEffect, useState } from 'react';
-import { Crown, Trophy, ExternalLink, Users, X, Flame, ChevronDown } from 'lucide-react';
+import { Crown, Trophy, ExternalLink, Users, X, Flame, ChevronDown, RefreshCw } from 'lucide-react';
 import { useAuth } from '../state/AuthContext.jsx';
 import { api, iso } from '../api/client.js';
 import Skeleton from '../components/Skeleton.jsx';
 import { t } from '../i18n.js';
 
+// Module-level cache — persists across tab switches until page refresh
+let _leaderboardCache = null;
+
 export default function Global({ lang }) {
   const { user } = useAuth();
-  const [data, setData] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const [data, setData] = useState(_leaderboardCache);
+  const [loading, setLoading] = useState(!_leaderboardCache);
   const [showBeta, setShowBeta] = useState(false);
   const [popupUser, setPopupUser] = useState(null);
 
-  useEffect(() => {
+  function fetchLeaderboard() {
+    setLoading(true);
     api(`/leaderboard/?today=${iso(new Date())}`)
-      .then(setData)
+      .then(res => {
+        _leaderboardCache = res;
+        setData(res);
+      })
       .finally(() => setLoading(false));
+  }
+
+  useEffect(() => {
+    // Only fetch if no cache — avoids re-fetching on every tab switch
+    if (!_leaderboardCache) {
+      fetchLeaderboard();
+    }
   }, []);
+
 
   const getBorderClass = (rank, hasLink) => {
     if (rank === 1) return "border-gold";
@@ -51,7 +66,16 @@ export default function Global({ lang }) {
       <div className="hero-card global-hero sheet-hero" style={{ position: 'relative', overflow: 'hidden' }}>
         <Flame size={32} style={{ color: 'var(--brand)' }} />
         <div style={{ flex: 1 }}>
-          <h2 className="pixel-text">{t(lang, 'leaderboard')}</h2>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
+            <h2 className="pixel-text">{t(lang, 'leaderboard')}</h2>
+            <button
+              onClick={() => { _leaderboardCache = null; fetchLeaderboard(); }}
+              title="Refresh leaderboard"
+              style={{ background: 'none', border: 'none', color: 'var(--brand)', opacity: 0.6, cursor: 'pointer', padding: '2px', display: 'flex', alignItems: 'center' }}
+            >
+              <RefreshCw size={14} className={loading ? 'spin' : ''} />
+            </button>
+          </div>
           {data.champion_name && (
             <p className="muted pixel-text" style={{ fontSize: '0.62rem', marginTop: '0.6rem', lineHeight: '1.6', letterSpacing: '0px' }}>
               {lang === 'es' 

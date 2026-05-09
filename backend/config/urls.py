@@ -24,6 +24,7 @@ from fitness.views import (
     MaintenanceNoticeViewSet,
     WeeklyShiftView,
     BadgeViewSet,
+    SanitizeRequestViewSet,
 )
 
 router = DefaultRouter()
@@ -41,6 +42,7 @@ router.register(r'broadcast-notifications', BroadcastNotificationViewSet, basena
 router.register(r'admin-messages', AdminMessageViewSet, basename='admin-message')
 router.register(r'maintenance-notices', MaintenanceNoticeViewSet, basename='maintenance-notice')
 router.register(r'badges', BadgeViewSet, basename='badge')
+router.register(r'sanitize-requests', SanitizeRequestViewSet, basename='sanitize-request')
 
 urlpatterns = [
     path('admin/', admin.site.urls),
