@@ -10,7 +10,7 @@ def get_leaderboard_data():
     week_end = week_start + timedelta(days=6)
 
     User = get_user_model()
-    users = User.objects.filter(is_approved=True).select_related('preferences').exclude(preferences__hide_from_leaderboard=True)
+    users = User.objects.filter(is_approved=True).select_related('preferences').prefetch_related('badges__badge').exclude(preferences__hide_from_leaderboard=True)
     data = []
 
     last_week_start = week_start - timedelta(days=7)
@@ -29,6 +29,8 @@ def get_leaderboard_data():
         score = 0
         for d in qualified_days:
             for log in logs_by_date[d]:
+                if log.is_pr_set:
+                    continue
                 eff_w = float(log.weight_kg or 0)
                 if log.exercise.exercise_type == 'calisthenics':
                     pref = getattr(user, 'preferences', None)
@@ -48,6 +50,8 @@ def get_leaderboard_data():
         last_score = 0
         for d in last_qualified_days:
             for log in last_logs_by_date[d]:
+                if log.is_pr_set:
+                    continue
                 eff_w = float(log.weight_kg or 0)
                 if log.exercise.exercise_type == 'calisthenics':
                     pref = getattr(user, 'preferences', None)
@@ -56,7 +60,7 @@ def get_leaderboard_data():
                 last_score += eff_w * (log.sets or 0) * (log.reps or 0)
         last_score = int(last_score)
 
-        qualified_logs = [log for d in qualified_days for log in logs_by_date[d]]
+        qualified_logs = [log for d in qualified_days for log in logs_by_date[d] if not log.is_pr_set]
         def get_eff(l):
             w = float(l.weight_kg or 0)
             if l.exercise.exercise_type == 'calisthenics':
@@ -79,7 +83,13 @@ def get_leaderboard_data():
             'score': score,
             'last_week_score': last_score,
             'is_test_user': user.is_test_user,
-            'recommended_link': getattr(user.preferences, 'recommended_link', '')
+            'recommended_link': getattr(user.preferences, 'recommended_link', ''),
+            'badges': [
+                {
+                    'name': ub.badge.name,
+                    'icon_url': f"badges/{ub.badge.icon_name}",
+                } for ub in user.badges.all()
+            ]
         })
 
     # Separate and sort

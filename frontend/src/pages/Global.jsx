@@ -15,6 +15,20 @@ export default function Global({ lang }) {
   const [showBeta, setShowBeta] = useState(false);
   const [popupUser, setPopupUser] = useState(null);
 
+  const [seenLinks, setSeenLinks] = useState(() => {
+    try {
+      return JSON.parse(localStorage.getItem(`seen_links_${user?.id}`) || '{}');
+    } catch {
+      return {};
+    }
+  });
+
+  const markLinkSeen = (userId, link) => {
+    const newSeen = { ...seenLinks, [userId]: link };
+    setSeenLinks(newSeen);
+    localStorage.setItem(`seen_links_${user?.id}`, JSON.stringify(newSeen));
+  };
+
   function fetchLeaderboard() {
     setLoading(true);
     api(`/leaderboard/?today=${iso(new Date())}`)
@@ -162,11 +176,27 @@ export default function Global({ lang }) {
                     }}>
                       {row.rank <= 10 ? ['一', '二', '三', '四', '五', '六', '七', '八', '九', '十'][row.rank - 1] : row.rank}
                     </div>
-                    <div className={`avatar-container ${getBorderClass(row.rank, hasLink)}`} onClick={() => setPopupUser(row)} style={{ flexShrink: 0, width: '38px', height: '38px' }}>
+                    <div 
+                      className={`avatar-container ${getBorderClass(row.rank, hasLink)}`} 
+                      onClick={() => {
+                        setPopupUser(row);
+                        if (hasLink) markLinkSeen(row.id, row.recommended_link);
+                      }} 
+                      style={{ flexShrink: 0, width: '38px', height: '38px' }}
+                    >
                       <div className="avatar" style={{ width: '100%', height: '100%' }}>
                         {row.profile_pic_url ? <img src={getIconUrl(row.profile_pic_url)} alt="" /> : row.name?.charAt(0)}
                       </div>
-                      {hasLink && <div className="link-badge"><ExternalLink size={10} /></div>}
+                      {hasLink && seenLinks[row.id] !== row.recommended_link && (
+                        <div 
+                          className="link-badge link-glow" 
+                          style={{ 
+                            '--glow-rgb': row.rank === 1 ? '251, 191, 36' : row.rank === 2 ? '148, 163, 184' : row.rank === 3 ? '180, 83, 9' : '34, 197, 94',
+                          }}
+                        >
+                          <ExternalLink size={10} />
+                        </div>
+                      )}
                     </div>
                   </div>
 
@@ -271,6 +301,42 @@ export default function Global({ lang }) {
                 </div>
               )}
             </div>
+
+            {/* Badges Display */}
+            {popupUser.badges && popupUser.badges.length > 0 && (
+              <div style={{ 
+                padding: '0 1.5rem', 
+                marginTop: '1rem',
+                width: '100%'
+              }}>
+                <div className="badge-scroll-row" style={{ 
+                  display: 'flex', 
+                  gap: '0.8rem', 
+                  overflowX: 'auto', 
+                  padding: '0.5rem 0.2rem',
+                  scrollbarWidth: 'none',
+                  WebkitOverflowScrolling: 'touch',
+                  msOverflowStyle: 'none',
+                  justifyContent: popupUser.badges.length < 4 ? 'center' : 'flex-start'
+                }}>
+                  {popupUser.badges.map((b, i) => (
+                    <div key={i} style={{ flexShrink: 0, textAlign: 'center' }}>
+                      <img 
+                        src={getIconUrl(b.icon_url)} 
+                        alt={b.name} 
+                        style={{ 
+                          width: '32px', 
+                          height: '32px', 
+                          objectFit: 'contain',
+                          filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.5))'
+                        }} 
+                        title={b.name}
+                      />
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
             
             <div style={{ padding: '1.5rem', textAlign: 'center' }}>
               <h2 className="pixel-text" style={{ marginBottom: '0.8rem', color: 'var(--brand)', fontSize: '0.9rem', lineHeight: '1.4' }}>
