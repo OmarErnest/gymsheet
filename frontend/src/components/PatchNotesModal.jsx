@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
-import { X, Zap, Wrench, Flame, TrendingUp, ChevronRight, ChevronLeft } from 'lucide-react';
+import { X, Zap, Wrench, Flame, TrendingUp } from 'lucide-react';
 import { PATCH_NOTES } from '../config/patchNotes.js';
 
 const TYPE_CONFIG = {
@@ -73,6 +73,7 @@ export default function PatchNotesModal({ onClose }) {
                 width: '100%', 
                 flexShrink: 0, 
                 scrollSnapAlign: 'start',
+                scrollSnapStop: 'always',
                 display: 'flex',
                 flexDirection: 'column'
               }}
@@ -151,59 +152,6 @@ export default function PatchNotesModal({ onClose }) {
             </div>
           ))}
         </div>
-
-        {/* Swipe Indicator Overlay (Floating arrows) */}
-        {activeIdx < notes.length - 1 && (
-          <div 
-            onClick={() => scrollTo(activeIdx + 1)}
-            style={{ 
-              position: 'absolute', 
-              right: '8px', 
-              top: '50%', 
-              transform: 'translateY(-50%)', 
-              background: 'rgba(var(--brand-rgb), 0.2)', 
-              color: 'var(--brand)', 
-              width: '40px', 
-              height: '40px', 
-              borderRadius: '50%', 
-              display: 'flex', 
-              alignItems: 'center', 
-              justifyContent: 'center', 
-              cursor: 'pointer',
-              zIndex: 10,
-              backdropFilter: 'blur(5px)',
-              border: '1px solid rgba(var(--brand-rgb), 0.3)',
-              animation: 'bounce-right 1.5s infinite'
-            }}
-          >
-            <ChevronRight size={24} />
-          </div>
-        )}
-        {activeIdx > 0 && (
-          <div 
-            onClick={() => scrollTo(activeIdx - 1)}
-            style={{ 
-              position: 'absolute', 
-              left: '8px', 
-              top: '50%', 
-              transform: 'translateY(-50%)', 
-              background: 'rgba(255,255,255,0.1)', 
-              color: 'var(--text)', 
-              width: '40px', 
-              height: '40px', 
-              borderRadius: '50%', 
-              display: 'flex', 
-              alignItems: 'center', 
-              justifyContent: 'center', 
-              cursor: 'pointer',
-              zIndex: 10,
-              backdropFilter: 'blur(5px)',
-              border: '1px solid rgba(255,255,255,0.1)'
-            }}
-          >
-            <ChevronLeft size={24} />
-          </div>
-        )}
 
         {/* Footer with Page Dots */}
         <div style={{
