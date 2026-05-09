@@ -1,6 +1,6 @@
 # GymSheet
 
-[![Project Status](https://img.shields.io/badge/Status-v--03a.038-brightgreen)](https://www.notion.so/Patch-Notes-35ad39c119be8102b79aca4189267c51)
+[![Project Status](https://img.shields.io/badge/Status-v--03a.039-brightgreen)](https://www.notion.so/Patch-Notes-35ad39c119be8102b79aca4189267c51)
 
 > **Official Patch Notes:** [GymSheet Update Log](https://www.notion.so/Patch-Notes-35ad39c119be8102b79aca4189267c51)
 
