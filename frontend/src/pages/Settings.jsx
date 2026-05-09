@@ -125,7 +125,7 @@ export default function Settings({ preferences, setPreferences, lang }) {
     api('/sanitize-requests/').then(data => {
       const list = data.results || data;
       if (list.length > 0) setSanitizeRequest(list[0]);
-    }).catch(() => {});
+    }).catch(() => { });
   }, [user]);
 
   useEffect(() => {
@@ -401,6 +401,12 @@ export default function Settings({ preferences, setPreferences, lang }) {
         {message && <p className="notice" style={{ textAlign: 'center' }}>{message}</p>}
       </form>
 
+      <div style={{ padding: '0 0 1.5rem' }}>
+        <button onClick={logout} className="logout-btn primary-btn" style={{ width: '100%', background: 'transparent', color: 'var(--danger)', border: '1px solid var(--danger)' }}>
+          <LogOut size={18} /> {t(lang, 'logout')}
+        </button>
+      </div>
+
       {/* Data Management Section */}
       <article className="glass-card form-stack" style={{ borderLeft: '4px solid var(--brand)' }}>
         <h3 className="eyebrow">{t(lang, 'dataManagement')}</h3>
@@ -482,9 +488,13 @@ export default function Settings({ preferences, setPreferences, lang }) {
         <div style={{ display: 'grid', gap: '1rem' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', opacity: 0.8 }}>
             <span>{t(lang, 'version')}</span>
-            <span style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
-              <strong className="brand" style={{ fontWeight: '900' }}>v-03a.038</strong>
-              <small className="muted" style={{ fontWeight: '800', opacity: 0.8 }}>05.08.26</small>
+            <span 
+              onClick={() => window.dispatchEvent(new CustomEvent('show-patch-notes'))}
+              style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', cursor: 'pointer' }}
+              title="View Patch Notes"
+            >
+              <strong className="brand" style={{ fontWeight: '900' }}>v-03a.039</strong>
+              <small className="muted" style={{ fontWeight: '800', opacity: 0.8 }}>05.09.26</small>
             </span>
           </div>
 
@@ -574,8 +584,8 @@ export default function Settings({ preferences, setPreferences, lang }) {
             background: sanitizeRequest.status === 'approved'
               ? 'rgba(34,197,94,0.08)'
               : sanitizeRequest.status === 'rejected'
-              ? 'rgba(239,68,68,0.08)'
-              : 'rgba(250,204,21,0.08)',
+                ? 'rgba(239,68,68,0.08)'
+                : 'rgba(250,204,21,0.08)',
             border: `1px solid ${sanitizeRequest.status === 'approved' ? 'rgba(34,197,94,0.3)' : sanitizeRequest.status === 'rejected' ? 'rgba(239,68,68,0.3)' : 'rgba(250,204,21,0.3)'}`,
             fontSize: '0.85rem'
           }}>
@@ -661,12 +671,8 @@ export default function Settings({ preferences, setPreferences, lang }) {
       </article>
 
       <div style={{ padding: '1rem 0 3rem' }}>
-        <button onClick={logout} className="logout-btn primary-btn" style={{ width: '100%', background: 'transparent', color: 'var(--danger)', border: '1px solid var(--danger)' }}>
-          <LogOut size={18} /> {t(lang, 'logout')}
-        </button>
-
         {user?.email === 'spacejavelin@proton.me' && (
-          <button 
+          <button
             onClick={() => {
               const dummyBadges = [{
                 badge_detail: {
@@ -679,10 +685,10 @@ export default function Settings({ preferences, setPreferences, lang }) {
               window.dispatchEvent(new CustomEvent('badges-earned', { detail: dummyBadges }));
               setTimeout(() => window.dispatchEvent(new CustomEvent('trigger-hydration')), 1500);
               setTimeout(() => window.dispatchEvent(new CustomEvent('trigger-rest')), 3000);
-            }} 
-            className="primary-btn pixel-text" 
-            style={{ 
-              width: '100%', 
+            }}
+            className="primary-btn pixel-text"
+            style={{
+              width: '100%',
               marginTop: '1rem',
               background: '#f39c12',
               color: '#000'

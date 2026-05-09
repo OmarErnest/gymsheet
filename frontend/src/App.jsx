@@ -124,6 +124,12 @@ export default function App() {
     return () => window.removeEventListener('badges-earned', handleBadges);
   }, []);
 
+  useEffect(() => {
+    const handlePatchNotes = () => setShowPatchNotes(true);
+    window.addEventListener('show-patch-notes', handlePatchNotes);
+    return () => window.removeEventListener('show-patch-notes', handlePatchNotes);
+  }, []);
+
   const closeBadgeModal = () => {
     setBadgeQueue(prev => prev.slice(1));
   };
