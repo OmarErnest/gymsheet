@@ -234,11 +234,11 @@ export default function Settings({ preferences, setPreferences, lang }) {
 
   return (
     <section className="stack">
-      <form className="glass-card form-stack" onSubmit={save} autoComplete="off">
+      <form id="settings-profile" className="glass-card form-stack" onSubmit={save} autoComplete="off">
         <h3 className="eyebrow">{t(lang, 'profile')}</h3>
 
         {/* Icon Selection */}
-        <div className="field">
+        <div id="settings-icons" className="field">
           <div
             style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', cursor: 'pointer' }}
             onClick={() => setShowIcons(!showIcons)}
@@ -370,25 +370,27 @@ export default function Settings({ preferences, setPreferences, lang }) {
           <input type="checkbox" checked={!!form.hide_from_leaderboard} onChange={(e) => update('hide_from_leaderboard', e.target.checked)} />
         </label>
 
-        <LinkInput
-          label={t(lang, 'recommendLink')}
-          value={form.recommended_link}
-          onChange={(val) => update('recommended_link', val)}
-          lang={lang}
-        />
+        <div id="settings-recommend">
+          <LinkInput
+            label={t(lang, 'recommendLink')}
+            value={form.recommended_link}
+            onChange={(val) => update('recommended_link', val)}
+            lang={lang}
+          />
+        </div>
 
 
 
-        <label className="field"><span>{t(lang, 'theme')}</span><select value={form.theme} onChange={(e) => update('theme', e.target.value)}><option value="dark">🌑 {t(lang, 'dark')}</option><option value="light">☀️ {t(lang, 'light')}</option></select></label>
+        <label id="settings-theme" className="field"><span>{t(lang, 'theme')}</span><select value={form.theme} onChange={(e) => update('theme', e.target.value)}><option value="dark">🌑 {t(lang, 'dark')}</option><option value="light">☀️ {t(lang, 'light')}</option></select></label>
         <label className="field"><span>Font Size</span><select value={form.font_size || 'medium'} onChange={(e) => update('font_size', e.target.value)}><option value="small">Small</option><option value="medium">Medium</option><option value="big">Big</option></select></label>
-        <label className="field"><span>{t(lang, 'language')}</span><select value={form.language} onChange={(e) => update('language', e.target.value)}><option value="en">🇬🇧 English</option><option value="es">🇪🇸 Español</option></select></label>
+        <label id="settings-lang" className="field"><span>{t(lang, 'language')}</span><select value={form.language} onChange={(e) => update('language', e.target.value)}><option value="en">🇬🇧 English</option><option value="es">🇪🇸 Español</option></select></label>
 
         <div className="paste-input">
           <label className="field"><span>Height (cm)</span><input autoComplete="off" inputMode="numeric" value={form.height_cm} onChange={(e) => update('height_cm', e.target.value.replace(/\D/g, ''))} placeholder="e.g. 175" /></label>
           <label className="field"><span>Weight (kg)</span><input autoComplete="off" inputMode="decimal" value={form.weight_kg} onChange={(e) => update('weight_kg', e.target.value)} placeholder="e.g. 70.5" /></label>
         </div>
 
-        <label className="field"><span>{t(lang, 'loginMethod')}</span><select value={form.auth_mode} onChange={(e) => update('auth_mode', e.target.value)}><option value="pin">{t(lang, 'sixDigitPin')}</option><option value="password">{t(lang, 'securePassword')}</option></select></label>
+        <label id="settings-auth" className="field"><span>{t(lang, 'loginMethod')}</span><select value={form.auth_mode} onChange={(e) => update('auth_mode', e.target.value)}><option value="pin">{t(lang, 'sixDigitPin')}</option><option value="password">{t(lang, 'securePassword')}</option></select></label>
         {form.auth_mode === 'pin' ? (
           <label className="field">
             <span>{t(lang, 'newPin')}</span>
@@ -421,7 +423,7 @@ export default function Settings({ preferences, setPreferences, lang }) {
       </div>
 
       {/* Data Management Section */}
-      <article className="glass-card form-stack" style={{ borderLeft: '4px solid var(--brand)' }}>
+      <article id="settings-data" className="glass-card form-stack" style={{ borderLeft: '4px solid var(--brand)' }}>
         <h3 className="eyebrow">{t(lang, 'dataManagement')}</h3>
 
         <div style={{ display: 'grid', gap: '1.5rem', padding: '0.5rem 0' }}>
@@ -495,7 +497,7 @@ export default function Settings({ preferences, setPreferences, lang }) {
       </article>
 
       {/* Support & About Section */}
-      <article className="glass-card form-stack" style={{ borderLeft: '4px solid var(--brand)' }}>
+      <article id="settings-about" className="glass-card form-stack" style={{ borderLeft: '4px solid var(--brand)' }}>
         <h3 className="eyebrow">{t(lang, 'about')}</h3>
 
         <div style={{ display: 'grid', gap: '1rem' }}>
@@ -547,13 +549,14 @@ export default function Settings({ preferences, setPreferences, lang }) {
           <MessageSquare size={18} />
           <h3 className="eyebrow" style={{ color: 'inherit', margin: 0 }}>{t(lang, 'contactAdmin')}</h3>
         </div>
-        <form onSubmit={sendToAdmin} className="form-stack">
+        <form id="settings-contact" onSubmit={sendToAdmin} className="form-stack">
           <textarea
             autoComplete="off"
             placeholder={lang === 'es' ? "Escribe tu mensaje aquí..." : "Type your message here..."}
             value={adminMsg}
             onChange={(e) => setAdminMsg(e.target.value)}
             required
+            maxLength="140"
             style={{
               minHeight: '120px',
               background: 'rgba(0,0,0,0.2)',
@@ -572,11 +575,14 @@ export default function Settings({ preferences, setPreferences, lang }) {
             {sendingMsg ? <RefreshCw size={18} className="spin" /> : <Send size={18} />}
             <span style={{ marginLeft: '0.5rem' }}>{lang === 'es' ? 'ENVIAR MENSAJE' : 'SEND MESSAGE'}</span>
           </button>
+          <div style={{ textAlign: 'right', fontSize: '0.7rem', color: adminMsg.length >= 140 ? 'var(--danger)' : 'var(--muted)', marginTop: '0.2rem', fontWeight: '800' }}>
+            {adminMsg.length}/140
+          </div>
         </form>
       </article>
 
       {/* Danger Zone */}
-      <article className="glass-card form-stack" style={{ borderLeft: '4px solid #ef4444' }}>
+      <article id="settings-danger" className="glass-card form-stack" style={{ borderLeft: '4px solid #ef4444' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#ef4444', marginBottom: '0.3rem' }}>
           <AlertTriangle size={18} />
           <h3 className="eyebrow" style={{ color: 'inherit', margin: 0 }}>

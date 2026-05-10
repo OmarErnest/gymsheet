@@ -19,15 +19,14 @@ export const CURRENT_VERSION = 'v-03a.40';
 export const PATCH_NOTES = [
   {
     version: 'v-03a.40',
-    date: '2026-05-09',
-    title: 'Command Palette & Social Update',
+    date: '2026-05-10',
+    title: 'Home UI & Day Swap Update',
     changes: [
-      { type: 'feature', text: 'Command Palette: Search now finds buttons and actions (Home, Profile, Settings) alongside your workouts.' },
-      { type: 'feature', text: 'Social Badges: Leaderboard profiles now show earned badges in a sleek, scrollable row.' },
-      { type: 'improve', text: 'Recommendation Glow: New links now pulse with color until viewed, making it easier to track updates.' },
-      { type: 'improve', text: 'Fair Scoring: PR logs are now isolated from weekly Power Level to prevent outlier score inflation.' },
-      { type: 'fix', text: 'Fixed BottomNav overflow for staff users with a new compact mobile layout.' },
-      { type: 'fix', text: 'Resolved Badge icon attribute errors in the leaderboard backend.' },
+      { type: 'feature', text: 'Day Swap: Easily rearrange your workout week using the new Swap mode in the Home header.' },
+      { type: 'improve', text: 'Classic Navigation: Reverted to arrow-based week switching with a centered, more accessible layout.' },
+      { type: 'improve', text: 'Week Indicator: Added a clean relative week label (-6 to +1) directly to the Calendar button.' },
+      { type: 'improve', text: 'Compact View: Renamed Spreadsheet view to "SHEET" for better fit on mobile devices.' },
+      { type: 'fix', text: 'Centered header controls to prevent overflow on various screen sizes.' },
     ],
   },
   {

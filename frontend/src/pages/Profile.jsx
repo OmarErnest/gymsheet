@@ -904,7 +904,7 @@ export default function Profile({ preferences, lang }) {
             <Activity />
             <span>{t(lang, 'strength')}</span>
           </button>
-          <button className={`nav-square ${activeTab === 'warmup' ? 'active' : ''}`} onClick={() => setActiveTab('warmup')}>
+          <button className={`nav-square ${activeTab === 'warmup' ? 'active' : ''}`} style={{ opacity: 0.4, cursor: 'not-allowed', filter: 'grayscale(1)' }} onClick={() => {}}>
             <Flame />
             <span>{lang === 'es' ? 'Warm Up' : 'Warm Up'}</span>
           </button>
@@ -924,7 +924,7 @@ export default function Profile({ preferences, lang }) {
             <PlusCircle />
             <span>{t(lang, 'addEx')}</span>
           </button>
-          <button className={`nav-square ${activeTab === 'menu' ? 'active' : ''}`} onClick={() => setActiveTab('menu')}>
+          <button className={`nav-square ${activeTab === 'menu' ? 'active' : ''}`} style={{ opacity: 0.4, cursor: 'not-allowed', filter: 'grayscale(1)' }} onClick={() => {}}>
             <Menu />
             <span>{lang === 'es' ? 'Menú' : 'Menu'}</span>
           </button>

@@ -14,8 +14,61 @@ export default function SearchModal({ onClose, lang }) {
     { id: 'go-profile', label: { en: 'View Profile & Stats', es: 'Ver Perfil y Estadísticas' }, icon: UserRound, action: () => { window.dispatchEvent(new CustomEvent('change-app-tab', { detail: 'profile' })); onClose(); } },
     { id: 'go-global', label: { en: 'Leaderboard (Global)', es: 'Leaderboard (Global)' }, icon: Globe2, action: () => { window.dispatchEvent(new CustomEvent('change-app-tab', { detail: 'global' })); onClose(); } },
     { id: 'go-settings', label: { en: 'App Settings', es: 'Ajustes de la App' }, icon: Settings, action: () => { window.dispatchEvent(new CustomEvent('change-app-tab', { detail: 'settings' })); onClose(); } },
+    
+    // Profile Subtabs
+    { id: 'prof-strength', label: { en: 'Profile: Strength Analysis', es: 'Perfil: Análisis de Fuerza' }, icon: Activity, action: () => { window.dispatchEvent(new CustomEvent('change-app-tab', { detail: 'profile' })); window.dispatchEvent(new CustomEvent('change-profile-tab', { detail: 'strength' })); onClose(); } },
+    { id: 'prof-warmup', label: { en: 'Profile: Warm Up (Offline)', es: 'Perfil: Warm Up (Fuera de línea)' }, icon: UserRound, action: () => { window.dispatchEvent(new CustomEvent('change-app-tab', { detail: 'profile' })); window.dispatchEvent(new CustomEvent('change-profile-tab', { detail: 'warmup' })); onClose(); } },
+    { id: 'prof-bodymap', label: { en: 'Profile: Body Map', es: 'Perfil: Mapa Corporal' }, icon: UserRound, action: () => { window.dispatchEvent(new CustomEvent('change-app-tab', { detail: 'profile' })); window.dispatchEvent(new CustomEvent('change-profile-tab', { detail: 'bodymap' })); onClose(); } },
+    { id: 'prof-goals', label: { en: 'Profile: Your Goals', es: 'Perfil: Tus Metas' }, icon: UserRound, action: () => { window.dispatchEvent(new CustomEvent('change-app-tab', { detail: 'profile' })); window.dispatchEvent(new CustomEvent('change-profile-tab', { detail: 'goals' })); onClose(); } },
     { id: 'action-add', label: { en: 'Add New Goal / Exercise', es: 'Añadir Nueva Meta / Ejercicio' }, icon: Plus, action: () => { window.dispatchEvent(new CustomEvent('change-app-tab', { detail: 'profile' })); window.dispatchEvent(new CustomEvent('change-profile-tab', { detail: 'creategoal' })); onClose(); } },
-    { id: 'action-sanitize', label: { en: 'Sanitize Account (Wipe Data)', es: 'Sanitizar Cuenta (Borrar Datos)' }, icon: Trash2, action: () => { window.dispatchEvent(new CustomEvent('change-app-tab', { detail: 'settings' })); onClose(); } },
+    { id: 'prof-addex', label: { en: 'Profile: Add Exercise Definition', es: 'Perfil: Añadir Definición de Ejercicio' }, icon: Plus, action: () => { window.dispatchEvent(new CustomEvent('change-app-tab', { detail: 'profile' })); window.dispatchEvent(new CustomEvent('change-profile-tab', { detail: 'addexercise' })); onClose(); } },
+
+    // Settings Sections
+    { id: 'set-theme', label: { en: 'Settings: Change Theme (Dark/Light)', es: 'Ajustes: Cambiar Tema (Oscuro/Claro)' }, icon: Settings, action: () => { 
+        window.dispatchEvent(new CustomEvent('change-app-tab', { detail: 'settings' })); 
+        setTimeout(() => document.getElementById('settings-theme')?.scrollIntoView({ behavior: 'smooth', block: 'center' }), 100);
+        onClose(); 
+    } },
+    { id: 'set-lang', label: { en: 'Settings: Change Language', es: 'Ajustes: Cambiar Idioma' }, icon: Globe2, action: () => { 
+        window.dispatchEvent(new CustomEvent('change-app-tab', { detail: 'settings' })); 
+        setTimeout(() => document.getElementById('settings-lang')?.scrollIntoView({ behavior: 'smooth', block: 'center' }), 100);
+        onClose(); 
+    } },
+    { id: 'set-icons', label: { en: 'Settings: Choose Icon', es: 'Ajustes: Elegir Icono' }, icon: Settings, action: () => { 
+        window.dispatchEvent(new CustomEvent('change-app-tab', { detail: 'settings' })); 
+        setTimeout(() => document.getElementById('settings-icons')?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 100);
+        onClose(); 
+    } },
+    { id: 'set-auth', label: { en: 'Settings: Login Method (PIN/Password)', es: 'Ajustes: Método de Inicio (PIN/Contraseña)' }, icon: Settings, action: () => { 
+        window.dispatchEvent(new CustomEvent('change-app-tab', { detail: 'settings' })); 
+        setTimeout(() => document.getElementById('settings-auth')?.scrollIntoView({ behavior: 'smooth', block: 'center' }), 100);
+        onClose(); 
+    } },
+    { id: 'set-recommend', label: { en: 'Settings: Recommend Link', es: 'Ajustes: Recomendar Link' }, icon: Settings, action: () => { 
+        window.dispatchEvent(new CustomEvent('change-app-tab', { detail: 'settings' })); 
+        setTimeout(() => document.getElementById('settings-recommend')?.scrollIntoView({ behavior: 'smooth', block: 'center' }), 100);
+        onClose(); 
+    } },
+    { id: 'set-data', label: { en: 'Settings: Data Management (Export/Import)', es: 'Ajustes: Gestión de Datos (Exportar/Importar)' }, icon: Settings, action: () => { 
+        window.dispatchEvent(new CustomEvent('change-app-tab', { detail: 'settings' })); 
+        setTimeout(() => document.getElementById('settings-data')?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 100);
+        onClose(); 
+    } },
+    { id: 'set-about', label: { en: 'Settings: About & Version', es: 'Ajustes: Acerca de y Versión' }, icon: Settings, action: () => { 
+        window.dispatchEvent(new CustomEvent('change-app-tab', { detail: 'settings' })); 
+        setTimeout(() => document.getElementById('settings-about')?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 100);
+        onClose(); 
+    } },
+    { id: 'set-contact', label: { en: 'Settings: Contact Admin', es: 'Ajustes: Contactar Admin' }, icon: Settings, action: () => { 
+        window.dispatchEvent(new CustomEvent('change-app-tab', { detail: 'settings' })); 
+        setTimeout(() => document.getElementById('settings-contact')?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 100);
+        onClose(); 
+    } },
+    { id: 'action-sanitize', label: { en: 'Sanitize Account (Wipe Data)', es: 'Sanitizar Cuenta (Borrar Datos)' }, icon: Trash2, action: () => { 
+        window.dispatchEvent(new CustomEvent('change-app-tab', { detail: 'settings' })); 
+        setTimeout(() => document.getElementById('settings-danger')?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 100);
+        onClose(); 
+    } },
   ];
 
   useEffect(() => {

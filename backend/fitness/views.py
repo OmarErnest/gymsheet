@@ -1,6 +1,7 @@
 import csv
 import io
 from datetime import date, timedelta
+from django.db import transaction
 
 from django.contrib.auth import get_user_model
 from django.db.models import Avg, Count, Max, Q, Sum, Case, When, F, FloatField
@@ -304,6 +305,73 @@ class WeeklyShiftView(APIView):
         shift_obj.shifts['offsets'] = offsets
         shift_obj.save()
         return Response({'offsets': offsets})
+
+
+class SwapDaysView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        date1_raw = request.data.get('date1')
+        date2_raw = request.data.get('date2')
+        
+        if not date1_raw or not date2_raw:
+            return Response({'detail': 'Two dates required.'}, status=400)
+            
+        d1 = parse_date_param(date1_raw, None)
+        d2 = parse_date_param(date2_raw, None)
+        
+        if not d1 or not d2:
+            return Response({'detail': 'Invalid dates.'}, status=400)
+            
+        if d1 == d2:
+            return Response({'detail': 'Dates must be different.'}, status=400)
+
+        # Ensure they are in the same week
+        if d1 - timedelta(days=d1.weekday()) != d2 - timedelta(days=d2.weekday()):
+             return Response({'detail': 'Dates must be in the same week.'}, status=400)
+             
+        week_start = d1 - timedelta(days=d1.weekday())
+        idx1 = d1.weekday()
+        idx2 = d2.weekday()
+        
+        shift_obj, _ = WeeklyShift.objects.get_or_create(user=request.user, week_start=week_start)
+        offsets = list(shift_obj.shifts.get('offsets', [0]*7))
+        
+        # Find which original days land on idx1 and idx2
+        orig_days_at_idx1 = []
+        orig_days_at_idx2 = []
+        
+        for d_idx in range(7):
+            current_pos = d_idx + offsets[d_idx]
+            if current_pos == idx1:
+                orig_days_at_idx1.append(d_idx)
+            elif current_pos == idx2:
+                orig_days_at_idx2.append(d_idx)
+                
+        # Swap offsets for these original days
+        for d_idx in orig_days_at_idx1:
+            offsets[d_idx] = idx2 - d_idx
+        for d_idx in orig_days_at_idx2:
+            offsets[d_idx] = idx1 - d_idx
+            
+        with transaction.atomic():
+            shift_obj.shifts['offsets'] = offsets
+            shift_obj.save()
+            
+            # Use a dummy date to avoid UNIQUE constraint violations during the swap
+            temp_date = d1 - timedelta(days=365*10)
+            
+            # Swap ExerciseLogs
+            ExerciseLog.objects.filter(user=request.user, date=d1).update(date=temp_date)
+            ExerciseLog.objects.filter(user=request.user, date=d2).update(date=d1)
+            ExerciseLog.objects.filter(user=request.user, date=temp_date).update(date=d2)
+            
+            # Swap DailyProgress
+            DailyProgress.objects.filter(user=request.user, date=d1).update(date=temp_date)
+            DailyProgress.objects.filter(user=request.user, date=d2).update(date=d1)
+            DailyProgress.objects.filter(user=request.user, date=temp_date).update(date=d2)
+            
+        return Response({'status': 'swapped'})
 
 class HomeDaysView(APIView):
     permission_classes = [IsAuthenticated]
@@ -664,6 +732,11 @@ class AdminMessageViewSet(viewsets.ModelViewSet):
         return AdminMessage.objects.filter(user=self.request.user).order_by('-created_at')
 
     def perform_create(self, serializer):
+        msg = serializer.validated_data.get('message', '')
+        if len(msg) > 140:
+            from rest_framework.exceptions import ValidationError
+            raise ValidationError("Message cannot exceed 140 characters.")
+
         # Anti-spam: Max 3 unread messages per user
         unread_count = AdminMessage.objects.filter(user=self.request.user, is_read=False).count()
         if unread_count >= 3:

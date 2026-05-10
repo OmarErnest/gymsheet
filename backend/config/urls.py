@@ -22,9 +22,10 @@ from fitness.views import (
     BroadcastNotificationViewSet,
     AdminMessageViewSet,
     MaintenanceNoticeViewSet,
-    WeeklyShiftView,
     BadgeViewSet,
     SanitizeRequestViewSet,
+    SwapDaysView,
+    WeeklyShiftView,
 )
 
 router = DefaultRouter()
@@ -57,6 +58,7 @@ urlpatterns = [
     path('api/home/days/', HomeDaysView.as_view(), name='home-days'),
     path('api/leaderboard/', LeaderboardView.as_view(), name='leaderboard'),
     path('api/weekly-shift/', WeeklyShiftView.as_view(), name='weekly-shift'),
+    path('api/swap-days/', SwapDaysView.as_view(), name='swap-days'),
     path('api/export-csv/', ExportCSVView.as_view(), name='export-csv'),
     path('api/logs-csv-template/', LogCSVTemplateView.as_view(), name='logs-csv-template'),
     path('api/exercise-csv-uploads/<int:pk>/approve/', ExerciseCSVUploadApproveView.as_view(), name='exercise-csv-approve'),
