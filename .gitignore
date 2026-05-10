@@ -2,7 +2,7 @@
 .env
 *.env
 *.sqlite3
-data.json
+#data.json
 secret_instructions.md
 change_email.py
 database.dbml
