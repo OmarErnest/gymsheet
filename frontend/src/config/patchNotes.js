@@ -26,6 +26,7 @@ export const PATCH_NOTES = [
       { type: 'improve', text: 'Classic Navigation: Reverted to arrow-based week switching with a centered, more accessible layout.' },
       { type: 'improve', text: 'Week Indicator: Added a clean relative week label (-6 to +1) directly to the Calendar button.' },
       { type: 'improve', text: 'Compact View: Renamed Spreadsheet view to "SHEET" for better fit on mobile devices.' },
+      { type: 'fix', text: 'Resolved missing Profile Menu action in the Command Palette search.' },
       { type: 'fix', text: 'Centered header controls to prevent overflow on various screen sizes.' },
     ],
   },
