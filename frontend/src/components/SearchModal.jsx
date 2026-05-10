@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Search, X, Calendar, Activity, Dumbbell, ArrowRight, Home, UserRound, Globe2, Settings, Plus, Trash2 } from 'lucide-react';
+import { Search, X, Calendar, Activity, Dumbbell, ArrowRight, Home, UserRound, Globe2, Settings, Plus, Trash2, Menu } from 'lucide-react';
 import { api } from '../api/client.js';
 import { t } from '../i18n.js';
 
@@ -14,10 +14,10 @@ export default function SearchModal({ onClose, lang }) {
     { id: 'go-profile', label: { en: 'View Profile & Stats', es: 'Ver Perfil y Estadísticas' }, icon: UserRound, action: () => { window.dispatchEvent(new CustomEvent('change-app-tab', { detail: 'profile' })); onClose(); } },
     { id: 'go-global', label: { en: 'Leaderboard (Global)', es: 'Leaderboard (Global)' }, icon: Globe2, action: () => { window.dispatchEvent(new CustomEvent('change-app-tab', { detail: 'global' })); onClose(); } },
     { id: 'go-settings', label: { en: 'App Settings', es: 'Ajustes de la App' }, icon: Settings, action: () => { window.dispatchEvent(new CustomEvent('change-app-tab', { detail: 'settings' })); onClose(); } },
-    
+
     // Profile Subtabs
     { id: 'prof-strength', label: { en: 'Profile: Strength Analysis', es: 'Perfil: Análisis de Fuerza' }, icon: Activity, action: () => { window.dispatchEvent(new CustomEvent('change-app-tab', { detail: 'profile' })); window.dispatchEvent(new CustomEvent('change-profile-tab', { detail: 'strength' })); onClose(); } },
-    {id: 'prof-warmup', label: { en: 'Profile: Warm Up (Offline)', es: 'Perfil: Warm Up (Fuera de línea)' }, icon: UserRound, action: () => { window.dispatchEvent(new CustomEvent('change-app-tab', { detail: 'profile' })); window.dispatchEvent(new CustomEvent('change-profile-tab', { detail: 'warmup' })); onClose(); } },
+    { id: 'prof-warmup', label: { en: 'Profile: Warm Up (Offline)', es: 'Perfil: Warm Up (Fuera de línea)' }, icon: UserRound, action: () => { window.dispatchEvent(new CustomEvent('change-app-tab', { detail: 'profile' })); window.dispatchEvent(new CustomEvent('change-profile-tab', { detail: 'warmup' })); onClose(); } },
     { id: 'prof-menu', label: { en: 'Profile: Diet Menu (Offline)', es: 'Perfil: Menú Dieta (Fuera de línea)' }, icon: Menu, action: () => { window.dispatchEvent(new CustomEvent('change-app-tab', { detail: 'profile' })); window.dispatchEvent(new CustomEvent('change-profile-tab', { detail: 'menu' })); onClose(); } },
     { id: 'prof-bodymap', label: { en: 'Profile: Body Map', es: 'Perfil: Mapa Corporal' }, icon: UserRound, action: () => { window.dispatchEvent(new CustomEvent('change-app-tab', { detail: 'profile' })); window.dispatchEvent(new CustomEvent('change-profile-tab', { detail: 'bodymap' })); onClose(); } },
     { id: 'prof-goals', label: { en: 'Profile: Your Goals', es: 'Perfil: Tus Metas' }, icon: UserRound, action: () => { window.dispatchEvent(new CustomEvent('change-app-tab', { detail: 'profile' })); window.dispatchEvent(new CustomEvent('change-profile-tab', { detail: 'goals' })); onClose(); } },
@@ -25,51 +25,69 @@ export default function SearchModal({ onClose, lang }) {
     { id: 'prof-addex', label: { en: 'Profile: Add Exercise Definition', es: 'Perfil: Añadir Definición de Ejercicio' }, icon: Plus, action: () => { window.dispatchEvent(new CustomEvent('change-app-tab', { detail: 'profile' })); window.dispatchEvent(new CustomEvent('change-profile-tab', { detail: 'addexercise' })); onClose(); } },
 
     // Settings Sections
-    { id: 'set-theme', label: { en: 'Settings: Change Theme (Dark/Light)', es: 'Ajustes: Cambiar Tema (Oscuro/Claro)' }, icon: Settings, action: () => { 
-        window.dispatchEvent(new CustomEvent('change-app-tab', { detail: 'settings' })); 
+    {
+      id: 'set-theme', label: { en: 'Settings: Change Theme (Dark/Light)', es: 'Ajustes: Cambiar Tema (Oscuro/Claro)' }, icon: Settings, action: () => {
+        window.dispatchEvent(new CustomEvent('change-app-tab', { detail: 'settings' }));
         setTimeout(() => document.getElementById('settings-theme')?.scrollIntoView({ behavior: 'smooth', block: 'center' }), 100);
-        onClose(); 
-    } },
-    { id: 'set-lang', label: { en: 'Settings: Change Language', es: 'Ajustes: Cambiar Idioma' }, icon: Globe2, action: () => { 
-        window.dispatchEvent(new CustomEvent('change-app-tab', { detail: 'settings' })); 
+        onClose();
+      }
+    },
+    {
+      id: 'set-lang', label: { en: 'Settings: Change Language', es: 'Ajustes: Cambiar Idioma' }, icon: Globe2, action: () => {
+        window.dispatchEvent(new CustomEvent('change-app-tab', { detail: 'settings' }));
         setTimeout(() => document.getElementById('settings-lang')?.scrollIntoView({ behavior: 'smooth', block: 'center' }), 100);
-        onClose(); 
-    } },
-    { id: 'set-icons', label: { en: 'Settings: Choose Icon', es: 'Ajustes: Elegir Icono' }, icon: Settings, action: () => { 
-        window.dispatchEvent(new CustomEvent('change-app-tab', { detail: 'settings' })); 
+        onClose();
+      }
+    },
+    {
+      id: 'set-icons', label: { en: 'Settings: Choose Icon', es: 'Ajustes: Elegir Icono' }, icon: Settings, action: () => {
+        window.dispatchEvent(new CustomEvent('change-app-tab', { detail: 'settings' }));
         setTimeout(() => document.getElementById('settings-icons')?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 100);
-        onClose(); 
-    } },
-    { id: 'set-auth', label: { en: 'Settings: Login Method (PIN/Password)', es: 'Ajustes: Método de Inicio (PIN/Contraseña)' }, icon: Settings, action: () => { 
-        window.dispatchEvent(new CustomEvent('change-app-tab', { detail: 'settings' })); 
+        onClose();
+      }
+    },
+    {
+      id: 'set-auth', label: { en: 'Settings: Login Method (PIN/Password)', es: 'Ajustes: Método de Inicio (PIN/Contraseña)' }, icon: Settings, action: () => {
+        window.dispatchEvent(new CustomEvent('change-app-tab', { detail: 'settings' }));
         setTimeout(() => document.getElementById('settings-auth')?.scrollIntoView({ behavior: 'smooth', block: 'center' }), 100);
-        onClose(); 
-    } },
-    { id: 'set-recommend', label: { en: 'Settings: Recommend Link', es: 'Ajustes: Recomendar Link' }, icon: Settings, action: () => { 
-        window.dispatchEvent(new CustomEvent('change-app-tab', { detail: 'settings' })); 
+        onClose();
+      }
+    },
+    {
+      id: 'set-recommend', label: { en: 'Settings: Recommend Link', es: 'Ajustes: Recomendar Link' }, icon: Settings, action: () => {
+        window.dispatchEvent(new CustomEvent('change-app-tab', { detail: 'settings' }));
         setTimeout(() => document.getElementById('settings-recommend')?.scrollIntoView({ behavior: 'smooth', block: 'center' }), 100);
-        onClose(); 
-    } },
-    { id: 'set-data', label: { en: 'Settings: Data Management (Export/Import)', es: 'Ajustes: Gestión de Datos (Exportar/Importar)' }, icon: Settings, action: () => { 
-        window.dispatchEvent(new CustomEvent('change-app-tab', { detail: 'settings' })); 
+        onClose();
+      }
+    },
+    {
+      id: 'set-data', label: { en: 'Settings: Data Management (Export/Import)', es: 'Ajustes: Gestión de Datos (Exportar/Importar)' }, icon: Settings, action: () => {
+        window.dispatchEvent(new CustomEvent('change-app-tab', { detail: 'settings' }));
         setTimeout(() => document.getElementById('settings-data')?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 100);
-        onClose(); 
-    } },
-    { id: 'set-about', label: { en: 'Settings: About & Version', es: 'Ajustes: Acerca de y Versión' }, icon: Settings, action: () => { 
-        window.dispatchEvent(new CustomEvent('change-app-tab', { detail: 'settings' })); 
+        onClose();
+      }
+    },
+    {
+      id: 'set-about', label: { en: 'Settings: About & Version', es: 'Ajustes: Acerca de y Versión' }, icon: Settings, action: () => {
+        window.dispatchEvent(new CustomEvent('change-app-tab', { detail: 'settings' }));
         setTimeout(() => document.getElementById('settings-about')?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 100);
-        onClose(); 
-    } },
-    { id: 'set-contact', label: { en: 'Settings: Contact Admin', es: 'Ajustes: Contactar Admin' }, icon: Settings, action: () => { 
-        window.dispatchEvent(new CustomEvent('change-app-tab', { detail: 'settings' })); 
+        onClose();
+      }
+    },
+    {
+      id: 'set-contact', label: { en: 'Settings: Contact Admin', es: 'Ajustes: Contactar Admin' }, icon: Settings, action: () => {
+        window.dispatchEvent(new CustomEvent('change-app-tab', { detail: 'settings' }));
         setTimeout(() => document.getElementById('settings-contact')?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 100);
-        onClose(); 
-    } },
-    { id: 'action-sanitize', label: { en: 'Sanitize Account (Wipe Data)', es: 'Sanitizar Cuenta (Borrar Datos)' }, icon: Trash2, action: () => { 
-        window.dispatchEvent(new CustomEvent('change-app-tab', { detail: 'settings' })); 
+        onClose();
+      }
+    },
+    {
+      id: 'action-sanitize', label: { en: 'Sanitize Account (Wipe Data)', es: 'Sanitizar Cuenta (Borrar Datos)' }, icon: Trash2, action: () => {
+        window.dispatchEvent(new CustomEvent('change-app-tab', { detail: 'settings' }));
         setTimeout(() => document.getElementById('settings-danger')?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 100);
-        onClose(); 
-    } },
+        onClose();
+      }
+    },
   ];
 
   useEffect(() => {
@@ -78,7 +96,7 @@ export default function SearchModal({ onClose, lang }) {
       setActionResults([]);
       return;
     }
-    const matches = APP_ACTIONS.filter(a => 
+    const matches = APP_ACTIONS.filter(a =>
       a.label[lang === 'es' ? 'es' : 'en'].toLowerCase().includes(query.toLowerCase()) ||
       a.id.toLowerCase().includes(query.toLowerCase())
     );
@@ -100,44 +118,44 @@ export default function SearchModal({ onClose, lang }) {
 
   return (
     <div className="modal-overlay" style={{ zIndex: 4000 }} onClick={onClose}>
-      <div 
-        className="modal-content glass-card animate-pop" 
-        style={{ 
-          maxWidth: '500px', 
-          width: '95%', 
-          padding: 0, 
-          overflow: 'hidden', 
-          display: 'flex', 
-          flexDirection: 'column', 
+      <div
+        className="modal-content glass-card animate-pop"
+        style={{
+          maxWidth: '500px',
+          width: '95%',
+          padding: 0,
+          overflow: 'hidden',
+          display: 'flex',
+          flexDirection: 'column',
           maxHeight: '80vh',
           border: '1px solid var(--brand)'
-        }} 
+        }}
         onClick={e => e.stopPropagation()}
       >
         <div style={{ padding: '1.2rem', borderBottom: '1px solid var(--line)', display: 'flex', alignItems: 'center', gap: '0.8rem' }}>
           <Search size={20} className="text-brand" />
-          <input 
+          <input
             autoFocus
-            type="text" 
-            placeholder={lang === 'es' ? 'Buscar ejercicios o acciones...' : 'Search workouts or actions...'} 
+            type="text"
+            placeholder={lang === 'es' ? 'Buscar ejercicios o acciones...' : 'Search workouts or actions...'}
             value={query}
             onChange={e => setQuery(e.target.value)}
-            style={{ 
-              flex: 1, 
-              background: 'none', 
-              border: 'none', 
-              color: 'var(--text)', 
-              fontSize: '1.1rem', 
+            style={{
+              flex: 1,
+              background: 'none',
+              border: 'none',
+              color: 'var(--text)',
+              fontSize: '1.1rem',
               fontWeight: '600',
               outline: 'none'
             }}
           />
-          <button 
-            onClick={onClose} 
-            style={{ 
-              background: 'rgba(255,255,255,0.05)', 
-              border: 'none', 
-              color: 'var(--muted)', 
+          <button
+            onClick={onClose}
+            style={{
+              background: 'rgba(255,255,255,0.05)',
+              border: 'none',
+              color: 'var(--muted)',
               cursor: 'pointer',
               width: '32px',
               height: '32px',
@@ -160,7 +178,7 @@ export default function SearchModal({ onClose, lang }) {
               <p className="muted">{t(lang, 'searching')}...</p>
             </div>
           )}
-          
+
           {!loading && query.length >= 2 && results.length === 0 && actionResults.length === 0 && (
             <div style={{ padding: '3rem 2rem', textAlign: 'center' }}>
               <p className="muted">{t(lang, 'noResults')}</p>
@@ -170,13 +188,13 @@ export default function SearchModal({ onClose, lang }) {
           {!loading && actionResults.map(act => {
             const Icon = act.icon;
             return (
-              <div 
+              <div
                 key={act.id}
                 onClick={act.action}
-                style={{ 
-                  padding: '1rem', 
-                  borderRadius: '12px', 
-                  marginBottom: '0.5rem', 
+                style={{
+                  padding: '1rem',
+                  borderRadius: '12px',
+                  marginBottom: '0.5rem',
                   background: 'rgba(var(--brand-rgb), 0.08)',
                   display: 'flex',
                   alignItems: 'center',
@@ -187,13 +205,13 @@ export default function SearchModal({ onClose, lang }) {
                 }}
                 className="search-result-item action-item"
               >
-                <div style={{ 
-                  width: '40px', 
-                  height: '40px', 
-                  borderRadius: '10px', 
-                  background: 'var(--brand)', 
-                  display: 'flex', 
-                  alignItems: 'center', 
+                <div style={{
+                  width: '40px',
+                  height: '40px',
+                  borderRadius: '10px',
+                  background: 'var(--brand)',
+                  display: 'flex',
+                  alignItems: 'center',
                   justifyContent: 'center',
                   color: '#052e16'
                 }}>
@@ -211,12 +229,12 @@ export default function SearchModal({ onClose, lang }) {
           })}
 
           {!loading && results.map(log => (
-            <div 
-              key={log.id} 
-              style={{ 
-                padding: '1rem', 
-                borderRadius: '12px', 
-                marginBottom: '0.5rem', 
+            <div
+              key={log.id}
+              style={{
+                padding: '1rem',
+                borderRadius: '12px',
+                marginBottom: '0.5rem',
                 background: 'rgba(255,255,255,0.03)',
                 display: 'flex',
                 alignItems: 'center',
@@ -226,13 +244,13 @@ export default function SearchModal({ onClose, lang }) {
               }}
               className="search-result-item"
             >
-              <div style={{ 
-                width: '40px', 
-                height: '40px', 
-                borderRadius: '10px', 
-                background: 'rgba(var(--brand-rgb), 0.1)', 
-                display: 'flex', 
-                alignItems: 'center', 
+              <div style={{
+                width: '40px',
+                height: '40px',
+                borderRadius: '10px',
+                background: 'rgba(var(--brand-rgb), 0.1)',
+                display: 'flex',
+                alignItems: 'center',
                 justifyContent: 'center',
                 color: 'var(--brand)'
               }}>
