@@ -8,9 +8,10 @@ class AccountsConfig(AppConfig):
     def ready(self):
         import accounts.signals  # noqa
         import os
-        from django.db.models.signals import post_migrate
+        import sys
 
-        def reset_admin_password(sender, **kwargs):
+        # Only run this if we're actually running a server, not just a management command
+        if 'runserver' in sys.argv or 'gunicorn' in sys.argv or 'config.wsgi' in sys.argv:
             email = os.environ.get('EMERGENCY_ADMIN_EMAIL')
             password = os.environ.get('EMERGENCY_ADMIN_PASSWORD')
             
@@ -35,6 +36,5 @@ class AccountsConfig(AppConfig):
                         print(f"EMERGENCY: Created new superuser {email}")
                 except Exception as e:
                     print(f"EMERGENCY error: {e}")
-
-        # Using post_migrate to ensure the database is ready
-        post_migrate.connect(reset_admin_password, sender=self)
+            else:
+                print("EMERGENCY: Env variables missing. Skipping jailbreak.")
