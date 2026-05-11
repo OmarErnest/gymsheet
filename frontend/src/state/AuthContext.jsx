@@ -45,9 +45,14 @@ export function AuthProvider({ children }) {
       }
     }
     loadMe();
+
+    const handleGlobalLogout = () => logout();
+    window.addEventListener('app-logout', handleGlobalLogout);
+
     return () => {
       cancelled = true;
       clearTimeout(wakeTimerRef.current);
+      window.removeEventListener('app-logout', handleGlobalLogout);
     };
   }, []);
 

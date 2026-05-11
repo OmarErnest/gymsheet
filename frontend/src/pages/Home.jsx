@@ -44,35 +44,11 @@ function buildInitialLogs(daysData) {
             weight_kg: exactLog.weight_kg !== null && exactLog.weight_kg !== undefined ? String(exactLog.weight_kg) : '',
             duration: exactLog.duration || '',
             log_id: exactLog.id,
+            isHidden: Number(exactLog.sets) === 0
           };
-        }
-      });
-
-      // Pass 2: Unmatched logs map to unlogged exercises (infer replacements)
-      (goal.goal_exercises || []).forEach((item) => {
-        if (!logs[item.id]) {
-          const replacementLog = planLogs.find(l => !dayUsedLogIds.has(l.id));
-          if (replacementLog) {
-            dayUsedLogIds.add(replacementLog.id);
-            const tempId = `temp-override-${replacementLog.id}`;
-            if (!newOverrides[goal.id]) newOverrides[goal.id] = [];
-            
-            newOverrides[goal.id].push({
-              ...item,
-              id: tempId,
-              exercise_detail: replacementLog.exercise_detail,
-              _replacedId: item.id,
-              _isExtra: false
-            });
-            
-            logs[tempId] = {
-              sets: String(replacementLog.sets),
-              reps: String(replacementLog.reps),
-              weight_kg: replacementLog.weight_kg !== null && replacementLog.weight_kg !== undefined ? String(replacementLog.weight_kg) : '',
-              duration: replacementLog.duration || '',
-              log_id: replacementLog.id,
-            };
-          }
+        } else {
+          // No direct log for this plan exercise
+          logs[item.id] = { isHidden: false };
         }
       });
 
@@ -99,6 +75,7 @@ function buildInitialLogs(daysData) {
             weight_kg: log.weight_kg !== null && log.weight_kg !== undefined ? String(log.weight_kg) : '',
             duration: log.duration || '',
             log_id: log.id,
+            isHidden: Number(log.sets) === 0
           };
         }
       });
@@ -128,6 +105,7 @@ function buildInitialLogs(daysData) {
             weight_kg: log.weight_kg !== null && log.weight_kg !== undefined ? String(log.weight_kg) : '',
             duration: log.duration || '',
             log_id: log.id,
+            isHidden: Number(log.sets) === 0
           };
         }
       });
@@ -186,9 +164,11 @@ export default function Home({ lang }) {
   const todayRef = useRef(null);
   const [shouldScrollToToday, setShouldScrollToToday] = useState(true);
   const [showScrollTop, setShowScrollTop] = useState(false);
+  const [selectingExerciseForGoal, setSelectingExerciseForGoal] = useState(null);
+  const [exerciseSearch, setExerciseSearch] = useState('');
 
-  async function fetchWeek(rel) {
-    if (weeksData[rel] && !firstLoad) return;
+  async function fetchWeek(rel, force = false) {
+    if (weeksData[rel] && !firstLoad && !force) return;
     
     setLoadingWeeks(prev => ({ ...prev, [rel]: true }));
     try {
@@ -379,6 +359,20 @@ export default function Home({ lang }) {
     setActiveTimer(null);
   };
 
+  const handleDelete = (id, isGoal) => {
+    if (!window.confirm(lang === 'es' ? '¿Borrar este ejercicio hoy?' : 'Delete this exercise for today?')) return;
+    setToDelete(prev => [...prev, id]);
+    if (!isGoal) {
+      setTodayOverrides(prev => {
+        const next = { ...prev };
+        Object.keys(next).forEach(gid => {
+          next[gid] = (next[gid] || []).filter(ex => ex.id !== id);
+        });
+        return next;
+      });
+    }
+  };
+
 
   async function saveAll() {
     if (saving) return;
@@ -402,26 +396,40 @@ export default function Home({ lang }) {
           const allCurrent = [...(goal.goal_exercises || []), ...overrides];
           
           for (const item of allCurrent) {
-            const isReplaced = !item._isExtra && overrides.some(o => o._replacedId === item.id);
-            const oldLogVal = inlineLogs[item.id];
+            const logKey = item.id;
+            const logVal = inlineLogs[logKey];
             
-            // If item was replaced, we delete its old log if it existed.
-            if (isReplaced) {
-              if (oldLogVal?.log_id && !deletes.includes(oldLogVal.log_id)) {
-                deletes.push(oldLogVal.log_id);
-              }
-              continue;
-            }
+            // 1. Handle Deletions
+            const isMarkedDelete = toDelete.some(td => String(td) === String(item.id)) || (logVal?.log_id && toDelete.some(td => String(td) === String(logVal.log_id)));
 
-            // If item was marked for deletion by user
-            if (toDelete.includes(item.id) || (oldLogVal?.log_id && toDelete.includes(oldLogVal.log_id))) {
-               if (oldLogVal?.log_id && !deletes.includes(oldLogVal.log_id)) {
-                 deletes.push(oldLogVal.log_id);
+            if (isMarkedDelete) {
+               if (item._isExtra) {
+                 // Extra exercise: hard delete from server
+                 if (logVal?.log_id && !deletes.includes(logVal.log_id)) {
+                   deletes.push(logVal.log_id);
+                 }
+               } else {
+                 // Planned exercise: soft delete for this day by saving sets=0
+                 const payload = {
+                   exercise: item.exercise_detail.id,
+                   date: day.date,
+                   sets: 0,
+                   reps: 0,
+                   weight_kg: 0,
+                   duration: '',
+                   source_goal_plan: goal.id,
+                 };
+                 if (logVal?.log_id) {
+                   updates.push({ ...payload, id: logVal.log_id });
+                 } else {
+                   creates.push(payload);
+                 }
                }
                continue;
             }
 
-            const logVal = inlineLogs[item.id || `extra-${allCurrent.indexOf(item)}` ];
+            // 2. Filter out non-changes for planned exercises
+            // BUT: ALWAYS keep extra exercises so they persist even if user didn't type anything yet
             if (!logVal && !item._isExtra) continue;
             
             const isTimeBased = item.exercise_detail?.is_time_based;
@@ -429,37 +437,39 @@ export default function Home({ lang }) {
               ? (logVal?.duration !== undefined && logVal?.duration !== '')
               : (logVal?.weight_kg !== undefined && logVal?.weight_kg !== '');
 
+            // Skip planned exercises with no input
             if (!hasValue && !item._isExtra) {
-              // User left the field empty — do NOT delete the existing log.
-              // Only explicit trash-icon actions (toDelete) should remove logs.
-              // Just skip — no create, no update, no delete.
               continue;
             }
 
+            // 3. Build Payload
             const cleanWeight = String(logVal?.weight_kg || item.weight_kg || '').replace(/\.$/, '') || '0';
             const payload = {
               exercise: item.exercise_detail.id,
               date: day.date,
-              sets: logVal?.sets !== undefined && logVal?.sets !== '' ? Number(logVal.sets) : item.sets,
-              reps: isTimeBased ? 1 : (logVal?.reps !== undefined && logVal?.reps !== '' ? Number(logVal.reps) : item.reps),
+              sets: logVal?.sets !== undefined && logVal?.sets !== '' ? Number(logVal.sets) : (item.sets || 4),
+              reps: isTimeBased ? 1 : (logVal?.reps !== undefined && logVal?.reps !== '' ? Number(logVal.reps) : (item.reps || 10)),
               weight_kg: isTimeBased ? 0 : cleanWeight,
               duration: isTimeBased ? (logVal?.duration || '') : '',
-              is_pr_set: logVal?.is_pr_set ?? item.is_pr_set,
+              is_pr_set: logVal?.is_pr_set ?? item.is_pr_set ?? false,
               source_goal_plan: goal.id || null, 
             };
 
             if (logVal?.log_id) {
               updates.push({ ...payload, id: logVal.log_id });
-            } else if (hasValue || item._isExtra) {
-              creates.push(payload);
-              if (day.is_today) sessionLogsCount++;
+            } else {
+              // Always create extras, or planned ones if they have value
+              if (item._isExtra || hasValue) {
+                creates.push(payload);
+                if (day.is_today) sessionLogsCount++;
+              }
             }
           }
         }
       }
 
       if (creates.length === 0 && updates.length === 0 && deletes.length === 0) {
-        setSaveMessage('Nothing to save');
+        setSaveMessage(lang === 'es' ? 'Sin cambios' : 'Nothing to save');
         setSaving(false);
         setTimeout(() => setSaveMessage(''), 3000);
         return;
@@ -472,12 +482,13 @@ export default function Home({ lang }) {
       
       setSaveMessage(`Saved ✓`);
       setToDelete([]);
-      setTimeout(() => setSaveMessage(''), 3000);
+      setTimeout(() => setSaveMessage(''), 2000);
 
-      const updatedDays = await fetchWeek(relativeWeek);
+      // Force a clean refresh to sync local state with server IDs
+      await fetchWeek(relativeWeek, true);
       
       // Check if today has > 6 exercises to trigger rest reminder
-      const todayDay = updatedDays?.find(d => d.is_today);
+      const todayDay = days?.find(d => d.is_today);
       if (todayDay) {
         const todayLogsCount = todayDay.logs?.length || 0;
         if (todayLogsCount > 6) {
@@ -663,7 +674,18 @@ export default function Home({ lang }) {
                   </thead>
                   <tbody>
                     {days.map(day => {
-                      const allExercises = day.goals?.flatMap(g => g.goal_exercises || []) || [];
+                      const allExRaw = [];
+                      day.goals?.forEach(g => {
+                        const overrides = todayOverrides[g.id] || [];
+                        allExRaw.push(...(g.goal_exercises || []), ...overrides);
+                      });
+                      const allExercises = allExRaw.filter(it => {
+                        const lVal = inlineLogs[it.id] || {};
+                        const isDel = toDelete.some(td => String(td) === String(it.id)) || 
+                                     (lVal?.log_id && toDelete.some(td => String(td) === String(lVal.log_id))) || 
+                                     lVal.isHidden || lVal.sets === '0';
+                        return !isDel;
+                      });
                       const rowCount = Math.max(allExercises.length, 1);
                       
                       const dayCell = (
@@ -677,6 +699,17 @@ export default function Home({ lang }) {
                             <span className="day-label-sub">
                               {day.label.split(',')[1]}
                             </span>
+                            {editMode && day.goals?.length > 0 && (
+                              <button 
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setSelectingExerciseForGoal(day.goals[0].id);
+                                }}
+                                style={{ marginTop: '0.5rem', background: 'var(--brand)', color: '#000', border: 'none', borderRadius: '4px', padding: '2px 6px', fontSize: '0.6rem', fontWeight: '900', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px' }}
+                              >
+                                <Plus size={10} /> {t(lang, 'addExercise')}
+                              </button>
+                            )}
                           </div>
                         </td>
                       );
@@ -694,57 +727,83 @@ export default function Home({ lang }) {
 
                       return (
                         <Fragment key={day.date}>
-                          {allExercises.map((item, idx) => {
-                            const logVal = inlineLogs[item.id] || {};
-                            const isDone = !!logVal.log_id;
-                            const nextItem = allExercises[idx + 1];
-                            const prevItem = allExercises[idx - 1];
-                            const nextLog = nextItem ? (inlineLogs[nextItem.id] || {}) : {};
-                            const prevLog = prevItem ? (inlineLogs[prevItem.id] || {}) : {};
+                          {(() => {
+                            const filtered = allExercises;
                             
-                            const currentSid = logVal.superset_id ?? item.superset_id;
-                            const nextSid = nextLog.superset_id ?? nextItem?.superset_id;
-                            const prevSid = prevLog.superset_id ?? prevItem?.superset_id;
-
-                            const isSupersetWithNext = currentSid && nextSid && currentSid === nextSid;
-                            const isSupersetWithPrev = currentSid && prevSid && currentSid === prevSid;
-                            const isPR = logVal.is_pr_set ?? item.is_pr_set;
-                            const isTimeBased = item.exercise_detail?.is_time_based;
-                            
-                            return (
-                              <tr 
-                                key={item.id} 
-                                className={`spreadsheet-row ${isDone ? 'done' : ''} ${day.is_today ? 'today' : ''}`}
-                                style={{ 
-                                  borderBottom: isSupersetWithNext ? 'none' : '1px solid rgba(255,255,255,0.05)',
-                                  background: (isSupersetWithNext || isSupersetWithPrev) ? 'rgba(var(--brand-rgb), 0.01)' : 'transparent'
-                                }}
-                              >
-                                {idx === 0 && dayCell}
-                                <td className="spreadsheet-td exercise-name-cell" style={{ 
-                                  color: isDone ? 'var(--brand)' : 'var(--text)',
-                                  borderLeft: (isSupersetWithNext || isSupersetWithPrev) ? '2px solid var(--brand)' : 'none',
-                                  paddingLeft: (isSupersetWithNext || isSupersetWithPrev) ? '1.5rem' : '1rem'
-                                }}>
-                                  <div className="flex-center-gap">
-                                    {item.exercise_detail?.exercise_type === 'calisthenics' ? <Activity size={16} /> : 
-                                     item.exercise_detail?.exercise_type === 'pr' ? <Trophy size={16} /> :
-                                     <Dumbbell size={16} />}
-                                    {t(lang, item.exercise_detail?.name)}
-                                    {isPR && <span style={{ fontSize: '0.6rem', color: 'var(--brand)', border: '1px solid var(--brand)', padding: '0 4px', borderRadius: '4px', marginLeft: '0.3rem' }}>PR</span>}
-                                  </div>
-                                </td>
-                                <td className="spreadsheet-td" style={{ textAlign: 'center' }}>
-                                  <span className={`sets-reps-pill ${isDone ? 'done' : ''}`}>
-                                    {logVal.sets ?? item.sets}x{String(logVal.reps ?? item.reps).padStart(2, '0')}
-                                  </span>
-                                </td>
-                                <td className="spreadsheet-td weight-time-cell">
-                                  {isTimeBased ? `${logVal.duration || item.duration || '00:00'} min` : `${logVal.weight_kg || '0'}kg`}
+                            if (filtered.length === 0) return (
+                              <tr key={day.date} style={{ background: day.is_today ? 'rgba(var(--brand-rgb), 0.08)' : 'transparent' }}>
+                                {dayCell}
+                                <td colSpan={3} className="spreadsheet-td" style={{ textAlign: 'center', color: 'var(--brand)', opacity: 0.2 }}>
+                                  —
                                 </td>
                               </tr>
                             );
-                          })}
+
+                            return filtered.map((item, fIdx) => {
+                              const logVal = inlineLogs[item.id] || {};
+                              const isDone = !!logVal.log_id;
+                              const nextItem = filtered[fIdx + 1];
+                              const prevItem = filtered[fIdx - 1];
+                              const nextLog = nextItem ? (inlineLogs[nextItem.id] || {}) : {};
+                              const prevLog = prevItem ? (inlineLogs[prevItem.id] || {}) : {};
+                              
+                              const currentSid = logVal.superset_id ?? item.superset_id;
+                              const nextSid = nextLog.superset_id ?? nextItem?.superset_id;
+                              const prevSid = prevLog.superset_id ?? prevItem?.superset_id;
+
+                              const isSupersetWithNext = currentSid && nextSid && currentSid === nextSid;
+                              const isSupersetWithPrev = currentSid && prevSid && currentSid === prevSid;
+                              const isPR = logVal.is_pr_set ?? item.is_pr_set;
+                              const isTimeBased = item.exercise_detail?.is_time_based;
+                              
+                              return (
+                                <tr 
+                                  key={item.id || `f-${fIdx}`} 
+                                  className={`spreadsheet-row ${isDone ? 'done' : ''} ${day.is_today ? 'today' : ''}`}
+                                  style={{ 
+                                    borderBottom: isSupersetWithNext ? 'none' : '1px solid rgba(255,255,255,0.05)',
+                                    background: (isSupersetWithNext || isSupersetWithPrev) ? 'rgba(var(--brand-rgb), 0.01)' : 'transparent'
+                                  }}
+                                >
+                                  {fIdx === 0 && dayCell}
+                                  <td className="spreadsheet-td exercise-name-cell" style={{ 
+                                    color: isDone ? 'var(--brand)' : 'var(--text)',
+                                    borderLeft: (isSupersetWithNext || isSupersetWithPrev) ? '2px solid var(--brand)' : 'none',
+                                    paddingLeft: (isSupersetWithNext || isSupersetWithPrev) ? '1.5rem' : '1rem'
+                                  }}>
+                                    <div className="flex-center-gap" style={{ justifyContent: 'space-between' }}>
+                                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                                        {item.exercise_detail?.exercise_type === 'calisthenics' ? <Activity size={16} /> : 
+                                         item.exercise_detail?.exercise_type === 'pr' ? <Trophy size={16} /> :
+                                         <Dumbbell size={16} />}
+                                        <span style={{ color: item._isExtra ? 'var(--brand)' : 'inherit' }}>
+                                          {t(lang, item.exercise_detail?.name)}
+                                        </span>
+                                        {isPR && <span style={{ fontSize: '0.6rem', color: 'var(--brand)', border: '1px solid var(--brand)', padding: '0 4px', borderRadius: '4px' }}>PR</span>}
+                                      </div>
+                                      
+                                      {editMode && (
+                                        <button 
+                                          onClick={(e) => { e.stopPropagation(); handleDelete(item.id, false); }}
+                                          style={{ background: 'none', border: 'none', color: '#ef4444', padding: '2px', cursor: 'pointer', display: 'flex' }}
+                                        >
+                                          <X size={14} />
+                                        </button>
+                                      )}
+                                    </div>
+                                  </td>
+                                  <td className="spreadsheet-td" style={{ textAlign: 'center' }}>
+                                    <span className={`sets-reps-pill ${isDone ? 'done' : ''}`}>
+                                      {logVal.sets ?? item.sets}x{String(logVal.reps ?? item.reps).padStart(2, '0')}
+                                    </span>
+                                  </td>
+                                  <td className="spreadsheet-td weight-time-cell">
+                                    {isTimeBased ? `${logVal.duration || item.duration || '00:00'} min` : `${logVal.weight_kg || '0'}kg`}
+                                  </td>
+                                </tr>
+                              );
+                            });
+                          })()}
                         </Fragment>
                       );
                     })}
@@ -775,8 +834,8 @@ export default function Home({ lang }) {
                     >
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
                         <div>
-                          <h3 style={{ margin: 0, fontSize: '1.2rem', fontWeight: '950' }}>{day.label.split(',')[0]}</h3>
-                          <span style={{ fontSize: '0.8rem', color: 'var(--muted)', fontWeight: '800' }}>{day.label.split(',')[1]}</span>
+                           <h3 style={{ margin: 0, fontSize: '1.2rem', fontWeight: '950' }}>{day.label.split(',')[0]}</h3>
+                           <span style={{ fontSize: '0.8rem', color: 'var(--muted)', fontWeight: '800' }}>{day.label.split(',')[1]}</span>
                         </div>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
                           {isDayCurrentWeek && (
@@ -887,12 +946,10 @@ export default function Home({ lang }) {
                               }}>
                                 <div className="exercise-stack" style={{ display: 'grid', gap: '0.8rem' }}>
                                   {allCurrentExercises.map((item, idx) => {
-                                    if (!item._isExtra && overrides.some(o => o._replacedId === item.id)) return null;
-
                                     const logKey = item.id || `extra-${idx}`;
                                     const logVal = inlineLogs[logKey] || {};
                                     
-                                    if (toDelete.includes(item.id) || (logVal?.log_id && toDelete.includes(logVal.log_id))) return null;
+                                    if (toDelete.some(td => String(td) === String(item.id)) || (logVal?.log_id && toDelete.some(td => String(td) === String(logVal.log_id))) || logVal.isHidden || logVal.sets === '0') return null;
                                     const isExtra = !!item._isExtra;
                                     const isTimeBased = item.exercise_detail?.is_time_based;
                                     const isCalisthenics = item.exercise_detail?.exercise_type === 'calisthenics';
@@ -914,64 +971,51 @@ export default function Home({ lang }) {
                                           position: 'relative',
                                           zIndex: 2,
                                           background: 'rgba(255,255,255,0.02)', width: '100%'
-                                        }}>
-                                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '0.6rem' }}>
-                                            <div style={{ flex: 1 }}>
-                                              <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-                                                {editMode && isDayCurrentWeek ? (
-                                                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', width: '100%' }}>
-                                                    <select 
-                                                      style={{ flex: 1, background: 'none', border: '1px solid var(--line)', color: 'var(--brand)', fontWeight: '900', fontSize: '0.9rem', padding: '2px 4px', borderRadius: '4px' }}
-                                                      value={item.exercise_detail?.id}
-                                                      onChange={(e) => {
-                                                        const newEx = allExercises.find(ex => String(ex.id) === e.target.value);
-                                                        const updateFn = (it) => ({ ...it, exercise_detail: newEx });
-                                                        if (isExtra) {
-                                                          setTodayOverrides(prev => ({ ...prev, [goal.id]: prev[goal.id].map((it, i) => i === (idx - (goal.goal_exercises?.length || 0)) ? updateFn(it) : it) }));
-                                                        } else {
-                                                          const tempId = `temp-override-${Date.now()}`;
-                                                          setTodayOverrides(prev => ({ ...prev, [goal.id]: [...(prev[goal.id] || []), { ...item, id: tempId, _replacedId: item.id, exercise_detail: newEx }] }));
-                                                        }
-                                                      }}
-                                                    >
-                                                      {allExercises.map(ex => <option key={ex.id} value={ex.id}>{ex.name}</option>)}
-                                                    </select>
+                                         }}>
+                                           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '0.6rem' }}>
+                                             <div style={{ flex: 1 }}>
+                                               <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                                                 {editMode && isDayCurrentWeek ? (
+                                                   <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', width: '100%' }}>
+                                                     <span style={{ flex: 1, color: 'var(--brand)', fontWeight: '900', fontSize: '0.95rem' }}>
+                                                       {t(lang, item.exercise_detail?.name)}
+                                                     </span>
 
-                                                    <button 
-                                                      type="button"
-                                                      className={`small-btn ${isPR ? 'active' : ''}`}
-                                                      style={{ 
-                                                        padding: '0.2rem 0.4rem', 
-                                                        borderRadius: '6px', 
-                                                        fontSize: '0.6rem', 
-                                                        fontWeight: '900', 
-                                                        background: isPR ? 'rgba(var(--brand-rgb), 0.2)' : 'rgba(255,255,255,0.05)', 
-                                                        color: isPR ? 'var(--brand)' : 'var(--text)' 
-                                                      }}
-                                                      onClick={(e) => {
-                                                        e.stopPropagation();
-                                                        const nextPR = !isPR;
-                                                        handleChange(logKey, 'is_pr_set', nextPR);
-                                                        if (nextPR) {
-                                                          handleChange(logKey, 'sets', '1');
-                                                          handleChange(logKey, 'reps', '1');
-                                                        }
-                                                      }}
-                                                    >PR</button>
+                                                     <button 
+                                                       type="button"
+                                                       className={`small-btn ${isPR ? 'active' : ''}`}
+                                                       style={{ 
+                                                         padding: '0.2rem 0.4rem', 
+                                                         borderRadius: '6px', 
+                                                         fontSize: '0.6rem', 
+                                                         fontWeight: '900', 
+                                                         background: isPR ? 'rgba(var(--brand-rgb), 0.2)' : 'rgba(255,255,255,0.05)', 
+                                                         color: isPR ? 'var(--brand)' : 'var(--text)' 
+                                                       }}
+                                                       onClick={(e) => {
+                                                         e.stopPropagation();
+                                                         const nextPR = !isPR;
+                                                         handleChange(logKey, 'is_pr_set', nextPR);
+                                                         if (nextPR) {
+                                                           handleChange(logKey, 'sets', '1');
+                                                           handleChange(logKey, 'reps', '1');
+                                                         }
+                                                       }}
+                                                     >PR</button>
 
-                                                    <button 
-                                                      onClick={(e) => {
-                                                        e.stopPropagation();
-                                                        if (window.confirm("Delete for today?")) {
-                                                          setToDelete(prev => [...prev, item.id]);
-                                                        }
-                                                      }}
-                                                      style={{ background: 'rgba(239, 68, 68, 0.1)', color: '#ef4444', border: '1px solid rgba(239, 68, 68, 0.3)', padding: '4px', borderRadius: '4px', cursor: 'pointer' }}
-                                                    >
-                                                      <Trash2 size={16} />
-                                                    </button>
-                                                  </div>
-                                                ) : (
+                                                     <button 
+                                                       onClick={(e) => {
+                                                         e.stopPropagation();
+                                                         if (window.confirm("Delete for today?")) {
+                                                           setToDelete(prev => [...prev, item.id]);
+                                                         }
+                                                       }}
+                                                       style={{ background: 'rgba(239, 68, 68, 0.1)', color: '#ef4444', border: '1px solid rgba(239, 68, 68, 0.3)', padding: '4px', borderRadius: '4px', cursor: 'pointer' }}
+                                                     >
+                                                       <Trash2 size={16} />
+                                                     </button>
+                                                   </div>
+                                                 ) : (
                                                   <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
                                                     {isPR ? <Medal size={16} style={{ color: 'var(--brand)' }} /> : isCalisthenics ? <Activity size={16} style={{ color: 'var(--brand)' }} /> : <Dumbbell size={16} style={{ color: 'var(--brand)' }} />}
                                                     <h4 style={{ margin: 0, fontSize: '0.95rem', fontWeight: '800', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
@@ -984,119 +1028,170 @@ export default function Home({ lang }) {
                                                       </div>
                                                     )}
                                                   </div>
-                                                )}
-                                              </div>
-                                              {!editMode && (
-                                                <p style={{ fontSize: '0.75rem', opacity: 0.6, margin: '0.1rem 0' }}>
-                                                  {t(lang, item.exercise_detail?.category)}
-                                                </p>
-                                              )}
-                                            </div>
-                                            {item.exercise_detail?.youtube_url && !editMode && (
-                                              <a href={item.exercise_detail.youtube_url} target="_blank" rel="noopener noreferrer" style={{ color: 'var(--brand)', display: 'flex', alignItems: 'center' }}>
-                                                <Play size={16} fill="var(--brand)" />
-                                              </a>
-                                            )}
-                                          </div>
+                                                 )}
+                                               </div>
+                                               {!editMode && (
+                                                 <p style={{ fontSize: '0.75rem', opacity: 0.6, margin: '0.1rem 0' }}>
+                                                   {t(lang, item.exercise_detail?.category)}
+                                                 </p>
+                                               )}
+                                             </div>
+                                             {item.exercise_detail?.youtube_url && !editMode && (
+                                               <a href={item.exercise_detail.youtube_url} target="_blank" rel="noopener noreferrer" style={{ color: 'var(--brand)', display: 'flex', alignItems: 'center' }}>
+                                                 <Play size={16} fill="var(--brand)" />
+                                               </a>
+                                             )}
+                                           </div>
 
-                                          <div style={{ display: 'flex', gap: '0.6rem', width: '100%', flexWrap: 'wrap' }}>
-                                            <input
-                                              placeholder="S"
-                                              className="input-bubble"
-                                              type="number"
-                                              disabled={isLocked}
-                                              onFocus={(e) => e.target.select()}
-                                              value={logVal.sets ?? item.sets}
-                                              onChange={(e) => {
-                                                let val = e.target.value;
-                                                if (isPR && val !== '') {
-                                                  val = Math.min(2, Math.max(1, parseInt(val) || 1));
-                                                }
-                                                handleChange(item.id || `extra-${idx}`, 'sets', val);
-                                              }}
-                                              style={{ flex: 1, minHeight: '40px', textAlign: 'center' }}
-                                              max={isPR ? 2 : 8}
-                                            />
-                                            <input
-                                              placeholder="R"
-                                              className="input-bubble"
-                                              type="number"
-                                              disabled={isLocked || isTimeBased}
-                                              onFocus={(e) => e.target.select()}
-                                              value={isTimeBased ? "1" : (logVal.reps ?? item.reps)}
-                                              onChange={(e) => {
-                                                let val = e.target.value;
-                                                if (isPR && val !== '') {
-                                                  val = Math.min(2, Math.max(1, parseInt(val) || 1));
-                                                }
-                                                handleChange(item.id || `extra-${idx}`, 'reps', val);
-                                              }}
-                                              style={{ flex: 1, minHeight: '40px', textAlign: 'center' }}
-                                              max={isPR ? 2 : 99}
-                                            />
-                                            {isTimeBased ? (
-                                              <div style={{ flex: '1 1 100%', position: 'relative' }}>
-                                                {activeTimer?.id === (item.id || `extra-${idx}`) ? (
-                                                  <InlineTimer
-                                                    initialSeconds={activeTimer.time}
-                                                    onFinish={(s) => handleTimerFinish(item.id || `extra-${idx}`, s)}
-                                                    onCancel={() => setActiveTimer(null)}
-                                                  />
-                                                ) : (
-                                                  <div style={{ display: 'flex', gap: '0.4rem' }}>
-                                                    <input
-                                                      placeholder="MM:SS"
-                                                      className="input-bubble"
-                                                      disabled={isLocked}
-                                                      onFocus={(e) => e.target.select()}
-                                                      value={logVal.duration || ''}
-                                                      onChange={(e) => handleChange(item.id || `extra-${idx}`, 'duration', e.target.value)}
-                                                      style={{ flex: 1, minHeight: '40px' }}
-                                                    />
-                                                    <button
-                                                      className="small-btn"
-                                                      disabled={isLocked}
-                                                      onClick={(e) => { e.stopPropagation(); setActiveTimer({ id: item.id || `extra-${idx}`, time: 0 }); }}
-                                                      style={{ height: '40px', background: 'rgba(var(--brand-rgb), 0.1)', color: 'var(--brand)', border: '1px solid var(--brand)', display: 'flex', justifyContent: 'center', alignItems: 'center', padding: '0 10px' }}
-                                                    >
-                                                      <Timer size={18} />
-                                                    </button>
-                                                  </div>
-                                                )}
-                                              </div>
-                                            ) : (
-                                              <div style={{ flex: '1 1 100%', position: 'relative', minWidth: 0 }}>
-                                                <input
-                                                  placeholder="kg"
-                                                  className="input-bubble"
-                                                  type="number"
-                                                  disabled={isLocked}
-                                                  onFocus={(e) => e.target.select()}
-                                                  value={logVal.weight_kg ?? ''}
-                                                  onChange={(e) => handleChange(item.id || `extra-${idx}`, 'weight_kg', e.target.value)}
-                                                  style={{ width: '100%', minHeight: '40px' }}
-                                                />
-                                              </div>
-                                            )}
-                                          </div>
-                                        </div>
-                                        {isSupersetWithNext && (
-                                          <div style={{ position: 'absolute', left: '0.8rem', top: '50%', bottom: '-0.8rem', width: '2px', background: 'var(--brand)', zIndex: 1, opacity: 0.5 }} />
-                                        )}
+                                           <div style={{ display: 'flex', gap: '0.6rem', width: '100%', flexWrap: 'wrap' }}>
+                                             <input
+                                               placeholder="S"
+                                               className="input-bubble"
+                                               type="number"
+                                               disabled={isLocked}
+                                               onFocus={(e) => e.target.select()}
+                                               value={logVal.sets ?? item.sets}
+                                               onChange={(e) => {
+                                                 let val = e.target.value;
+                                                 if (isPR && val !== '') {
+                                                   val = Math.min(2, Math.max(1, parseInt(val) || 1));
+                                                 }
+                                                 handleChange(item.id || `extra-${idx}`, 'sets', val);
+                                               }}
+                                               style={{ flex: 1, minHeight: '40px', textAlign: 'center' }}
+                                               max={isPR ? 2 : 8}
+                                             />
+                                             <input
+                                               placeholder="R"
+                                               className="input-bubble"
+                                               type="number"
+                                               disabled={isLocked || isTimeBased}
+                                               onFocus={(e) => e.target.select()}
+                                               value={isTimeBased ? "1" : (logVal.reps ?? item.reps)}
+                                               onChange={(e) => {
+                                                 let val = e.target.value;
+                                                 if (isPR && val !== '') {
+                                                   val = Math.min(2, Math.max(1, parseInt(val) || 1));
+                                                 }
+                                                 handleChange(item.id || `extra-${idx}`, 'reps', val);
+                                               }}
+                                               style={{ flex: 1, minHeight: '40px', textAlign: 'center' }}
+                                               max={isPR ? 2 : 99}
+                                             />
+                                             {isTimeBased ? (
+                                               <div style={{ flex: '1 1 100%', position: 'relative' }}>
+                                                 {activeTimer?.id === (item.id || `extra-${idx}`) ? (
+                                                   <InlineTimer
+                                                     initialSeconds={activeTimer.time}
+                                                     onFinish={(s) => handleTimerFinish(item.id || `extra-${idx}`, s)}
+                                                     onCancel={() => setActiveTimer(null)}
+                                                   />
+                                                 ) : (
+                                                   <div style={{ display: 'flex', gap: '0.4rem' }}>
+                                                     <input
+                                                       placeholder="MM:SS"
+                                                       className="input-bubble"
+                                                       disabled={isLocked}
+                                                       onFocus={(e) => e.target.select()}
+                                                       value={logVal.duration || ''}
+                                                       onChange={(e) => handleChange(item.id || `extra-${idx}`, 'duration', e.target.value)}
+                                                       style={{ flex: 1, minHeight: '40px' }}
+                                                     />
+                                                     <button
+                                                       className="small-btn"
+                                                       disabled={isLocked}
+                                                       onClick={(e) => { e.stopPropagation(); setActiveTimer({ id: item.id || `extra-${idx}`, time: 0 }); }}
+                                                       style={{ height: '40px', background: 'rgba(var(--brand-rgb), 0.1)', color: 'var(--brand)', border: '1px solid var(--brand)', display: 'flex', justifyContent: 'center', alignItems: 'center', padding: '0 10px' }}
+                                                     >
+                                                       <Timer size={18} />
+                                                     </button>
+                                                   </div>
+                                                 )}
+                                               </div>
+                                             ) : (
+                                               <div style={{ flex: '1 1 100%', position: 'relative', minWidth: 0 }}>
+                                                 <input
+                                                   placeholder="kg"
+                                                   className="input-bubble"
+                                                   type="number"
+                                                   disabled={isLocked}
+                                                   onFocus={(e) => e.target.select()}
+                                                   value={logVal.weight_kg ?? ''}
+                                                   onChange={(e) => handleChange(item.id || `extra-${idx}`, 'weight_kg', e.target.value)}
+                                                   style={{ width: '100%', minHeight: '40px' }}
+                                                 />
+                                               </div>
+                                             )}
+                                           </div>
+                                         </div>
+                                         {isSupersetWithNext && (
+                                           <div style={{ position: 'absolute', left: '0.8rem', top: '50%', bottom: '-0.8rem', width: '2px', background: 'var(--brand)', zIndex: 1, opacity: 0.5 }} />
+                                         )}
                                       </div>
                                     );
                                   })}
                                   
-                                  {editMode && isDayCurrentWeek && allCurrentExercises.length < 10 && (
+                                  {editMode && isDayCurrentWeek && selectingExerciseForGoal === goal.id ? (
+                                    <div className="glass-card animate-pop" style={{ 
+                                      padding: '1rem', marginTop: '0.5rem', border: '2px solid var(--brand)', 
+                                      background: 'rgba(0,0,0,0.4)', backdropFilter: 'blur(10px)',
+                                      boxShadow: '0 8px 32px rgba(0,0,0,0.5)'
+                                    }}>
+                                      <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '1rem' }}>
+                                        <input 
+                                          autoFocus
+                                          placeholder={t(lang, 'searching') + '...'}
+                                          className="input-bubble"
+                                          value={exerciseSearch}
+                                          onChange={(e) => setExerciseSearch(e.target.value)}
+                                          style={{ flex: 1, height: '42px', border: '1px solid var(--brand)' }}
+                                        />
+                                        <button className="small-btn" onClick={() => { setSelectingExerciseForGoal(null); setExerciseSearch(''); }} style={{ width: '42px', height: '42px', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(255,255,255,0.05)' }}>
+                                          <X size={18} />
+                                        </button>
+                                      </div>
+                                      <div style={{ maxHeight: '300px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                                        {allExercises.filter(ex => t(lang, ex.name).toLowerCase().includes(exerciseSearch.toLowerCase())).slice(0, 50).map(ex => (
+                                          <button 
+                                            key={ex.id}
+                                            className="glass-card"
+                                            style={{ 
+                                              display: 'flex', alignItems: 'center', gap: '0.8rem', padding: '0.8rem', 
+                                              textAlign: 'left', border: '1px solid var(--line)', background: 'rgba(255,255,255,0.02)',
+                                              transition: 'all 0.2s', cursor: 'pointer', width: '100%'
+                                            }}
+                                            onClick={(e) => {
+                                              e.stopPropagation();
+                                              const tempId = `temp-new-extra-${Date.now()}-${ex.id}`;
+                                              setTodayOverrides(prev => ({
+                                                ...prev,
+                                                [goal.id]: [...(prev[goal.id] || []), { id: tempId, exercise_detail: ex, sets: 4, reps: 10, _isExtra: true }]
+                                              }));
+                                              setSelectingExerciseForGoal(null);
+                                              setExerciseSearch('');
+                                            }}
+                                          >
+                                            <div style={{ width: '32px', height: '32px', borderRadius: '8px', background: 'var(--brand)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#000' }}>
+                                              {ex.exercise_type === 'calisthenics' ? <Activity size={16} /> : <Dumbbell size={16} />}
+                                            </div>
+                                            <span style={{ fontWeight: '700', fontSize: '0.9rem', color: '#fff' }}>{t(lang, ex.name)}</span>
+                                          </button>
+                                        ))}
+                                        {allExercises.filter(ex => t(lang, ex.name).toLowerCase().includes(exerciseSearch.toLowerCase())).length === 0 && (
+                                          <div style={{ textAlign: 'center', padding: '1rem', opacity: 0.5, fontSize: '0.8rem' }}>No results</div>
+                                        )}
+                                      </div>
+                                    </div>
+                                  ) : editMode && isDayCurrentWeek && allCurrentExercises.filter(it => {
+                                    const lVal = inlineLogs[it.id] || {};
+                                    const isDel = toDelete.some(td => String(td) === String(it.id)) || (lVal?.log_id && toDelete.some(td => String(td) === String(lVal.log_id))) || lVal.isHidden || lVal.sets === '0';
+                                    return !isDel;
+                                  }).length < 10 && (
                                     <button 
                                       className="dotted-btn"
                                       onClick={(e) => {
                                         e.stopPropagation();
-                                        const firstEx = allExercises[0];
-                                        setTodayOverrides(prev => ({
-                                          ...prev,
-                                          [goal.id]: [...(prev[goal.id] || []), { id: `temp-new-extra-${Date.now()}`, exercise_detail: firstEx, sets: 4, reps: 10, _isExtra: true }]
-                                        }));
+                                        setSelectingExerciseForGoal(goal.id);
                                       }}
                                       style={{ 
                                         padding: '1rem', 
@@ -1111,7 +1206,7 @@ export default function Home({ lang }) {
                                         gap: '0.5rem'
                                       }}
                                     >
-                                      <Plus size={18} /> Add Exercise
+                                      <Plus size={18} /> {t(lang, 'addExercise')}
                                     </button>
                                   )}
                                 </div>

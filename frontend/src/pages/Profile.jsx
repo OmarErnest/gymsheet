@@ -389,8 +389,13 @@ export default function Profile({ preferences, lang }) {
 
   useEffect(() => {
     const handleSubTab = (e) => setActiveTab(e.detail);
+    const handleStats = () => setShowWarriorStats(true);
     window.addEventListener('change-profile-tab', handleSubTab);
-    return () => window.removeEventListener('change-profile-tab', handleSubTab);
+    window.addEventListener('open-fighter-stats', handleStats);
+    return () => {
+      window.removeEventListener('change-profile-tab', handleSubTab);
+      window.removeEventListener('open-fighter-stats', handleStats);
+    };
   }, []);
 
   useEffect(() => {

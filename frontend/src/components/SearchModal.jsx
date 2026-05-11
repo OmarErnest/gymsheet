@@ -87,14 +87,43 @@ export default function SearchModal({ onClose, lang }) {
         onClose();
       }
     },
+    {
+      id: 'set-hide', label: { en: 'Settings: Hide from Leaderboard', es: 'Ajustes: Ocultar del Leaderboard' }, icon: Globe2, action: () => {
+        window.dispatchEvent(new CustomEvent('change-app-tab', { detail: 'settings' }));
+        setTimeout(() => document.getElementById('settings-hide')?.scrollIntoView({ behavior: 'smooth', block: 'center' }), 100);
+        onClose();
+      }
+    },
+    {
+      id: 'set-pause', label: { en: 'Settings: Pause Future Goals', es: 'Ajustes: Pausar Futuras Metas' }, icon: Settings, action: () => {
+        window.dispatchEvent(new CustomEvent('change-app-tab', { detail: 'settings' }));
+        setTimeout(() => document.getElementById('settings-pause')?.scrollIntoView({ behavior: 'smooth', block: 'center' }), 100);
+        onClose();
+      }
+    },
+    {
+      id: 'prof-warrior-stats', label: { en: 'Profile: Fighter Stats', es: 'Perfil: Estadísticas de Guerrero' }, icon: Activity, action: () => {
+        window.dispatchEvent(new CustomEvent('change-app-tab', { detail: 'profile' }));
+        window.dispatchEvent(new CustomEvent('open-fighter-stats'));
+        onClose();
+      }
+    },
+    { 
+      id: 'go-admin-django', 
+      label: { en: 'Admin: Django Panel', es: 'Admin: Panel de Django' }, 
+      icon: Settings, 
+      action: () => { 
+        window.open(`${import.meta.env.VITE_API_URL?.replace('/api', '') || 'http://127.0.0.1:8000'}/admin/`, '_blank'); 
+        onClose(); 
+      } 
+    },
     { 
       id: 'action-logout', 
       label: { en: 'Logout', es: 'Cerrar Sesión' }, 
       icon: LogOut, 
       action: () => { 
-        localStorage.removeItem('access_token');
-        localStorage.removeItem('refresh_token');
-        window.location.reload();
+        window.dispatchEvent(new CustomEvent('app-logout'));
+        onClose();
       } 
     },
   ];

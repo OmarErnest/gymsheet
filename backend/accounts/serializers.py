@@ -92,7 +92,7 @@ class UserPreferenceSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = UserPreference
-        fields = ('theme', 'language', 'goals_paused', 'font_size', 'auth_mode', 'new_pin', 'new_password', 'height_cm', 'weight_kg', 'recommended_link', 'profile_pic_url_pending')
+        fields = ('theme', 'language', 'goals_paused', 'font_size', 'auth_mode', 'new_pin', 'new_password', 'height_cm', 'weight_kg', 'recommended_link', 'hide_from_leaderboard', 'profile_pic_url_pending')
 
     def validate(self, attrs):
         import re

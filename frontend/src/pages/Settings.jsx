@@ -61,7 +61,7 @@ export default function Settings({ preferences, setPreferences, lang }) {
 
   async function update(field, value) {
     setForm((prev) => ({ ...prev, [field]: value }));
-    if (field === 'language' || field === 'theme' || field === 'font_size' || field === 'hide_from_leaderboard') {
+    if (field === 'language' || field === 'theme' || field === 'font_size' || field === 'hide_from_leaderboard' || field === 'goals_paused') {
       if (isDummy) {
         setMessage(lang === 'es' ? 'Acción restringida para cuenta demo' : 'Action restricted for demo account');
         return;
@@ -340,7 +340,7 @@ export default function Settings({ preferences, setPreferences, lang }) {
           )}
         </div>
 
-        <label className="switch-row">
+        <label id="settings-pause" className="switch-row">
           <span>
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
               {t(lang, 'pauseFutureGoals')}
@@ -355,7 +355,7 @@ export default function Settings({ preferences, setPreferences, lang }) {
           <input type="checkbox" checked={!!form.goals_paused} onChange={(e) => update('goals_paused', e.target.checked)} />
         </label>
 
-        <label className="switch-row">
+        <label id="settings-hide" className="switch-row">
           <span>
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
               {t(lang, 'hideFromLeaderboard')}
