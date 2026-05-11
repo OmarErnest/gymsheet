@@ -30,6 +30,8 @@ export default function App() {
   const [showSearch, setShowSearch] = useState(false);
   const [badgeQueue, setBadgeQueue] = useState([]);
   const [showPatchNotes, setShowPatchNotes] = useState(false);
+  const [showHeader, setShowHeader] = useState(true);
+  const [lastScrollY, setLastScrollY] = useState(0);
 
   useEffect(() => {
     // Initial sync
@@ -140,6 +142,26 @@ export default function App() {
     }
   }, [activeTab]);
 
+  useEffect(() => {
+    const handleScroll = () => {
+      const currentScrollY = window.scrollY;
+      
+      // If scrolling down and past the header area, hide it
+      if (currentScrollY > lastScrollY && currentScrollY > 100) {
+        setShowHeader(false);
+      } 
+      // If scrolling up, show it
+      else {
+        setShowHeader(true);
+      }
+      
+      setLastScrollY(currentScrollY);
+    };
+
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, [lastScrollY]);
+
   const labels = useMemo(
     () => ({
       home: t(lang, 'home'),
@@ -226,7 +248,7 @@ export default function App() {
 
   return (
     <div className="app-shell">
-      <header className="topbar">
+      <header className={`topbar ${!showHeader ? 'hidden' : ''}`}>
         <div className="brand-mark" style={{ background: 'none', border: 'none', width: 'auto', display: 'flex', gap: '0.6rem', alignItems: 'center' }}>
           <div style={{ position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
             <div style={{ position: 'absolute', width: '36px', height: '36px', background: 'var(--brand)', filter: 'blur(15px)', opacity: 0.3 }}></div>

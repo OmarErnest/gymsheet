@@ -91,6 +91,11 @@ input[type=number] { -moz-appearance: textfield; appearance: textfield; }
   background: color-mix(in srgb, var(--bg) 85%, transparent);
   border-bottom: 1px solid var(--line);
   width: 100%;
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.topbar.hidden {
+  transform: translateY(-100%);
 }
 
 .topbar h1, .login-card h1, h2, h3, h4 { margin: 0; letter-spacing: -0.035em; }

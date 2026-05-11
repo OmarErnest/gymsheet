@@ -783,19 +783,47 @@ export default function Profile({ preferences, lang }) {
         {showWarriorStats && (
           <div className="profile-stats-grid animate-fade-in" style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '0.8rem', marginTop: '0.8rem' }}>
             <div className="glass-card stat-card" style={{ padding: '0.8rem', textAlign: 'center' }}>
-              <Zap size={20} style={{ color: '#10b981', marginBottom: '0.4rem', opacity: 0.8 }} />
+              <div style={{
+                width: '28px',
+                height: '28px',
+                margin: '0 auto 0.4rem',
+                border: '2px solid #10b981',
+                borderRadius: '4px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                fontSize: '15px',
+                fontWeight: '900',
+                color: '#10b981',
+                fontFamily: "'Ma Shan Zheng', cursive",
+              }}>
+                勤
+              </div>
               <h3 className="pixel-text" style={{ margin: 0, fontSize: '1rem', fontWeight: '900', color: '#10b981' }}>{activeDaysThisWeek}</h3>
               <p className="muted pixel-text" style={{ margin: 0, fontSize: '0.5rem', fontWeight: '800', textTransform: 'uppercase' }}>
                 {lang === 'es' ? 'Días Activos' : 'Active Days'}
               </p>
             </div>
             <div className="glass-card stat-card" style={{ padding: '0.8rem', textAlign: 'center' }}>
-              <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="#f59e0b" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" style={{ marginBottom: '0.4rem', opacity: 1 }}>
-                <path d="M6 11V6a2 2 0 0 1 4 0v5" />
-                <path d="M10 11V4a2 2 0 0 1 4 0v7" />
-                <path d="M14 11V6a2 2 0 0 1 4 0v5" />
-                <path d="M18 11V9a2 2 0 0 1 4 0v6a7 7 0 0 1-7 7H9a7 7 0 0 1-7-7v-4a2 2 0 0 1 4 0v6" />
-              </svg>
+              <div style={{ position: 'relative', width: '30px', height: '30px', margin: '0 auto 0.4rem' }}>
+                <svg viewBox="0 0 100 100" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%' }}>
+                  <path d="M50 8 L92 82 L8 82 Z" fill="none" stroke="#f59e0b" strokeWidth="8" strokeLinejoin="round" />
+                </svg>
+                <div style={{
+                  position: 'absolute',
+                  inset: 0,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  paddingTop: '5px',
+                  fontSize: '14px',
+                  fontWeight: '900',
+                  color: '#f59e0b',
+                  fontFamily: "'Ma Shan Zheng', cursive",
+                }}>
+                  敵
+                </div>
+              </div>
               <h3 className="pixel-text" style={{ margin: 0, fontSize: '1rem', fontWeight: '900', color: '#f59e0b' }}>{logs.length}</h3>
               <p className="muted pixel-text" style={{ margin: 0, fontSize: '0.5rem', fontWeight: '800', textTransform: 'uppercase' }}>
                 {lang === 'es' ? 'Oponentes' : 'Opponents'}
@@ -803,10 +831,10 @@ export default function Profile({ preferences, lang }) {
             </div>
             <div className="glass-card stat-card" style={{ padding: '0.8rem', textAlign: 'center', border: '1px solid rgba(var(--brand-rgb), 0.2)' }}>
               <div style={{
-                width: '26px',
-                height: '26px',
+                width: '28px',
+                height: '28px',
                 margin: '0 auto 0.4rem',
-                border: '2.5px solid #8b5cf6',
+                border: '2px solid #8b5cf6',
                 borderRadius: '50%',
                 display: 'flex',
                 alignItems: 'center',
@@ -815,7 +843,6 @@ export default function Profile({ preferences, lang }) {
                 fontWeight: '900',
                 color: '#8b5cf6',
                 fontFamily: "'Ma Shan Zheng', cursive",
-                opacity: 1
               }}>
                 覇
               </div>
