@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Search, X, Calendar, Activity, Dumbbell, ArrowRight, Home, UserRound, Globe2, Settings, Plus, Trash2, Menu } from 'lucide-react';
+import { Search, X, Calendar, Activity, Dumbbell, ArrowRight, Home, UserRound, Globe2, Settings, Plus, Trash2, Menu, LogOut } from 'lucide-react';
 import { api } from '../api/client.js';
 import { t } from '../i18n.js';
 
@@ -81,12 +81,21 @@ export default function SearchModal({ onClose, lang }) {
         onClose();
       }
     },
-    {
-      id: 'action-sanitize', label: { en: 'Sanitize Account (Wipe Data)', es: 'Sanitizar Cuenta (Borrar Datos)' }, icon: Trash2, action: () => {
+    { id: 'action-sanitize', label: { en: 'Sanitize Account (Wipe Data)', es: 'Sanitizar Cuenta (Borrar Datos)' }, icon: Trash2, action: () => {
         window.dispatchEvent(new CustomEvent('change-app-tab', { detail: 'settings' }));
         setTimeout(() => document.getElementById('settings-danger')?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 100);
         onClose();
       }
+    },
+    { 
+      id: 'action-logout', 
+      label: { en: 'Logout', es: 'Cerrar Sesión' }, 
+      icon: LogOut, 
+      action: () => { 
+        localStorage.removeItem('access_token');
+        localStorage.removeItem('refresh_token');
+        window.location.reload();
+      } 
     },
   ];
 
