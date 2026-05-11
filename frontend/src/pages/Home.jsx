@@ -125,11 +125,33 @@ export default function Home({ lang }) {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [activeTimer, setActiveTimer] = useState(null); // { id: exerciseId, time: seconds }
+  
   const [saveMessage, setSaveMessage] = useState('');
   const [error, setError] = useState('');
   const [completedCount, setCompletedCount] = useState(0);
   const [editMode, setEditMode] = useState(false);
   const [allExercises, setAllExercises] = useState([]);
+  
+  const groupedExercises = useMemo(() => {
+    const groups = {};
+    allExercises.forEach(ex => {
+      const cat = ex.category || 'other';
+      if (!groups[cat]) groups[cat] = [];
+      groups[cat].push(ex);
+    });
+    // Order categories: chest, back, legs, shoulder, arms, other
+    const order = ['chest', 'back', 'legs', 'shoulder', 'arms', 'other'];
+    const sortedGroups = {};
+    order.forEach(cat => {
+      if (groups[cat]) sortedGroups[cat] = groups[cat];
+    });
+    // Add any categories not in the predefined order
+    Object.keys(groups).forEach(cat => {
+      if (!sortedGroups[cat]) sortedGroups[cat] = groups[cat];
+    });
+    return sortedGroups;
+  }, [allExercises]);
+  
   const [todayOverrides, setTodayOverrides] = useState({}); // { goalId: [ { exercise_detail, sets, reps, is_time_based } ] }
   const [inlineLogs, setInlineLogs] = useState({});
   const [toDelete, setToDelete] = useState([]); // Array of log_ids or item.ids to delete from the session
@@ -1150,35 +1172,66 @@ export default function Home({ lang }) {
                                           <X size={18} />
                                         </button>
                                       </div>
-                                      <div style={{ maxHeight: '300px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                                        {allExercises.filter(ex => t(lang, ex.name).toLowerCase().includes(exerciseSearch.toLowerCase())).slice(0, 50).map(ex => (
-                                          <button 
-                                            key={ex.id}
-                                            className="glass-card"
-                                            style={{ 
-                                              display: 'flex', alignItems: 'center', gap: '0.8rem', padding: '0.8rem', 
-                                              textAlign: 'left', border: '1px solid var(--line)', background: 'rgba(255,255,255,0.02)',
-                                              transition: 'all 0.2s', cursor: 'pointer', width: '100%'
-                                            }}
-                                            onClick={(e) => {
-                                              e.stopPropagation();
-                                              const tempId = `temp-new-extra-${Date.now()}-${ex.id}`;
-                                              setTodayOverrides(prev => ({
-                                                ...prev,
-                                                [goal.id]: [...(prev[goal.id] || []), { id: tempId, exercise_detail: ex, sets: 4, reps: 10, _isExtra: true }]
-                                              }));
-                                              setSelectingExerciseForGoal(null);
-                                              setExerciseSearch('');
-                                            }}
-                                          >
-                                            <div style={{ width: '32px', height: '32px', borderRadius: '8px', background: 'var(--brand)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#000' }}>
-                                              {ex.exercise_type === 'calisthenics' ? <Activity size={16} /> : <Dumbbell size={16} />}
+                                      <div style={{ maxHeight: '350px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '1rem', paddingRight: '4px' }}>
+                                        {Object.entries(groupedExercises).map(([cat, exs]) => {
+                                          const filtered = exs.filter(ex => 
+                                            t(lang, ex.name).toLowerCase().includes(exerciseSearch.toLowerCase())
+                                          );
+                                          if (filtered.length === 0) return null;
+
+                                          return (
+                                            <div key={cat} style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
+                                              <h4 style={{ 
+                                                margin: '0 0 0.2rem 0', 
+                                                fontSize: '0.75rem', 
+                                                textTransform: 'uppercase', 
+                                                color: 'var(--muted)', 
+                                                letterSpacing: '1px',
+                                                paddingLeft: '0.2rem',
+                                                borderLeft: '2px solid var(--brand)'
+                                              }}>
+                                                {t(lang, cat)}
+                                              </h4>
+                                              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))', gap: '0.4rem' }}>
+                                                {filtered.map(ex => (
+                                                  <button 
+                                                    key={ex.id}
+                                                    className="glass-card"
+                                                    style={{ 
+                                                      display: 'flex', alignItems: 'center', gap: '0.6rem', padding: '0.6rem', 
+                                                      textAlign: 'left', border: '1px solid var(--line)', background: 'rgba(255,255,255,0.02)',
+                                                      transition: 'all 0.2s', cursor: 'pointer', width: '100%'
+                                                    }}
+                                                    onClick={(e) => {
+                                                      e.stopPropagation();
+                                                      const tempId = `temp-new-extra-${Date.now()}-${ex.id}`;
+                                                      setTodayOverrides(prev => ({
+                                                        ...prev,
+                                                        [goal.id]: [...(prev[goal.id] || []), { id: tempId, exercise_detail: ex, sets: 4, reps: 10, _isExtra: true }]
+                                                      }));
+                                                      setSelectingExerciseForGoal(null);
+                                                      setExerciseSearch('');
+                                                    }}
+                                                  >
+                                                    <div style={{ width: '24px', height: '24px', minWidth: '24px', borderRadius: '6px', background: 'var(--brand)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#000' }}>
+                                                      {ex.exercise_type === 'calisthenics' ? <Activity size={12} /> : <Dumbbell size={12} />}
+                                                    </div>
+                                                    <span style={{ fontWeight: '700', fontSize: '0.75rem', color: '#fff', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                                                      {t(lang, ex.name)}
+                                                    </span>
+                                                  </button>
+                                                ))}
+                                              </div>
                                             </div>
-                                            <span style={{ fontWeight: '700', fontSize: '0.9rem', color: '#fff' }}>{t(lang, ex.name)}</span>
-                                          </button>
-                                        ))}
-                                        {allExercises.filter(ex => t(lang, ex.name).toLowerCase().includes(exerciseSearch.toLowerCase())).length === 0 && (
-                                          <div style={{ textAlign: 'center', padding: '1rem', opacity: 0.5, fontSize: '0.8rem' }}>No results</div>
+                                          );
+                                        })}
+                                        
+                                        {Object.values(groupedExercises).every(exs => 
+                                          exs.filter(ex => t(lang, ex.name).toLowerCase().includes(exerciseSearch.toLowerCase())).length === 0
+                                        ) && (
+                                          <div style={{ textAlign: 'center', padding: '2rem', opacity: 0.5, fontSize: '0.8rem' }}>
+                                            {t(lang, 'noLogs')}
+                                          </div>
                                         )}
                                       </div>
                                     </div>
