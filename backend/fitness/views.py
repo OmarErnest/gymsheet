@@ -403,10 +403,12 @@ class HomeDaysView(APIView):
         for log in ExerciseLog.objects.filter(user=request.user, date__range=[start, end]).select_related('exercise'):
             logs_by_date.setdefault(log.date, []).append(log)
 
-        # All-time personal bests (max weight) per exercise for this user
-        pb_rows = (
-            ExerciseLog.objects
-            .filter(user=request.user)
+        # All-time personal bests (best effective weight) per exercise for this user
+        from django.db.models import OuterRef, Subquery
+        
+        # Subquery to get the best log ID for each exercise
+        best_logs_subquery = (
+            ExerciseLog.objects.filter(user=request.user, exercise_id=OuterRef('exercise_id'))
             .annotate(
                 effective_weight=Case(
                     When(exercise__exercise_type='calisthenics', then=F('weight_kg') + (F('user__preferences__weight_kg') * 0.5)),
@@ -414,17 +416,35 @@ class HomeDaysView(APIView):
                     output_field=FloatField()
                 )
             )
-            .values('exercise_id')
-            .annotate(best=Max('effective_weight'))
+            .order_by('-effective_weight', '-date', '-created_at')
+            .values('id')[:1]
         )
-        personal_bests = {row['exercise_id']: float(row['best']) for row in pb_rows}
+
+        pb_logs = ExerciseLog.objects.filter(
+            id__in=Subquery(
+                ExerciseLog.objects.filter(user=request.user)
+                .values('exercise_id')
+                .annotate(best_id=Subquery(best_logs_subquery))
+                .values('best_id')
+            )
+        ).select_related('exercise')
+
+        personal_bests = {
+            log.exercise_id: {
+                'weight': float(log.weight_kg),
+                'sets': log.sets,
+                'reps': log.reps,
+                'date': log.date.isoformat(),
+            } for log in pb_logs
+        }
 
         def enrich_goals(goals_data):
-            """Inject personal_best into each goal_exercise dict."""
+            """Inject personal_best details into each goal_exercise dict."""
             for goal in goals_data:
                 for ge in goal.get('goal_exercises', []):
                     ex_id = ge.get('exercise') or (ge.get('exercise_detail') or {}).get('id')
-                    ge['personal_best'] = personal_bests.get(ex_id)
+                    ge['personal_best_details'] = personal_bests.get(ex_id)
+                    ge['personal_best'] = personal_bests.get(ex_id, {}).get('weight')
             return goals_data
 
         days = []

@@ -188,6 +188,8 @@ export default function Home({ lang }) {
   const [showScrollTop, setShowScrollTop] = useState(false);
   const [selectingExerciseForGoal, setSelectingExerciseForGoal] = useState(null);
   const [exerciseSearch, setExerciseSearch] = useState('');
+  const [selectedRecord, setSelectedRecord] = useState(null);
+  const [showRecordModal, setShowRecordModal] = useState(false);
 
   async function fetchWeek(rel, force = false) {
     if (weeksData[rel] && !firstLoad && !force) return;
@@ -232,6 +234,16 @@ export default function Home({ lang }) {
   useEffect(() => {
     fetchWeek(relativeWeek);
   }, [relativeWeek]);
+
+  useEffect(() => {
+    const handleBack = () => {
+      if (showRecordModal) setShowRecordModal(false);
+      else if (editMode) setEditMode(false);
+      else if (selectingExerciseForGoal) setSelectingExerciseForGoal(null);
+    };
+    window.addEventListener('app-back-button', handleBack);
+    return () => window.removeEventListener('app-back-button', handleBack);
+  }, [showRecordModal, editMode, selectingExerciseForGoal]);
 
   const fetchExercises = () => {
     api('/exercises/?page_size=1000').then(res => {
@@ -349,14 +361,19 @@ export default function Home({ lang }) {
   }
 
 
-  function handleChange(itemId, field, raw) {
-    let value = raw;
+  const handleChange = (id, field, val) => {
+    if (relativeWeek !== 0) {
+      setSaveMessage(t(lang, 'notCurrentWeek'));
+      setTimeout(() => setSaveMessage(''), 3000);
+      return;
+    }
+    let value = val;
     if (field === 'sets' || field === 'reps') {
-      value = raw.replace(/[^0-9]/g, '');
+      value = val.replace(/[^0-9]/g, '');
     } else if (field === 'weight_kg') {
-      value = raw.replace(/[^0-9.]/g, '').replace(/(\..*)\./g, '$1');
+      value = val.replace(/[^0-9.]/g, '').replace(/(\..*)\./g, '$1');
     } else if (field === 'duration') {
-      let digits = raw.replace(/[^0-9]/g, '');
+      let digits = val.replace(/[^0-9]/g, '');
       if (digits.length > 0) {
         digits = parseInt(digits, 10).toString();
         if (digits === 'NaN' || digits === '0') digits = '';
@@ -370,9 +387,9 @@ export default function Home({ lang }) {
     }
     setInlineLogs((prev) => ({
       ...prev,
-      [itemId]: { ...prev[itemId], [field]: value },
+      [id]: { ...prev[id], [field]: value },
     }));
-  }
+  };
 
   const handleTimerFinish = (id, seconds) => {
     const mm = Math.floor(seconds / 60).toString().padStart(2, '0');
@@ -509,11 +526,13 @@ export default function Home({ lang }) {
       // Force a clean refresh to sync local state with server IDs
       await fetchWeek(relativeWeek, true);
       
-      // Check if today has > 6 exercises to trigger rest reminder
+      // Check if today has >= 6 exercises to trigger rest reminder
       const todayDay = days?.find(d => d.is_today);
       if (todayDay) {
-        const todayLogsCount = todayDay.logs?.length || 0;
-        if (todayLogsCount > 6) {
+        const todayLogsCount = todayDay.logs?.filter(l => 
+          (parseFloat(l.weight_kg) > 0) || (l.duration && l.duration !== '')
+        ).length || 0;
+        if (todayLogsCount >= 6) {
           window.dispatchEvent(new CustomEvent('trigger-rest'));
         }
       }
@@ -918,8 +937,15 @@ export default function Home({ lang }) {
                                   </>
                                 )}
                               </div>
-                              <button
-                                onClick={(e) => { e.stopPropagation(); setEditMode(!editMode); }}
+                               <button
+                                onClick={(e) => { 
+                                  e.stopPropagation(); 
+                                  if (relativeWeek !== 0 && !editMode) {
+                                    alert(t(lang, 'notCurrentWeek'));
+                                    return;
+                                  }
+                                  setEditMode(!editMode); 
+                                }}
                                 className={editMode ? 'small-btn active' : 'small-btn'}
                                 style={{ 
                                   padding: '0.5rem', 
@@ -1044,9 +1070,19 @@ export default function Home({ lang }) {
                                                       {t(lang, item.exercise_detail?.name)}
                                                       {isPR && <span style={{ fontSize: '0.6rem', background: 'rgba(var(--brand-rgb), 0.2)', color: 'var(--brand)', padding: '2px 6px', borderRadius: '4px' }}>PR</span>}
                                                     </h4>
-                                                    {item.personal_best && (
-                                                      <div style={{ fontSize: '0.65rem', color: 'var(--brand)', fontWeight: '900', background: 'rgba(34, 197, 94, 0.1)', padding: '2px 8px', borderRadius: '999px', border: '1px solid var(--brand)', display: 'inline-flex', alignItems: 'center', gap: '0.2rem' }}>
-                                                        <Medal size={10} /> {item.personal_best}kg
+                                                    {item.personal_best_details && (
+                                                      <div 
+                                                        onClick={(e) => {
+                                                          e.stopPropagation();
+                                                          setSelectedRecord({
+                                                            ...item.personal_best_details,
+                                                            exercise_name: item.exercise_detail?.name
+                                                          });
+                                                          setShowRecordModal(true);
+                                                        }}
+                                                        style={{ fontSize: '0.65rem', color: 'var(--brand)', fontWeight: '900', background: 'rgba(34, 197, 94, 0.1)', padding: '2px 8px', borderRadius: '999px', border: '1px solid var(--brand)', display: 'inline-flex', alignItems: 'center', gap: '0.2rem', cursor: 'pointer' }}
+                                                      >
+                                                        <Medal size={10} /> {item.personal_best_details.weight}kg
                                                       </div>
                                                     )}
                                                   </div>
@@ -1359,6 +1395,40 @@ export default function Home({ lang }) {
           >
             <X size={16} />
           </button>
+        </div>
+      )}
+
+      {showRecordModal && selectedRecord && (
+        <div className="modal-overlay" style={{ zIndex: 3000 }} onClick={() => setShowRecordModal(false)}>
+          <div className="glass-card modal-content animate-pop" style={{ padding: '2rem', border: '1px solid var(--brand)', maxWidth: '320px', textAlign: 'center' }} onClick={e => e.stopPropagation()}>
+            <div style={{ background: 'rgba(var(--brand-rgb), 0.1)', width: '60px', height: '60px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 1.5rem', border: '2px solid var(--brand)' }}>
+              <Trophy size={32} color="var(--brand)" />
+            </div>
+            <h3 style={{ margin: '0 0 1rem', fontSize: '1.4rem', fontWeight: '950' }}>{t(lang, selectedRecord.exercise_name || 'records')}</h3>
+            <div style={{ display: 'grid', gap: '1rem', marginBottom: '1.5rem' }}>
+              <div style={{ background: 'rgba(255,255,255,0.03)', padding: '1rem', borderRadius: '12px', border: '1px solid var(--line)' }}>
+                <p style={{ margin: 0, fontSize: '0.75rem', color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: '1px' }}>{t(lang, 'weight')}</p>
+                <p style={{ margin: '0.2rem 0 0', fontSize: '1.5rem', fontWeight: '900', color: 'var(--brand)' }}>{selectedRecord.weight}kg</p>
+              </div>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.8rem' }}>
+                <div style={{ background: 'rgba(255,255,255,0.03)', padding: '0.8rem', borderRadius: '12px', border: '1px solid var(--line)' }}>
+                  <p style={{ margin: 0, fontSize: '0.65rem', color: 'var(--muted)', textTransform: 'uppercase' }}>{t(lang, 'sets')}</p>
+                  <p style={{ margin: '0.1rem 0 0', fontSize: '1.1rem', fontWeight: '900' }}>{selectedRecord.sets}</p>
+                </div>
+                <div style={{ background: 'rgba(255,255,255,0.03)', padding: '0.8rem', borderRadius: '12px', border: '1px solid var(--line)' }}>
+                  <p style={{ margin: 0, fontSize: '0.65rem', color: 'var(--muted)', textTransform: 'uppercase' }}>{t(lang, 'reps')}</p>
+                  <p style={{ margin: '0.1rem 0 0', fontSize: '1.1rem', fontWeight: '900' }}>{selectedRecord.reps}</p>
+                </div>
+              </div>
+              <div style={{ background: 'rgba(255,255,255,0.03)', padding: '0.8rem', borderRadius: '12px', border: '1px solid var(--line)' }}>
+                <p style={{ margin: 0, fontSize: '0.65rem', color: 'var(--muted)', textTransform: 'uppercase' }}>{t(lang, 'date')}</p>
+                <p style={{ margin: '0.1rem 0 0', fontSize: '0.9rem', fontWeight: '800' }}>{new Date(selectedRecord.date).toLocaleDateString()}</p>
+              </div>
+            </div>
+            <button className="primary-btn" style={{ width: '100%' }} onClick={() => setShowRecordModal(false)}>
+              {t(lang, 'iUnderstand')}
+            </button>
+          </div>
         </div>
       )}
     </section>

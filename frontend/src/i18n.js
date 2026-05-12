@@ -170,6 +170,8 @@ export const dict = {
     faq2A: 'Yes, use the Export Data button in Settings.',
     faq3Q: 'How is the score calculated?',
     faq3A: 'It uses a mix of consistency, active days, and total weight lifted.',
+    takeNap: 'take a nap or something...',
+    notCurrentWeek: 'You are not in the current week.',
     // Graph Periods
     allTime: 'All Time',
     lastYear: 'Last Year',
@@ -392,6 +394,8 @@ export const dict = {
     faq2A: 'Sí, usa el botón de Exportar Datos en Ajustes.',
     faq3Q: '¿Cómo se calcula el puntaje?',
     faq3A: 'Utiliza una mezcla de consistencia, días activos y peso total levantado.',
+    takeNap: 've a dormir o algo...',
+    notCurrentWeek: 'No estás en la semana actual.',
     // Graph Periods
     allTime: 'Todo el tiempo',
     lastYear: 'Último año',

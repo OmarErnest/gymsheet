@@ -162,6 +162,29 @@ export default function App() {
     return () => window.removeEventListener('scroll', handleScroll);
   }, [lastScrollY]);
 
+  // Back button interception
+  useEffect(() => {
+    const handlePopState = (e) => {
+      let handled = false;
+      
+      if (showProfilePopup) { setShowProfilePopup(false); handled = true; }
+      else if (showSearch) { setShowSearch(false); handled = true; }
+      else if (badgeQueue.length > 0) { closeBadgeModal(); handled = true; }
+      else if (showPatchNotes) { setShowPatchNotes(false); handled = true; }
+      
+      // Dispatch to components
+      const event = new CustomEvent('app-back-button', { detail: { handled } });
+      window.dispatchEvent(event);
+
+      // If we handled it or components might handle it, push state back
+      window.history.pushState(null, '', window.location.href);
+    };
+
+    window.history.pushState(null, '', window.location.href);
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, [showProfilePopup, showSearch, badgeQueue, showPatchNotes]);
+
   const labels = useMemo(
     () => ({
       home: t(lang, 'home'),

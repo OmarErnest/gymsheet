@@ -213,7 +213,7 @@ export default function EventManager({ activeTab, user, lang }) {
       triggerEvent({
         image: '/icons/events/Rest.png',
         title: t(lang, 'Take it easy, pal.'),
-        message: t(lang, 'We are all out of senzu beans. Take a nap or something...'),
+        message: t(lang, 'takeNap'),
         type: 'rest'
       });
     };

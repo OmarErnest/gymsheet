@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Area, AreaChart, ResponsiveContainer, Tooltip, XAxis, YAxis, PieChart, Pie, Cell, CartesianGrid, Radar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis } from 'recharts';
-import { Plus, Trash2, Edit2, RefreshCw, Activity, Map as MapIcon, PlusCircle, Target, List, BarChart3, Radar as RadarIcon, GripVertical, Timer, Weight, Dumbbell, ChevronDown, Zap, Trophy, Medal, Menu, Settings, Flame } from 'lucide-react';
+import { Area, AreaChart, ResponsiveContainer, Tooltip, XAxis, YAxis, PieChart, Pie, Cell, CartesianGrid, Radar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, ScatterChart, Scatter, ZAxis } from 'recharts';
+import { Plus, Trash2, Edit2, RefreshCw, Activity, Map as MapIcon, PlusCircle, Target, List, BarChart3, Radar as RadarIcon, GripVertical, Timer, Weight, Dumbbell, ChevronDown, Zap, Trophy, Medal, Menu, Settings, Flame, Maximize2, Minimize2, TrendingUp, CircleDot, LayoutGrid } from 'lucide-react';
 import { api } from '../api/client.js';
 import LinkInput from '../components/LinkInput.jsx';
 import Skeleton from '../components/Skeleton.jsx';
@@ -44,6 +44,58 @@ const backDots = [
   { part: 'hips', top: '48%', left: '38%' },
   { part: 'calf', top: '75%', left: '40%' }
 ];
+
+const ActivityMap = ({ logs, lang }) => {
+  const today = new Date();
+  const days = [];
+  // 6 months = ~26 weeks
+  for (let i = 181; i >= 0; i--) {
+    const d = new Date();
+    d.setDate(today.getDate() - i);
+    const dateStr = d.toISOString().split('T')[0];
+    const dayLogs = logs.filter(l => l.date === dateStr);
+    days.push({ date: dateStr, count: dayLogs.length });
+  }
+
+  const getColor = (count) => {
+    if (count === 0) return 'rgba(255,255,255,0.05)';
+    if (count === 1) return 'rgba(34, 197, 94, 0.2)';
+    if (count >= 2 && count <= 6) return 'rgba(34, 197, 94, 0.45)';
+    if (count >= 7 && count <= 10) return 'rgba(34, 197, 94, 0.85)';
+    return 'rgba(34, 197, 94, 1)';
+  };
+
+  return (
+    <div className="activity-map glass-card" style={{ padding: '0.8rem', marginTop: '0.8rem' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', marginBottom: '0.5rem', marginLeft: '0.2rem' }}>
+        <div style={{
+          width: '14px', height: '14px', border: '1px solid #10b981', borderRadius: '2px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '8px', fontWeight: '900', color: '#10b981', fontFamily: "'Ma Shan Zheng', cursive"
+        }}>勤</div>
+        <span className="pixel-text" style={{ fontSize: '0.6rem', fontWeight: '900', color: '#10b981', letterSpacing: '1px' }}>ACTIVITY MAP</span>
+      </div>
+      <div style={{ 
+        display: 'grid', 
+        gridTemplateColumns: 'repeat(26, 1fr)', 
+        gridTemplateRows: 'repeat(7, 1fr)', 
+        gridAutoFlow: 'column',
+        gap: '4px',
+        height: '80px'
+      }}>
+        {days.map(d => (
+          <div 
+            key={d.date} 
+            title={`${d.date}: ${d.count} exercises`}
+            style={{ 
+              background: getColor(d.count), 
+              borderRadius: '2px',
+              border: d.count > 0 ? '1px solid rgba(255,255,255,0.1)' : 'none'
+            }} 
+          />
+        ))}
+      </div>
+    </div>
+  );
+};
 
 function SortableGoalItem({ goal, lang, onEdit, onDelete }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: goal.id });
@@ -219,18 +271,15 @@ export default function Profile({ preferences, lang }) {
   });
 
   const [activeTab, setActiveTab] = useState('strength');
-  const [graphMode, setGraphMode] = useState(() => {
-    return localStorage.getItem('graphMode') || 'pie';
-  });
-  const [showFrontBody, setShowFrontBody] = useState(true);
-  const [selectedDot, setSelectedDot] = useState(null);
-  const [showWarriorStats, setShowWarriorStats] = useState(false);
+  const [graphMode, setGraphMode] = useState('pie');
+  const [isChartExpanded, setIsChartExpanded] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [exerciseForm, setExerciseForm] = useState({ id: null, name: '', youtube_url: '', category: '', exercise_type: 'machine', is_public: false, is_time_based: false });
   const [editingExercise, setEditingExercise] = useState(null);
   const [measurementForm, setMeasurementForm] = useState({
     body_part: 'biceps', value_cm: '', date: new Date().toISOString().slice(0, 10), notes: ''
   });
+  const [showWarriorStats, setShowWarriorStats] = useState(false);
 
   const [goalForm, setGoalForm] = useState({
     id: null,
@@ -399,6 +448,15 @@ export default function Profile({ preferences, lang }) {
   }, []);
 
   useEffect(() => {
+    const handleBack = () => {
+      if (isChartExpanded) setIsChartExpanded(false);
+      else if (showWarriorStats) setShowWarriorStats(false);
+    };
+    window.addEventListener('app-back-button', handleBack);
+    return () => window.removeEventListener('app-back-button', handleBack);
+  }, [isChartExpanded, showWarriorStats]);
+
+  useEffect(() => {
     localStorage.setItem('selectedCategories', JSON.stringify(selectedCategories));
     localStorage.setItem('selectedExercises', JSON.stringify(selectedExercises));
     localStorage.setItem('selectedPeriod', selectedPeriod);
@@ -437,6 +495,7 @@ export default function Profile({ preferences, lang }) {
   const chartData = useMemo(() => {
     const now = new Date();
     const filtered = logs.filter((log) => {
+      if (log.is_pr_set) return false;
       const matchesCat = selectedCategories.length === 0 || selectedCategories.includes(log.exercise_detail?.category);
       const matchesEx = selectedExercises.length === 0 || selectedExercises.includes(String(log.exercise));
       if (!matchesCat || !matchesEx) return false;
@@ -484,6 +543,7 @@ export default function Profile({ preferences, lang }) {
   const filteredLogsList = useMemo(() => {
     const now = new Date();
     return logs.filter((log) => {
+      if (log.is_pr_set) return false;
       const matchesCat = selectedCategories.length === 0 || selectedCategories.includes(log.exercise_detail?.category);
       const matchesEx = selectedExercises.length === 0 || selectedExercises.includes(String(log.exercise));
       if (!matchesCat || !matchesEx) return false;
@@ -786,29 +846,7 @@ export default function Profile({ preferences, lang }) {
         </button>
 
         {showWarriorStats && (
-          <div className="profile-stats-grid animate-fade-in" style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '0.8rem', marginTop: '0.8rem' }}>
-            <div className="glass-card stat-card" style={{ padding: '0.8rem', textAlign: 'center' }}>
-              <div style={{
-                width: '28px',
-                height: '28px',
-                margin: '0 auto 0.4rem',
-                border: '2px solid #10b981',
-                borderRadius: '4px',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                fontSize: '15px',
-                fontWeight: '900',
-                color: '#10b981',
-                fontFamily: "'Ma Shan Zheng', cursive",
-              }}>
-                勤
-              </div>
-              <h3 className="pixel-text" style={{ margin: 0, fontSize: '1rem', fontWeight: '900', color: '#10b981' }}>{activeDaysThisWeek}</h3>
-              <p className="muted pixel-text" style={{ margin: 0, fontSize: '0.5rem', fontWeight: '800', textTransform: 'uppercase' }}>
-                {lang === 'es' ? 'Días Activos' : 'Active Days'}
-              </p>
-            </div>
+          <div className="profile-stats-grid animate-fade-in" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.8rem', marginTop: '0.8rem' }}>
             <div className="glass-card stat-card" style={{ padding: '0.8rem', textAlign: 'center' }}>
               <div style={{ position: 'relative', width: '30px', height: '30px', margin: '0 auto 0.4rem' }}>
                 <svg viewBox="0 0 100 100" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%' }}>
@@ -829,7 +867,7 @@ export default function Profile({ preferences, lang }) {
                   敵
                 </div>
               </div>
-              <h3 className="pixel-text" style={{ margin: 0, fontSize: '1rem', fontWeight: '900', color: '#f59e0b' }}>{logs.length}</h3>
+              <h3 className="pixel-text" style={{ margin: 0, fontSize: '1rem', fontWeight: '900', color: '#f59e0b' }}>{logs.filter(l => !l.is_pr_set).length}</h3>
               <p className="muted pixel-text" style={{ margin: 0, fontSize: '0.5rem', fontWeight: '800', textTransform: 'uppercase' }}>
                 {lang === 'es' ? 'Oponentes' : 'Opponents'}
               </p>
@@ -858,6 +896,8 @@ export default function Profile({ preferences, lang }) {
             </div>
           </div>
         )}
+
+        {showWarriorStats && <ActivityMap logs={logs} lang={lang} />}
 
         {showWarriorStats && (
           <div className="fighter-badges-section animate-fade-in" style={{ marginTop: '0.8rem' }}>
@@ -965,13 +1005,14 @@ export default function Profile({ preferences, lang }) {
         {activeTab === 'strength' && (
           <article className="glass-card profile-section" style={{ padding: '0.8rem' }}>
             <div style={{ textAlign: 'center', marginBottom: '0.5rem' }}>
-              {/* Removed redundant headers to save space for the graph */}
-              <div className="tab-pill-box" style={{ margin: '0.8rem auto 0', width: 'fit-content' }}>
-                <button className={`tab-pill ${graphMode === 'pie' ? 'active' : ''}`} onClick={() => setGraphMode('pie')}><RadarIcon size={18} /></button>
-                <button className={`tab-pill ${graphMode === 'bar' ? 'active' : ''}`} onClick={() => setGraphMode('bar')}><BarChart3 size={18} /></button>
-                <button className={`tab-pill ${graphMode === 'list' ? 'active' : ''}`} onClick={() => setGraphMode('list')}><List size={18} /></button>
+              <div className="segmented ghost" style={{ flex: 1, minWidth: '220px', margin: '0.8rem auto 0', width: 'fit-content' }}>
+                <button className={graphMode === 'pie' ? 'active' : ''} onClick={() => setGraphMode('pie')}><Target size={18} /></button>
+                <button className={graphMode === 'area' ? 'active' : ''} onClick={() => setGraphMode('area')}><TrendingUp size={18} /></button>
+                <button className={graphMode === 'scatter' ? 'active' : ''} onClick={() => setGraphMode('scatter')}><CircleDot size={18} /></button>
+                <button className={graphMode === 'list' ? 'active' : ''} onClick={() => setGraphMode('list')}><List size={18} /></button>
               </div>
             </div>
+            
             <div className="strength-filters" style={{ display: 'flex', flexDirection: 'column', gap: '0.8rem' }}>
               <div style={{ display: 'flex', gap: '0.4rem', margin: '0 -0.4rem' }}>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '0.3rem', flex: 1, minWidth: 0, padding: '0 0.4rem' }}>
@@ -1012,95 +1053,118 @@ export default function Profile({ preferences, lang }) {
                 </select>
               </div>
             </div>
-            <div className="chart-box" style={{ height: '360px', marginTop: '1rem', background: 'transparent', border: 'none' }}>
-              {graphMode === 'bar' && (chartData.length ? (
-                <ResponsiveContainer width="100%" height="100%">
-                  <AreaChart data={chartData} margin={{ top: 10, right: 10, left: -15, bottom: 0 }}>
-                    <defs>
-                      <linearGradient id="colorWeight" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor="var(--brand)" stopOpacity={0.4} />
-                        <stop offset="95%" stopColor="var(--brand)" stopOpacity={0} />
-                      </linearGradient>
-                    </defs>
-                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--line)" />
-                    <XAxis
-                      dataKey="date"
-                      axisLine={false}
-                      tickLine={false}
-                      tick={{ fill: 'var(--muted)', fontSize: 10 }}
-                      minTickGap={20}
-                    />
-                    <YAxis
-                      axisLine={false}
-                      tickLine={false}
-                      tick={{ fill: 'var(--muted)', fontSize: 10 }}
-                      width={35}
-                    />
-                    <Tooltip
-                      contentStyle={{ background: 'var(--bg-soft)', borderRadius: '12px', border: '1px solid var(--line)', color: 'var(--text)' }}
-                      itemStyle={{ color: 'var(--brand)', fontWeight: 'bold' }}
-                    />
-                    <Area
-                      type="monotone"
-                      dataKey="weight"
-                      stroke="var(--brand)"
-                      strokeWidth={3}
-                      fillOpacity={1}
-                      fill="url(#colorWeight)"
-                      animationDuration={1000}
-                    />
-                  </AreaChart>
-                </ResponsiveContainer>
-              ) : <p className="muted" style={{ textAlign: 'center', paddingTop: '4rem' }}>{t(lang, 'noLogs')}</p>)}
-              {graphMode === 'pie' && (
-                <ResponsiveContainer width="100%" height="100%">
-                  <RadarChart cx="50%" cy="50%" outerRadius="65%" data={pieData} margin={{ top: 10, right: 10, left: 10, bottom: 10 }}>
-                    <PolarGrid stroke="var(--line)" />
-                    <PolarAngleAxis
-                      dataKey="name"
-                      tick={{ fill: 'var(--text)', fontSize: 10, fontWeight: '700' }}
-                    />
-                    <PolarRadiusAxis
-                      angle={30}
-                      domain={[0, 'auto']}
-                      tick={false}
-                      axisLine={false}
-                    />
-                    <Radar
-                      name="Volume"
-                      dataKey="value"
-                      stroke="var(--brand)"
-                      fill="var(--brand)"
-                      fillOpacity={0.5}
-                      animationDuration={1500}
-                    />
-                    <Tooltip
-                      contentStyle={{ background: 'var(--bg-soft)', borderRadius: '12px', border: '1px solid var(--line)', color: 'var(--text)' }}
-                    />
-                  </RadarChart>
-                </ResponsiveContainer>
-              )}
-              {graphMode === 'list' && (
-                <div className="exercise-list" style={{ overflowY: 'auto', maxHeight: '100%' }}>
-                  {filteredLogsList.map((log) => (
-                    <div key={log.id} className="exercise-row">
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.8rem' }}>
-                        <div className="text-brand">
-                          {log.exercise_detail?.exercise_type === 'calisthenics' ? <Activity size={18} /> :
-                            <Dumbbell size={18} />}
-                        </div>
-                        <div>
-                          <strong>{log.exercise_detail?.name}</strong>
-                          <p>
-                            {log.date} — {log.sets}x{String(log.reps).padStart(2, '0')}
-                            {!(log.exercise_detail?.exercise_type === 'calisthenics' && Number(log.weight_kg) === 0) && ` @ ${log.weight_kg}kg`}
-                          </p>
+
+            <div className={`chart-box ${isChartExpanded ? 'expanded' : ''}`} style={isChartExpanded ? {
+              position: 'fixed',
+              inset: 0,
+              zIndex: 9999,
+              background: 'rgba(0,0,0,0.95)',
+              backdropFilter: 'blur(10px)',
+              padding: '4rem 1.5rem 1.5rem',
+              height: '100vh',
+              marginTop: 0,
+              display: 'flex',
+              flexDirection: 'column',
+              animation: 'fadeIn 0.3s ease'
+            } : { height: '360px', minHeight: '360px', marginTop: '1rem', background: 'var(--bg-soft)', border: '1px solid var(--line)', position: 'relative', display: 'flex', flexDirection: 'column', borderRadius: '16px', overflow: 'hidden' }}>
+              
+              <button 
+                onClick={() => setIsChartExpanded(!isChartExpanded)}
+                style={{
+                  position: 'absolute',
+                  top: isChartExpanded ? '1.5rem' : '0.5rem',
+                  right: isChartExpanded ? '1.5rem' : '0.5rem',
+                  zIndex: 10,
+                  background: isChartExpanded ? 'rgba(255,255,255,0.1)' : 'rgba(255,255,255,0.05)',
+                  border: 'none',
+                  color: 'var(--text)',
+                  padding: '10px',
+                  borderRadius: '12px',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  boxShadow: '0 4px 12px rgba(0,0,0,0.2)'
+                }}
+              >
+                {isChartExpanded ? <Minimize2 size={24} /> : <Maximize2 size={16} />}
+              </button>
+
+              <div style={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column' }}>
+                {chartData.length === 0 && graphMode !== 'list' ? (
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', color: 'var(--muted)', fontSize: '0.9rem', fontWeight: '800' }}>
+                    {t(lang, 'noLogs')}
+                  </div>
+                ) : null}
+                
+                {graphMode === 'pie' && chartData.length > 0 && (
+                  <ResponsiveContainer width="100%" height="100%">
+                    <RadarChart cx="50%" cy="50%" outerRadius="65%" data={pieData} margin={{ top: 10, right: 10, left: 10, bottom: 10 }}>
+                      <PolarGrid stroke="var(--line)" />
+                      <PolarAngleAxis dataKey="name" tick={{ fill: 'var(--text)', fontSize: 10, fontWeight: '700' }} />
+                      <PolarRadiusAxis angle={30} domain={[0, 'auto']} tick={false} axisLine={false} />
+                      <Radar name="Volume" dataKey="value" stroke="var(--brand)" fill="var(--brand)" fillOpacity={0.5} animationDuration={1500} />
+                      <Tooltip contentStyle={{ background: 'var(--bg-soft)', borderRadius: '12px', border: '1px solid var(--line)', color: 'var(--text)' }} />
+                    </RadarChart>
+                  </ResponsiveContainer>
+                )}
+
+                {graphMode === 'area' && chartData.length > 0 && (
+                  <ResponsiveContainer width="100%" height="100%">
+                    <AreaChart data={chartData} margin={{ top: 10, right: 10, left: -15, bottom: 0 }}>
+                      <defs>
+                        <linearGradient id="colorArea" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="5%" stopColor="var(--brand)" stopOpacity={0.4} />
+                          <stop offset="95%" stopColor="var(--brand)" stopOpacity={0} />
+                        </linearGradient>
+                      </defs>
+                      <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--line)" />
+                      <XAxis dataKey="date" hide />
+                      <YAxis hide />
+                      <Tooltip contentStyle={{ background: 'var(--bg-soft)', borderRadius: '12px', border: '1px solid var(--line)' }} />
+                      <Area type="monotone" dataKey="weight" stroke="var(--brand)" fill="url(#colorArea)" strokeWidth={2} />
+                    </AreaChart>
+                  </ResponsiveContainer>
+                )}
+
+                {graphMode === 'scatter' && chartData.length > 0 && (
+                  <ResponsiveContainer width="100%" height="100%">
+                    <ScatterChart margin={{ top: 20, right: 20, bottom: 20, left: -20 }}>
+                      <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--line)" />
+                      <XAxis type="category" dataKey="date" name="date" tick={{ fill: 'var(--muted)', fontSize: 10 }} />
+                      <YAxis type="number" dataKey="weight" name="weight" tick={{ fill: 'var(--muted)', fontSize: 10 }} />
+                      <ZAxis type="number" dataKey="count" range={[50, 400]} />
+                      <Tooltip cursor={{ strokeDasharray: '3 3' }} contentStyle={{ background: 'var(--bg-soft)', borderRadius: '12px', border: '1px solid var(--line)' }} />
+                      <Scatter name="Workouts" data={chartData} fill="var(--brand)">
+                        {chartData.map((entry, index) => (
+                          <Cell key={`cell-${index}`} fill="var(--brand)" />
+                        ))}
+                      </Scatter>
+                    </ScatterChart>
+                  </ResponsiveContainer>
+                )}
+
+                {graphMode === 'list' && (
+                  <div className="exercise-list" style={{ overflowY: 'auto', height: '100%', padding: '0.5rem' }}>
+                    {filteredLogsList.map((log) => (
+                      <div key={log.id} className="exercise-row">
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.8rem' }}>
+                          <div className="text-brand">
+                            {log.exercise_detail?.exercise_type === 'calisthenics' ? <Activity size={18} /> : <Dumbbell size={18} />}
+                          </div>
+                          <div>
+                            <strong>{log.exercise_detail?.name}</strong>
+                            <p>
+                              {log.date} — {log.sets}x{String(log.reps).padStart(2, '0')}
+                              {!(log.exercise_detail?.exercise_type === 'calisthenics' && Number(log.weight_kg) === 0) && ` @ ${log.weight_kg}kg`}
+                            </p>
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  ))}
-                </div>
-              )}
+                    ))}
+                  </div>
+                )}
+              </div>
             </div>
           </article>
         )}
