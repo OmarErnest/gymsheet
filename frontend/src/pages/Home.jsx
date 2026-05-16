@@ -1,5 +1,5 @@
 import { useEffect, useState, useRef, useMemo, Fragment } from 'react';
-import { Save, Plus, Trash2, CheckCircle2, ChevronRight, ChevronLeft, Trophy, Medal, Play, Timer, Pause, RotateCcw, Droplets, Square, Settings, Table, LayoutGrid, CalendarDays, RefreshCw, Activity, Dumbbell, X } from 'lucide-react';
+import { Save, Plus, Trash2, CheckCircle2, ChevronRight, ChevronLeft, Trophy, Medal, Play, Timer, Pause, RotateCcw, Droplets, Square, Settings, Table, LayoutGrid, CalendarDays, RefreshCw, Activity, Dumbbell, X, MoreVertical } from 'lucide-react';
 import { api, iso } from '../api/client.js';
 import Skeleton from '../components/Skeleton.jsx';
 import { t } from '../i18n.js';
@@ -162,6 +162,8 @@ export default function Home({ lang }) {
   const days = weeksData[relativeWeek] || [];
   const [pushMenuDay, setPushMenuDay] = useState(null); // dayIdx of active push menu
   const [isSwapMode, setIsSwapMode] = useState(false);
+  const [isPushMode, setIsPushMode] = useState(false);
+  const [openMenuDayId, setOpenMenuDayId] = useState(null);
   const [swapDate, setSwapDate] = useState(null);
 
   const currentWeekStart = useMemo(() => {
@@ -190,6 +192,23 @@ export default function Home({ lang }) {
   const [exerciseSearch, setExerciseSearch] = useState('');
   const [selectedRecord, setSelectedRecord] = useState(null);
   const [showRecordModal, setShowRecordModal] = useState(false);
+
+  useEffect(() => {
+    if (isSwapMode || isPushMode) {
+      document.body.classList.add('screen-glow-active');
+    } else {
+      document.body.classList.remove('screen-glow-active');
+    }
+    return () => document.body.classList.remove('screen-glow-active');
+  }, [isSwapMode, isPushMode]);
+
+  useEffect(() => {
+    return () => {
+      document.body.classList.remove('screen-glow-active');
+      setIsSwapMode(false);
+      setIsPushMode(false);
+    };
+  }, []);
 
   async function fetchWeek(rel, force = false) {
     if (weeksData[rel] && !firstLoad && !force) return;
@@ -646,13 +665,14 @@ export default function Home({ lang }) {
             </button>
             <button 
               onClick={() => {
-                setIsSwapMode(!isSwapMode);
-                setSwapDate(null);
+                if (isSwapMode) setIsSwapMode(false);
+                else if (isPushMode) setIsPushMode(false);
+                else setOpenMenuDayId(openMenuDayId === 'top' ? null : 'top');
               }} 
               style={{ 
-                background: isSwapMode ? 'var(--brand)' : 'rgba(var(--brand-rgb), 0.1)', 
+                background: (isSwapMode || isPushMode) ? 'var(--brand)' : 'rgba(var(--brand-rgb), 0.1)', 
                 border: '1px solid rgba(var(--brand-rgb), 0.3)', 
-                color: isSwapMode ? '#052e16' : 'var(--brand)', 
+                color: (isSwapMode || isPushMode) ? '#052e16' : 'var(--brand)', 
                 fontSize: '0.65rem', 
                 fontWeight: '1000', 
                 cursor: 'pointer', 
@@ -663,11 +683,31 @@ export default function Home({ lang }) {
                 gap: '6px',
                 transition: 'all 0.3s ease',
                 letterSpacing: '1px',
-                boxShadow: isSwapMode ? '0 0 15px var(--brand)' : '0 2px 10px rgba(0,0,0,0.1)'
+                boxShadow: (isSwapMode || isPushMode) ? '0 0 15px var(--brand)' : '0 2px 10px rgba(0,0,0,0.1)',
+                position: 'relative'
               }}
-              title="Swap Days"
+              title="Menu"
             >
-              <RefreshCw size={13} strokeWidth={2.5} className={isSwapMode ? 'spin' : ''} />
+              {isSwapMode ? <RefreshCw size={13} strokeWidth={2.5} className="spin" /> : 
+               isPushMode ? <CalendarDays size={13} strokeWidth={2.5} className="animate-pulse" /> : 
+               <MoreVertical size={13} strokeWidth={2.5} />}
+              
+              {openMenuDayId === 'top' && (
+                <>
+                  <div style={{ position: 'fixed', inset: 0, zIndex: 199 }} onClick={(e) => { e.stopPropagation(); setOpenMenuDayId(null); }} />
+                  <div className="day-action-menu" style={{ top: '100%', right: 0, marginTop: '0.5rem' }}>
+                    <button className="day-action-item" onClick={(e) => { e.stopPropagation(); setEditMode(!editMode); setOpenMenuDayId(null); }}>
+                      <Settings size={16} /> {editMode ? 'Stop Editing' : 'Edit Day'}
+                    </button>
+                    <button className="day-action-item" onClick={(e) => { e.stopPropagation(); setIsSwapMode(true); setOpenMenuDayId(null); }}>
+                      <RefreshCw size={16} /> Swap Goals
+                    </button>
+                    <button className="day-action-item" onClick={(e) => { e.stopPropagation(); setIsPushMode(true); setOpenMenuDayId(null); }}>
+                      <CalendarDays size={16} /> Push / Shift
+                    </button>
+                  </div>
+                </>
+              )}
             </button>
         </div>
 
@@ -861,15 +901,18 @@ export default function Home({ lang }) {
                     <article
                       key={day.date}
                       ref={day.is_today ? todayRef : null}
-                      onClick={() => isSwapMode && handleDaySwap(day.date)}
+                      onClick={() => {
+                        if (isSwapMode) handleDaySwap(day.date);
+                        if (isPushMode) setPushMenuDay(pushMenuDay === dayIdx ? null : dayIdx);
+                      }}
                       className={day.is_today ? 'day-card today' : 'day-card'}
                       style={{ 
                         marginBottom: 'clamp(1rem, 4vw, 1.5rem)',
-                        cursor: isSwapMode ? 'pointer' : 'default',
-                        outline: isSwapMode && swapDate === day.date ? '3px solid var(--brand)' : 'none',
+                        cursor: (isSwapMode || isPushMode) ? 'pointer' : 'default',
+                        outline: (isSwapMode && swapDate === day.date) || (isPushMode && pushMenuDay === dayIdx) ? '3px solid var(--brand)' : 'none',
                         outlineOffset: '2px',
-                        opacity: isSwapMode && swapDate && swapDate !== day.date ? 0.8 : 1,
-                        transform: isSwapMode && swapDate === day.date ? 'scale(1.02)' : 'none',
+                        opacity: (isSwapMode && swapDate && swapDate !== day.date) ? 0.8 : 1,
+                        transform: (isSwapMode && swapDate === day.date) || (isPushMode && pushMenuDay === dayIdx) ? 'scale(1.02)' : 'none',
                         transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)'
                       }}
                     >
@@ -879,86 +922,65 @@ export default function Home({ lang }) {
                            <span style={{ fontSize: '0.8rem', color: 'var(--muted)', fontWeight: '800' }}>{day.label.split(',')[1]}</span>
                         </div>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
-                          {isDayCurrentWeek && (
-                            <div style={{ display: 'flex', gap: '0.4rem', alignItems: 'center' }}>
-                              <div style={{ position: 'relative' }}>
-                                <button
-                                  onClick={(e) => { e.stopPropagation(); setPushMenuDay(pushMenuDay === dayIdx ? null : dayIdx); }}
-                                  className="small-btn"
-                                  title="Shift goals"
-                                  style={{ padding: '0.5rem', borderRadius: '12px', background: 'rgba(255,255,255,0.05)', color: 'var(--text)', border: 'none', display: 'flex', alignItems: 'center', gap: '4px' }}
-                                >
-                                  <CalendarDays size={16} />
-                                  <span style={{ fontSize: '0.6rem', fontWeight: '900' }}>PUSH</span>
-                                </button>
-
-                                {pushMenuDay === dayIdx && (
-                                  <>
-                                    <div style={{ position: 'fixed', inset: 0, zIndex: 100 }} onClick={(e) => { e.stopPropagation(); setPushMenuDay(null); }} />
-                                    <div className="glass-card" style={{
-                                      position: 'absolute',
-                                      top: '100%',
-                                      left: 0,
-                                      zIndex: 101,
-                                      marginTop: '0.4rem',
-                                      padding: '0.3rem',
-                                      display: 'flex',
-                                      gap: '0.3rem',
-                                      background: 'var(--bg-strong)',
-                                      border: '1px solid var(--line)',
-                                      boxShadow: '0 8px 32px rgba(0,0,0,0.4)',
-                                      borderRadius: '12px'
-                                    }}>
+                          {isDayCurrentWeek && isPushMode && (
+                            <div style={{ position: 'relative' }}>
+                              {pushMenuDay === dayIdx && (
+                                <>
+                                  <div style={{ position: 'fixed', inset: 0, zIndex: 201 }} onClick={(e) => { e.stopPropagation(); setPushMenuDay(null); }} />
+                                  <div className="glass-card animate-pop" style={{
+                                    position: 'fixed',
+                                    top: '50%',
+                                    left: '50%',
+                                    transform: 'translate(-50%, -50%)',
+                                    zIndex: 2000,
+                                    padding: 'clamp(1rem, 5vw, 1.5rem)',
+                                    display: 'flex',
+                                    flexDirection: 'column',
+                                    gap: '1rem',
+                                    background: 'var(--bg-strong)',
+                                    border: '2px solid var(--brand)',
+                                    boxShadow: '0 20px 80px rgba(0,0,0,0.9)',
+                                    borderRadius: '28px',
+                                    width: 'min(300px, 90vw)',
+                                    textAlign: 'center'
+                                  }}>
+                                    <p style={{ margin: 0, fontSize: '0.8rem', fontWeight: '950', color: 'var(--brand)', letterSpacing: '2px' }}>SHIFT GOALS</p>
+                                    <h3 style={{ margin: 0, fontSize: '1.1rem', fontWeight: '900' }}>{day.label.split(',')[0]}</h3>
+                                    <div style={{ display: 'flex', gap: '1rem' }}>
                                       <button
-                                        className="small-btn"
-                                        style={{ padding: '0.4rem 0.6rem', fontSize: '0.7rem', fontWeight: '900', color: '#ef4444' }}
+                                        className="primary-btn"
+                                        style={{ flex: 1, background: 'rgba(239, 68, 68, 0.2)', color: '#ef4444', border: '1px solid #ef4444', height: '60px', fontSize: '1.2rem' }}
                                         onClick={async (e) => {
                                           e.stopPropagation();
                                           try {
                                             await api('/weekly-shift/', { method: 'POST', body: JSON.stringify({ today: day.date, day_index: dayIdx, direction: -1 }) });
                                             setPushMenuDay(null);
+                                            setIsPushMode(false);
                                             fetchWeek(relativeWeek);
                                           } catch (err) { setError(err.message); }
                                         }}
                                       >-1</button>
                                       <button
-                                        className="small-btn"
-                                        style={{ padding: '0.4rem 0.6rem', fontSize: '0.7rem', fontWeight: '900', color: '#10b981' }}
+                                        className="primary-btn"
+                                        style={{ flex: 1, height: '60px', fontSize: '1.2rem' }}
                                         onClick={async (e) => {
                                           e.stopPropagation();
                                           try {
                                             await api('/weekly-shift/', { method: 'POST', body: JSON.stringify({ today: day.date, day_index: dayIdx, direction: 1 }) });
                                             setPushMenuDay(null);
+                                            setIsPushMode(false);
                                             fetchWeek(relativeWeek);
                                           } catch (err) { setError(err.message); }
                                         }}
                                       >+1</button>
                                     </div>
-                                  </>
-                                )}
-                              </div>
-                               <button
-                                onClick={(e) => { 
-                                  e.stopPropagation(); 
-                                  if (relativeWeek !== 0 && !editMode) {
-                                    alert(t(lang, 'notCurrentWeek'));
-                                    return;
-                                  }
-                                  setEditMode(!editMode); 
-                                }}
-                                className={editMode ? 'small-btn active' : 'small-btn'}
-                                style={{ 
-                                  padding: '0.5rem', 
-                                  borderRadius: '12px', 
-                                  background: editMode ? 'var(--brand)' : 'rgba(255,255,255,0.05)',
-                                  color: editMode ? '#052e16' : 'var(--text)',
-                                  border: 'none',
-                                  boxShadow: editMode ? '0 0 15px var(--brand)' : 'none',
-                                  transition: 'all 0.3s ease'
-                                }}
-                              >
-                                <Settings size={18} className={editMode ? 'spin' : ''} />
-                              </button>
+                                    <button 
+                                      onClick={(e) => { e.stopPropagation(); setPushMenuDay(null); }}
+                                      style={{ background: 'none', border: 'none', color: 'var(--muted)', fontSize: '0.8rem', fontWeight: '800', cursor: 'pointer', marginTop: '0.5rem' }}
+                                    >CANCEL</button>
+                                  </div>
+                                </>
+                              )}
                             </div>
                           )}
                           {isDayCompleted && !editMode && <CheckCircle2 size={18} className="success" />}
@@ -1459,17 +1481,18 @@ function InlineTimer({ initialSeconds, onFinish, onCancel }) {
   const increments = [15, 30, 45, 60, 75, 90, 105, 120, 135, 150, 165, 180];
 
   return (
-    <div className="glass-card" style={{ 
+    <div className="glass-card animate-pop" style={{ 
       position: 'absolute',
       top: '100%',
       right: 0,
-      zIndex: 10,
-      padding: '0.6rem', 
-      border: '1px solid var(--brand)', 
-      borderRadius: '12px', 
-      background: 'var(--bg-soft)', 
-      minWidth: '180px',
-      boxShadow: '0 8px 32px rgba(0,0,0,0.5)',
+      zIndex: 500,
+      padding: '0.8rem', 
+      border: '2px solid var(--brand)', 
+      borderRadius: '16px', 
+      background: 'var(--bg-strong)', 
+      backdropFilter: 'blur(10px)',
+      minWidth: '200px',
+      boxShadow: '0 12px 48px rgba(0,0,0,0.7)',
       marginTop: '0.5rem'
     }}>
       {seconds === 0 && !isActive ? (

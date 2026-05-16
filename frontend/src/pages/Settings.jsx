@@ -417,7 +417,23 @@ export default function Settings({ preferences, setPreferences, lang }) {
       </form>
 
       <div style={{ padding: '0 0 1.5rem' }}>
-        <button onClick={logout} className="logout-btn primary-btn" style={{ width: '100%', background: 'transparent', color: 'var(--danger)', border: '1px solid var(--danger)' }}>
+        <button 
+          onClick={logout} 
+          className="logout-btn primary-btn" 
+          style={{ 
+            width: '100%', 
+            background: 'rgba(239, 68, 68, 0.1)', 
+            color: '#ef4444', 
+            border: '2px solid #ef4444',
+            fontWeight: '900',
+            letterSpacing: '1px',
+            textTransform: 'uppercase',
+            boxShadow: '0 4px 15px rgba(239, 68, 68, 0.2)',
+            transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)'
+          }}
+          onMouseEnter={(e) => { e.currentTarget.style.background = '#ef4444'; e.currentTarget.style.color = '#fff'; }}
+          onMouseLeave={(e) => { e.currentTarget.style.background = 'rgba(239, 68, 68, 0.1)'; e.currentTarget.style.color = '#ef4444'; }}
+        >
           <LogOut size={18} /> {t(lang, 'logout')}
         </button>
       </div>

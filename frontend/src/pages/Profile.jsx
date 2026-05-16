@@ -48,12 +48,13 @@ const backDots = [
 const ActivityMap = ({ logs, lang }) => {
   const today = new Date();
   const days = [];
+  const safeLogs = Array.isArray(logs) ? logs : [];
   // 6 months = ~26 weeks
   for (let i = 181; i >= 0; i--) {
     const d = new Date();
     d.setDate(today.getDate() - i);
     const dateStr = d.toISOString().split('T')[0];
-    const dayLogs = logs.filter(l => l.date === dateStr);
+    const dayLogs = safeLogs.filter(l => l && l.date === dateStr);
     days.push({ date: dateStr, count: dayLogs.length });
   }
 
@@ -240,6 +241,81 @@ function MultiSelect({ label, options, selected, onToggle, onToggleAll, lang, al
   );
 }
 
+function CustomSingleSelect({ value, options, onChange, lang }) {
+  const [isOpen, setIsOpen] = useState(false);
+  const selectedOption = options.find(o => String(o.id) === String(value)) || options[0];
+
+  return (
+    <div style={{ position: 'relative', width: '100%' }}>
+      <button
+        type="button"
+        onClick={() => setIsOpen(!isOpen)}
+        style={{
+          width: '100%',
+          textAlign: 'left',
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          height: '52px',
+          fontSize: '0.95rem',
+          padding: '0 1.2rem',
+          borderRadius: '14px',
+          border: '1px solid var(--line)',
+          background: 'var(--bg-soft)',
+          color: 'var(--text)',
+          fontWeight: '700',
+          cursor: 'pointer',
+          transition: 'all 0.2s'
+        }}
+      >
+        <span style={{ fontWeight: '900' }}>{selectedOption.name}</span>
+        <ChevronDown size={18} style={{ opacity: 0.5, transform: isOpen ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s' }} />
+      </button>
+
+      {isOpen && (
+        <>
+          <div style={{ position: 'fixed', inset: 0, zIndex: 90 }} onClick={() => setIsOpen(false)} />
+          <div className="glass-card animate-pop" style={{
+            position: 'absolute',
+            top: '100%',
+            right: 0,
+            zIndex: 1000,
+            marginTop: '0.5rem',
+            padding: '0.4rem',
+            border: '1px solid var(--brand)',
+            boxShadow: '0 12px 48px rgba(0,0,0,0.6)',
+            background: 'var(--bg-strong)',
+            minWidth: '100%',
+            backdropFilter: 'blur(10px)',
+            borderRadius: '16px'
+          }}>
+            {options.map((opt) => (
+              <button
+                key={opt.id}
+                onClick={() => { onChange(opt.id); setIsOpen(false); }}
+                style={{
+                  width: '100%',
+                  textAlign: 'left',
+                  padding: '0.8rem 1rem',
+                  borderRadius: '10px',
+                  background: String(opt.id) === String(value) ? 'rgba(var(--brand-rgb), 0.15)' : 'transparent',
+                  color: String(opt.id) === String(value) ? 'var(--brand)' : 'var(--text)',
+                  border: 'none',
+                  fontWeight: '800',
+                  cursor: 'pointer',
+                  transition: 'all 0.2s'
+                }}
+              >
+                {opt.name}
+              </button>
+            ))}
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
+
 export default function Profile({ preferences, lang }) {
   const { user } = useAuth();
   const isDummy = user?.email === 'dummy@gym.sheet';
@@ -280,6 +356,8 @@ export default function Profile({ preferences, lang }) {
     body_part: 'biceps', value_cm: '', date: new Date().toISOString().slice(0, 10), notes: ''
   });
   const [showWarriorStats, setShowWarriorStats] = useState(false);
+  const [showFrontBody, setShowFrontBody] = useState(true);
+  const [selectedDot, setSelectedDot] = useState(null);
 
   const [goalForm, setGoalForm] = useState({
     id: null,
@@ -816,15 +894,13 @@ export default function Profile({ preferences, lang }) {
   return (
     <section className="stack profile-page animate-fade-in" style={{ paddingBottom: '6rem' }}>
       {message && <p className="notice">{message}</p>}
-
-
-      <div className="stats-expander" style={{ marginBottom: '0.4rem' }}>
+      <div className="stats-expander" style={{ marginBottom: showWarriorStats ? '0.8rem' : '-0.9rem', transition: 'margin 0.3s ease' }}>
         <button
           onClick={() => setShowWarriorStats(!showWarriorStats)}
           style={{
             width: 'fit-content',
             margin: '0 auto',
-            padding: '0.4rem 1rem',
+            padding: '0.2rem 1rem',
             background: 'none',
             border: 'none',
             color: showWarriorStats ? 'var(--brand)' : 'var(--muted)',
@@ -1005,7 +1081,7 @@ export default function Profile({ preferences, lang }) {
         {activeTab === 'strength' && (
           <article className="glass-card profile-section" style={{ padding: '0.8rem' }}>
             <div style={{ textAlign: 'center', marginBottom: '0.5rem' }}>
-              <div className="segmented ghost" style={{ flex: 1, minWidth: '220px', margin: '0.8rem auto 0', width: 'fit-content' }}>
+              <div className="segmented ghost" style={{ flex: 1, minWidth: '220px', margin: '0.8rem auto 0', width: 'fit-content', gridTemplateColumns: 'repeat(4, 1fr)' }}>
                 <button className={graphMode === 'pie' ? 'active' : ''} onClick={() => setGraphMode('pie')}><Target size={18} /></button>
                 <button className={graphMode === 'area' ? 'active' : ''} onClick={() => setGraphMode('area')}><TrendingUp size={18} /></button>
                 <button className={graphMode === 'scatter' ? 'active' : ''} onClick={() => setGraphMode('scatter')}><CircleDot size={18} /></button>
@@ -1044,13 +1120,17 @@ export default function Profile({ preferences, lang }) {
               </div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '0.3rem' }}>
                 <span style={{ fontSize: '0.6rem', fontWeight: '1000', color: 'var(--muted)', marginLeft: '0.5rem', letterSpacing: '1px' }}>PERIOD</span>
-                <select style={{ height: '52px', fontSize: '0.95rem', borderRadius: '16px', padding: '0 1rem', background: 'var(--bg-soft)', border: '1px solid var(--line)', color: 'var(--text)', fontWeight: '700', width: '100%' }} value={selectedPeriod} onChange={(e) => setSelectedPeriod(e.target.value)}>
-                  <option value="all">{t(lang, 'allTime')}</option>
-                  <option value="year">{t(lang, 'lastYear')}</option>
-                  <option value="90">90 {t(lang, 'days')}</option>
-                  <option value="30">30 {t(lang, 'days')}</option>
-                  <option value="7">{t(lang, 'last7Days')}</option>
-                </select>
+                <CustomSingleSelect
+                  value={selectedPeriod}
+                  options={[
+                    { id: '7', name: '7 Days' },
+                    { id: '30', name: '30 Days' },
+                    { id: '90', name: '90 Days' },
+                    { id: 'year', name: '1 Year' },
+                    { id: 'all', name: 'All Time' }
+                  ]}
+                  onChange={setSelectedPeriod}
+                />
               </div>
             </div>
 
@@ -1066,7 +1146,18 @@ export default function Profile({ preferences, lang }) {
               display: 'flex',
               flexDirection: 'column',
               animation: 'fadeIn 0.3s ease'
-            } : { height: '360px', minHeight: '360px', marginTop: '1rem', background: 'var(--bg-soft)', border: '1px solid var(--line)', position: 'relative', display: 'flex', flexDirection: 'column', borderRadius: '16px', overflow: 'hidden' }}>
+            } : {
+              height: '360px',
+              minHeight: '360px',
+              marginTop: '1rem',
+              background: 'var(--bg-soft)',
+              border: '1px solid var(--line)',
+              position: 'relative',
+              display: 'flex',
+              flexDirection: 'column',
+              borderRadius: '16px',
+              overflow: 'hidden'
+            }}>
               
               <button 
                 onClick={() => setIsChartExpanded(!isChartExpanded)}
@@ -1134,7 +1225,7 @@ export default function Profile({ preferences, lang }) {
                       <XAxis type="category" dataKey="date" name="date" tick={{ fill: 'var(--muted)', fontSize: 10 }} />
                       <YAxis type="number" dataKey="weight" name="weight" tick={{ fill: 'var(--muted)', fontSize: 10 }} />
                       <ZAxis type="number" dataKey="count" range={[50, 400]} />
-                      <Tooltip cursor={{ strokeDasharray: '3 3' }} contentStyle={{ background: 'var(--bg-soft)', borderRadius: '12px', border: '1px solid var(--line)' }} />
+                      <Tooltip cursor={{ strokeDasharray: '3 3', stroke: 'var(--brand)', strokeWidth: 1 }} contentStyle={{ background: 'var(--bg-soft)', borderRadius: '12px', border: '1px solid var(--line)' }} />
                       <Scatter name="Workouts" data={chartData} fill="var(--brand)">
                         {chartData.map((entry, index) => (
                           <Cell key={`cell-${index}`} fill="var(--brand)" />
@@ -1418,11 +1509,12 @@ export default function Profile({ preferences, lang }) {
               </button>
 
               {(showFrontBody ? frontDots : backDots).map((dot) => {
-                const latest = (measurements || [])
+                if (!dot) return null;
+                const latest = (Array.isArray(measurements) ? measurements : [])
                   .filter(m => m && m.body_part === dot.part)
                   .sort((a, b) => {
-                    const da = a.date ? new Date(a.date) : 0;
-                    const db = b.date ? new Date(b.date) : 0;
+                    const da = a && a.date ? new Date(a.date).getTime() : 0;
+                    const db = b && b.date ? new Date(b.date).getTime() : 0;
                     return db - da;
                   })[0];
                 const isActive = selectedDot === dot.part;
