@@ -41,3 +41,4 @@ The database architecture leverages normalized relational tables to maintain int
 - **Frontend**: React 18, Vite, Recharts, Lucide
 - **Database**: PostgreSQL / SQLite
 - **Styling**: Vanilla CSS (Custom Design System)
+# iFixSolutions
